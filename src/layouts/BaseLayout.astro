@@ -204,7 +204,9 @@ const { title, template = 'classic' } = Astro.props;
         templateButtons.forEach((button) => {
           button.addEventListener('click', function (e) {
             e.preventDefault();
+            e.stopPropagation();
             const template = this.getAttribute('data-template');
+            console.log('[Template] Clicked:', template);
             setTemplate(template);
           });
         });

@@ -488,14 +488,31 @@
   /* 模板特定边框 */
   [data-template='classic'] .layout-border {
     border-color: var(--juanbo-300);
+    border-width: 2px;
   }
 
   [data-template='simple'] .layout-border {
     border-color: var(--mo-200);
+    border-width: 1px;
   }
 
   [data-template='deluxe'] .layout-border {
     border-color: var(--zhusha-300);
+    border-width: 3px;
+    border-style: double;
+  }
+
+  /* 模板特定背景 */
+  [data-template='classic'] body {
+    background-color: var(--bg-primary);
+  }
+
+  [data-template='simple'] body {
+    background-color: oklch(100% 0 0);
+  }
+
+  [data-template='deluxe'] body {
+    background: linear-gradient(135deg, var(--bg-primary), var(--bg-tertiary));
   }
 
   /* 纹样显示/隐藏 */
