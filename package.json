@@ -4,8 +4,7 @@
   "version": "1.0.0",
   "description": "🎋 古籍现代化改造项目 - 传承中华文化，让古籍阅读更现代化",
   "engines": {
-    "node": ">=22.0.0",
-    "bun": ">=1.0.0"
+    "bun": ">=1.3.0"
   },
   "scripts": {
     "dev": "astro dev",

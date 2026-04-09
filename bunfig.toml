@@ -1,6 +1,9 @@
 # Bun 配置文件
 # https://bun.sh/docs/project/bunfig
 
+# 运行时版本要求
+runtime = "bun"
+
 [install]
 # 自动保存锁定文件
 save = true
