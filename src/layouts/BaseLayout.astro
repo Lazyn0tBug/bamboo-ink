@@ -6,35 +6,11 @@ interface Props {
   template?: 'classic' | 'simple' | 'deluxe';
 }
 
-const { title, template = 'classic' } = Astro.props;
-
-// 模板配置
-const templates = {
-  classic: {
-    bg: 'bg-xuanzhi-100',
-    border: 'border-juanbo-300',
-    font: 'font-song',
-    pattern: true,
-  },
-  simple: {
-    bg: 'bg-white',
-    border: 'border-gray-200',
-    font: 'font-song',
-    pattern: false,
-  },
-  deluxe: {
-    bg: 'bg-gradient-to-b from-xuanzhi-50 to-xuanzhi-200',
-    border: 'border-zhusha-300',
-    font: 'font-song',
-    pattern: true,
-  },
-};
-
-const currentTemplate = templates[template];
+const { title } = Astro.props;
 ---
 
 <!doctype html>
-<html lang="zh-CN">
+<html lang="zh-CN" data-template="classic">
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
@@ -47,12 +23,42 @@ const currentTemplate = templates[template];
       rel="stylesheet"
     />
     <title>{title} - 古籍图书馆</title>
+    <style>
+      /* 模板样式 - 通过 data-template 属性切换 */
+      html[data-template='classic'] body {
+        background-color: #f7f5f0;
+      }
+      html[data-template='classic'] .layout-border {
+        border-color: #e0d8c8;
+      }
+      html[data-template='classic'] .layout-pattern {
+        display: block;
+      }
+
+      html[data-template='simple'] body {
+        background-color: #ffffff;
+      }
+      html[data-template='simple'] .layout-border {
+        border-color: #e5e5e5;
+      }
+      html[data-template='simple'] .layout-pattern {
+        display: none;
+      }
+
+      html[data-template='deluxe'] body {
+        background: linear-gradient(to bottom, #fefdfb, #efebd1);
+      }
+      html[data-template='deluxe'] .layout-border {
+        border-color: #f59898;
+      }
+      html[data-template='deluxe'] .layout-pattern {
+        display: block;
+      }
+    </style>
   </head>
-  <body class={`min-h-screen ${currentTemplate.bg} ${currentTemplate.font} text-mo-500`}>
+  <body class="min-h-screen font-song text-mo-500">
     <!-- 顶部导航 -->
-    <nav
-      class={`border-b ${currentTemplate.border} bg-xuanzhi-50/80 backdrop-blur-sm sticky top-0 z-50`}
-    >
+    <nav class="border-b layout-border bg-xuanzhi-50/80 backdrop-blur-sm sticky top-0 z-50">
       <div class="max-w-6xl mx-auto px-4 py-3">
         <div class="flex items-center justify-between">
           <a href="/" class="flex items-center space-x-3">
@@ -92,18 +98,15 @@ const currentTemplate = templates[template];
           <div class="flex items-center space-x-2">
             <button
               data-template="classic"
-              class={`px-3 py-1.5 rounded text-sm ${template === 'classic' ? 'bg-zhusha-500 text-white' : 'text-mo-500 hover:bg-xuanzhi-200'}`}
-              >古典</button
+              class="px-3 py-1.5 rounded text-sm text-mo-500 hover:bg-xuanzhi-200">古典</button
             >
             <button
               data-template="simple"
-              class={`px-3 py-1.5 rounded text-sm ${template === 'simple' ? 'bg-zhusha-500 text-white' : 'text-mo-500 hover:bg-xuanzhi-200'}`}
-              >简约</button
+              class="px-3 py-1.5 rounded text-sm text-mo-500 hover:bg-xuanzhi-200">简约</button
             >
             <button
               data-template="deluxe"
-              class={`px-3 py-1.5 rounded text-sm ${template === 'deluxe' ? 'bg-zhusha-500 text-white' : 'text-mo-500 hover:bg-xuanzhi-200'}`}
-              >华丽</button
+              class="px-3 py-1.5 rounded text-sm text-mo-500 hover:bg-xuanzhi-200">华丽</button
             >
           </div>
         </div>
@@ -116,7 +119,7 @@ const currentTemplate = templates[template];
     </main>
 
     <!-- 页脚 -->
-    <footer class={`border-t ${currentTemplate.border} mt-16 py-8 bg-xuanzhi-50/50`}>
+    <footer class="border-t layout-border mt-16 py-8 bg-xuanzhi-50/50">
       <div class="max-w-6xl mx-auto px-4 text-center text-mo-400 text-sm">
         <p>古籍现代化改造项目 © 2026</p>
         <p class="mt-2">Powered by Astro & Tailwind CSS</p>
@@ -124,23 +127,23 @@ const currentTemplate = templates[template];
     </footer>
 
     <!-- 古典纹样装饰（仅 classic 和 deluxe 模板） -->
-    {
-      currentTemplate.pattern && (
-        <div class="fixed top-0 left-0 w-full h-full pointer-events-none opacity-5 z-0">
-          <div class="absolute top-10 left-10 w-32 h-32 border-2 border-mo-500 rounded-full" />
-          <div class="absolute bottom-10 right-10 w-48 h-48 border-2 border-mo-500 rotate-45" />
-        </div>
-      )
-    }
+    <div class="layout-pattern fixed top-0 left-0 w-full h-full pointer-events-none opacity-5 z-0">
+      <div class="absolute top-10 left-10 w-32 h-32 border-2 border-mo-500 rounded-full"></div>
+      <div class="absolute bottom-10 right-10 w-48 h-48 border-2 border-mo-500 rotate-45"></div>
+    </div>
 
     <!-- 模板切换脚本 -->
     <script is:inline>
       // 模板切换功能 - 使用 localStorage 保存偏好
+      const html = document.documentElement;
       const templateButtons = document.querySelectorAll('[data-template]');
 
-      // 更新按钮状态
-      function updateButtonState() {
-        const template = new URLSearchParams(window.location.search).get('template') || 'classic';
+      // 设置模板
+      function setTemplate(template) {
+        html.setAttribute('data-template', template);
+        localStorage.setItem('preferredTemplate', template);
+
+        // 更新按钮状态
         templateButtons.forEach((btn) => {
           const buttonTemplate = btn.getAttribute('data-template');
           if (buttonTemplate === template) {
@@ -157,26 +160,18 @@ const currentTemplate = templates[template];
       templateButtons.forEach((btn) => {
         btn.addEventListener('click', () => {
           const template = btn.getAttribute('data-template');
-          const url = new URL(window.location.href);
-          url.searchParams.set('template', template);
-
-          // 保存到 localStorage
-          localStorage.setItem('preferredTemplate', template);
-
-          // 跳转
-          window.location.href = url.toString();
+          setTemplate(template);
         });
       });
 
-      // 初始化状态
-      updateButtonState();
+      // 初始化：从 URL 或 localStorage 读取偏好
+      const urlTemplate = new URLSearchParams(window.location.search).get('template');
+      const savedTemplate = localStorage.getItem('preferredTemplate') || 'classic';
 
-      // 如果 URL 没有 template 参数，使用 localStorage 的偏好
-      if (!new URLSearchParams(window.location.search).has('template')) {
-        const preferred = localStorage.getItem('preferredTemplate') || 'classic';
-        const url = new URL(window.location.href);
-        url.searchParams.set('template', preferred);
-        window.location.replace(url.toString());
+      if (urlTemplate) {
+        setTemplate(urlTemplate);
+      } else {
+        setTemplate(savedTemplate);
       }
     </script>
   </body>
