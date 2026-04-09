@@ -196,8 +196,8 @@ const { title, template = 'classic' } = Astro.props;
         // 绑定主题切换事件
         themeToggle.addEventListener('click', function (e) {
           e.preventDefault();
-          const currentTheme = document.documentElement.getAttribute('data-theme') || 'light';
-          const newTheme = currentTheme === 'light' ? 'dark' : 'light';
+          const isDark = document.documentElement.classList.contains('dark');
+          const newTheme = isDark ? 'light' : 'dark';
           setTheme(newTheme);
         });
 

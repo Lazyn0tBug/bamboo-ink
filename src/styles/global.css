@@ -156,10 +156,12 @@
      ======================================== */
   --color-background: var(--bg-primary);
   --color-foreground: var(--text-primary);
+  --color-text: var(--text-primary);
   --color-text-primary: var(--text-primary);
   --color-text-secondary: var(--text-secondary);
   --color-text-tertiary: var(--text-tertiary);
 
+  --color-surface: var(--bg-secondary);
   --color-card: var(--bg-secondary);
   --color-card-foreground: var(--text-primary);
 
