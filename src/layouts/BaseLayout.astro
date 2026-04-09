@@ -1,0 +1,106 @@
+---
+interface Props {
+  title: string;
+  template?: 'classic' | 'simple' | 'deluxe';
+}
+
+const { title, template = 'classic' } = Astro.props;
+
+// 模板配置
+const templates = {
+  classic: {
+    bg: 'bg-xuanzhi-100',
+    border: 'border-juanbo-300',
+    font: 'font-song',
+    pattern: true,
+  },
+  simple: {
+    bg: 'bg-white',
+    border: 'border-gray-200',
+    font: 'font-song',
+    pattern: false,
+  },
+  deluxe: {
+    bg: 'bg-gradient-to-b from-xuanzhi-50 to-xuanzhi-200',
+    border: 'border-zhusha-300',
+    font: 'font-song',
+    pattern: true,
+  },
+};
+
+const currentTemplate = templates[template];
+---
+
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="description" content="古籍现代化阅读平台" />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+SC:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
+    <title>{title} - 古籍图书馆</title>
+  </head>
+  <body class={`min-h-screen ${currentTemplate.bg} ${currentTemplate.font} text-mo-500`}>
+    <!-- 顶部导航 -->
+    <nav class={`border-b ${currentTemplate.border} bg-xuanzhi-50/80 backdrop-blur-sm sticky top-0 z-50`}>
+      <div class="max-w-6xl mx-auto px-4 py-3">
+        <div class="flex items-center justify-between">
+          <a href="/" class="flex items-center space-x-3">
+            <div class="w-10 h-10 bg-zhusha-500 rounded-lg flex items-center justify-center">
+              <span class="text-white text-xl font-bold">古</span>
+            </div>
+            <div>
+              <h1 class="text-lg font-bold text-mo-600">古籍图书馆</h1>
+              <p class="text-xs text-mo-400">Classic Library</p>
+            </div>
+          </a>
+          
+          <!-- 搜索框 -->
+          <div class="flex-1 max-w-md mx-8">
+            <div class="relative">
+              <input
+                type="text"
+                placeholder="搜索古籍..."
+                class="w-full px-4 py-2 border border-juanbo-300 rounded-lg bg-white/80 focus:outline-none focus:ring-2 focus:ring-zhusha-500/50"
+              />
+              <svg class="w-5 h-5 absolute right-3 top-2.5 text-mo-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+              </svg>
+            </div>
+          </div>
+          
+          <!-- 模板切换 -->
+          <div class="flex items-center space-x-2">
+            <a href="?template=classic" class={`px-3 py-1.5 rounded text-sm ${template === 'classic' ? 'bg-zhusha-500 text-white' : 'text-mo-500 hover:bg-xuanzhi-200'}`}>古典</a>
+            <a href="?template=simple" class={`px-3 py-1.5 rounded text-sm ${template === 'simple' ? 'bg-zhusha-500 text-white' : 'text-mo-500 hover:bg-xuanzhi-200'}`}>简约</a>
+            <a href="?template=deluxe" class={`px-3 py-1.5 rounded text-sm ${template === 'deluxe' ? 'bg-zhusha-500 text-white' : 'text-mo-500 hover:bg-xuanzhi-200'}`}>华丽</a>
+          </div>
+        </div>
+      </div>
+    </nav>
+
+    <!-- 主体内容 -->
+    <main class="max-w-6xl mx-auto px-4 py-8">
+      <slot />
+    </main>
+
+    <!-- 页脚 -->
+    <footer class={`border-t ${currentTemplate.border} mt-16 py-8 bg-xuanzhi-50/50`}>
+      <div class="max-w-6xl mx-auto px-4 text-center text-mo-400 text-sm">
+        <p>古籍现代化改造项目 © 2026</p>
+        <p class="mt-2">Powered by Astro & Tailwind CSS</p>
+      </div>
+    </footer>
+
+    <!-- 古典纹样装饰（仅 classic 和 deluxe 模板） -->
+    {currentTemplate.pattern && (
+      <div class="fixed top-0 left-0 w-full h-full pointer-events-none opacity-5 z-0">
+        <div class="absolute top-10 left-10 w-32 h-32 border-2 border-mo-500 rounded-full"></div>
+        <div class="absolute bottom-10 right-10 w-48 h-48 border-2 border-mo-500 rotate-45"></div>
+      </div>
+    )}
+  </body>
+</html>

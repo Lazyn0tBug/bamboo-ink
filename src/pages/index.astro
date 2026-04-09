@@ -1,0 +1,145 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+
+const fourSections = [
+  {
+    name: '经部',
+    pinyin: 'Jīng',
+    description: '儒家经典，十三经等',
+    count: 156,
+    icon: '📜',
+    color: 'bg-blue-500',
+    items: ['周易', '尚书', '诗经', '周礼', '仪礼', '礼记', '春秋左传', '论语', '孟子'],
+  },
+  {
+    name: '史部',
+    pinyin: 'Shǐ',
+    description: '历史典籍，廿五史等',
+    count: 234,
+    icon: '📚',
+    color: 'bg-red-500',
+    items: ['史记', '汉书', '后汉书', '三国志', '晋书', '宋书', '南齐书', '梁书', '陈书'],
+  },
+  {
+    name: '子部',
+    pinyin: 'Zǐ',
+    description: '诸子百家，哲学著作',
+    count: 189,
+    icon: '🎋',
+    color: 'bg-green-500',
+    items: ['老子', '庄子', '墨子', '荀子', '韩非子', '吕氏春秋', '淮南子', '论衡'],
+  },
+  {
+    name: '集部',
+    pinyin: 'Jí',
+    description: '文学作品集，诗词曲赋',
+    count: 312,
+    icon: '🖋️',
+    color: 'bg-purple-500',
+    items: ['楚辞', '文选', '乐府诗集', '全唐诗', '宋词', '元曲', '古文观止'],
+  },
+];
+
+const recentUpdates = [
+  { title: '周易', section: '经部', date: '2026-04-08' },
+  { title: '史记·本纪', section: '史部', date: '2026-04-07' },
+  { title: '道德经', section: '子部', date: '2026-04-06' },
+  { title: '诗经', section: '经部', date: '2026-04-05' },
+];
+---
+
+<BaseLayout title="首页" template={Astro.request.url.searchParams.get('template') || 'classic'}>
+  <!-- 欢迎区域 -->
+  <div class="text-center py-12 mb-8">
+    <h2 class="text-4xl font-bold text-mo-600 mb-4">古籍图书馆</h2>
+    <p class="text-xl text-mo-400 mb-2">Classic Chinese Library</p>
+    <p class="text-mo-500 max-w-2xl mx-auto">
+      传承中华文化，让古籍阅读更现代化。支持语义搜索、智能标注、多模板切换。
+    </p>
+  </div>
+
+  <!-- 四部分类 -->
+  <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-12">
+    {fourSections.map((section) => (
+      <div class={`bg-white rounded-xl shadow-lg overflow-hidden hover:shadow-xl transition-shadow duration-300 border border-juanbo-200`}>
+        <div class={`${section.color} p-6 text-white`}>
+          <div class="text-4xl mb-2">{section.icon}</div>
+          <h3 class="text-2xl font-bold">{section.name}</h3>
+          <p class="text-sm opacity-80">{section.pinyin}</p>
+        </div>
+        <div class="p-6">
+          <p class="text-mo-500 mb-4">{section.description}</p>
+          <div class="flex items-center justify-between mb-4">
+            <span class="text-sm text-mo-400">收录典籍</span>
+            <span class="text-lg font-bold text-zhusha-500">{section.count} 部</span>
+          </div>
+          <div class="flex flex-wrap gap-2">
+            {section.items.slice(0, 4).map((item) => (
+              <span class="px-2 py-1 bg-xuanzhi-100 text-mo-600 text-xs rounded">
+                {item}
+              </span>
+            ))}
+            <span class="px-2 py-1 bg-mo-100 text-mo-400 text-xs rounded">
+              +{section.items.length - 4}
+            </span>
+          </div>
+          <a href={`/${section.name}`} class="mt-4 block text-center py-2 bg-xuanzhi-100 hover:bg-xuanzhi-200 text-mo-600 rounded-lg transition-colors">
+            浏览全部 →
+          </a>
+        </div>
+      </div>
+    ))}
+  </div>
+
+  <!-- 最近更新 -->
+  <div class="bg-white rounded-xl shadow-lg p-6 border border-juanbo-200 mb-12">
+    <div class="flex items-center justify-between mb-6">
+      <h3 class="text-xl font-bold text-mo-600">📖 最近更新</h3>
+      <a href="/updates" class="text-zhusha-500 hover:text-zhusha-600 text-sm">查看全部 →</a>
+    </div>
+    <div class="space-y-4">
+      {recentUpdates.map((item) => (
+        <div class="flex items-center justify-between py-3 border-b border-juanbo-100 last:border-0">
+          <div>
+            <h4 class="text-mo-600 font-medium">{item.title}</h4>
+            <p class="text-sm text-mo-400">{item.section}</p>
+          </div>
+          <span class="text-sm text-mo-400">{item.date}</span>
+        </div>
+      ))}
+    </div>
+  </div>
+
+  <!-- 功能特性 -->
+  <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-12">
+    <div class="bg-white rounded-xl shadow-lg p-6 border border-juanbo-200 text-center">
+      <div class="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-4">
+        <svg class="w-8 h-8 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+        </svg>
+      </div>
+      <h4 class="text-lg font-bold text-mo-600 mb-2">语义搜索</h4>
+      <p class="text-mo-400 text-sm">支持自然语言查询，快速定位古籍内容</p>
+    </div>
+    
+    <div class="bg-white rounded-xl shadow-lg p-6 border border-juanbo-200 text-center">
+      <div class="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
+        <svg class="w-8 h-8 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+        </svg>
+      </div>
+      <h4 class="text-lg font-bold text-mo-600 mb-2">智能标注</h4>
+      <p class="text-mo-400 text-sm">AI 自动识别人物、地名、典故，辅助阅读</p>
+    </div>
+    
+    <div class="bg-white rounded-xl shadow-lg p-6 border border-juanbo-200 text-center">
+      <div class="w-16 h-16 bg-purple-100 rounded-full flex items-center justify-center mx-auto mb-4">
+        <svg class="w-8 h-8 text-purple-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 21a4 4 0 01-4-4V5a2 2 0 012-2h4a2 2 0 012 2v12a4 4 0 01-4 4zm0 0h12a2 2 0 002-2v-4a2 2 0 00-2-2h-2.343M11 7.343l1.657-1.657a2 2 0 012.828 0l2.829 2.829a2 2 0 010 2.828l-8.486 8.485M7 17h.01" />
+        </svg>
+      </div>
+      <h4 class="text-lg font-bold text-mo-600 mb-2">多模板切换</h4>
+      <p class="text-mo-400 text-sm">古典/简约/华丽三种阅读主题可选</p>
+    </div>
+  </div>
+</BaseLayout>
