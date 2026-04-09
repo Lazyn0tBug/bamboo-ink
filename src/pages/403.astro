@@ -10,28 +10,40 @@ import BaseLayout from '../layouts/BaseLayout.astro';
     <div class="text-center max-w-2xl mx-auto px-8">
       <!-- 古典图标：门禁/封印 -->
       <div class="relative mb-8">
-        <div class="w-32 h-32 bg-gradient-to-b from-zhusha-100 to-zhusha-200 rounded-full flex items-center justify-center mx-auto shadow-lg border-2 border-juanbo-300">
-          <svg class="w-16 h-16 text-zhusha-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"></path>
+        <div
+          class="w-32 h-32 bg-gradient-to-b from-zhusha-100 to-zhusha-200 rounded-full flex items-center justify-center mx-auto shadow-lg border-2 border-juanbo-300"
+        >
+          <svg
+            class="w-16 h-16 text-zhusha-600"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+          >
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="1.5"
+              d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"
+            ></path>
           </svg>
         </div>
         <!-- 装饰封印 -->
-        <div class="absolute -bottom-1 -right-1 w-12 h-12 bg-zhusha-500 rounded-full flex items-center justify-center border-2 border-white shadow-md">
+        <div
+          class="absolute -bottom-1 -right-1 w-12 h-12 bg-zhusha-500 rounded-full flex items-center justify-center border-2 border-white shadow-md"
+        >
           <span class="text-white text-xs font-li">封</span>
         </div>
       </div>
 
       <!-- 错误代码 - 使用隶书 -->
       <h1 class="text-8xl font-bold text-zhusha-600 mb-2 font-li tracking-wider">四〇三</h1>
-      
+
       <!-- 古典诗词风格提示 -->
       <div class="mb-8">
-        <p class="text-2xl text-mo-500 font-song mb-4">
-          此门深似海，君非有缘人
-        </p>
+        <p class="text-2xl text-mo-500 font-song mb-4">此门深似海，君非有缘人</p>
         <p class="text-mo-400 text-sm leading-relaxed">
-          朱门紧闭锁重重，非是常客莫叩钟。<br/>
-          此间典籍藏珍秘，需持符节方得通。<br/>
+          朱门紧闭锁重重，非是常客莫叩钟。<br />
+          此间典籍藏珍秘，需持符节方得通。<br />
           劝君速速归去也，他处自有好春风。
         </p>
       </div>
@@ -39,9 +51,9 @@ import BaseLayout from '../layouts/BaseLayout.astro';
       <!-- 提示信息框 -->
       <div class="bg-xuanzhi-50 border-l-4 border-zhusha-400 p-6 mb-8 rounded-r-lg">
         <p class="text-mo-600 font-song text-sm">
-          <span class="font-bold text-zhusha-600">【提示】</span><br/>
-          此页面需要特殊权限方可访问。<br/>
-          若您已登录，请联系管理员获取授权。<br/>
+          <span class="font-bold text-zhusha-600">【提示】</span><br />
+          此页面需要特殊权限方可访问。<br />
+          若您已登录，请联系管理员获取授权。<br />
           若未登录，请先登录后再试。
         </p>
       </div>
@@ -53,8 +65,18 @@ import BaseLayout from '../layouts/BaseLayout.astro';
           class="group px-8 py-3 bg-gradient-to-r from-xuanzhi-100 to-xuanzhi-200 hover:from-xuanzhi-200 hover:to-xuanzhi-300 text-mo-600 rounded-lg transition-all shadow-md hover:shadow-lg font-song border border-juanbo-300"
         >
           <span class="flex items-center justify-center">
-            <svg class="w-5 h-5 mr-2 group-hover:-translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"></path>
+            <svg
+              class="w-5 h-5 mr-2 group-hover:-translate-x-1 transition-transform"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"
+              ></path>
             </svg>
             退一步 · 返回首页
           </span>
@@ -64,8 +86,18 @@ import BaseLayout from '../layouts/BaseLayout.astro';
           class="group px-8 py-3 bg-zhusha-500 hover:bg-zhusha-600 text-white rounded-lg transition-all shadow-md hover:shadow-lg font-song"
         >
           <span class="flex items-center justify-center">
-            <svg class="w-5 h-5 mr-2 group-hover:rotate-12 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 16l-4-4m0 0l4-4m-4 4h14m-5 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h7a3 3 0 013 3v1"></path>
+            <svg
+              class="w-5 h-5 mr-2 group-hover:rotate-12 transition-transform"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M11 16l-4-4m0 0l4-4m-4 4h14m-5 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h7a3 3 0 013 3v1"
+              ></path>
             </svg>
             请君入内 · 登录
           </span>

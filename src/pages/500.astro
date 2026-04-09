@@ -10,30 +10,34 @@ import BaseLayout from '../layouts/BaseLayout.astro';
     <div class="text-center max-w-2xl mx-auto px-8">
       <!-- 古典图标：雷电/变故 -->
       <div class="relative mb-8">
-        <div class="w-32 h-32 bg-gradient-to-b from-mo-100 to-mo-200 rounded-full flex items-center justify-center mx-auto shadow-lg border-2 border-juanbo-300">
+        <div
+          class="w-32 h-32 bg-gradient-to-b from-mo-100 to-mo-200 rounded-full flex items-center justify-center mx-auto shadow-lg border-2 border-juanbo-300"
+        >
           <svg class="w-16 h-16 text-mo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M13 10V3L4 14h7v7l9-11h-7z"></path>
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="1.5"
+              d="M13 10V3L4 14h7v7l9-11h-7z"></path>
           </svg>
         </div>
         <!-- 装饰云纹 -->
         <div class="absolute -top-4 -left-4 w-16 h-16 text-zhusha-300 opacity-40">
           <svg fill="currentColor" viewBox="0 0 100 100">
-            <path d="M50 10 Q70 30 50 50 Q30 30 50 10"/>
+            <path d="M50 10 Q70 30 50 50 Q30 30 50 10"></path>
           </svg>
         </div>
       </div>
 
       <!-- 错误代码 - 使用隶书 -->
       <h1 class="text-8xl font-bold text-mo-600 mb-2 font-li tracking-wider">五〇〇</h1>
-      
+
       <!-- 古典诗词风格提示 -->
       <div class="mb-8">
-        <p class="text-2xl text-mo-500 font-song mb-4">
-          天有不测风云，阁有旦夕祸福
-        </p>
+        <p class="text-2xl text-mo-500 font-song mb-4">天有不测风云，阁有旦夕祸福</p>
         <p class="text-mo-400 text-sm leading-relaxed">
-          藏书阁中忽起浪，玉宇琼楼暂蒙尘。<br/>
-          非是典籍无缘见，只缘仙阁暂整修。<br/>
+          藏书阁中忽起浪，玉宇琼楼暂蒙尘。<br />
+          非是典籍无缘见，只缘仙阁暂整修。<br />
           劝君稍待片刻后，再觅书香满楼台。
         </p>
       </div>
@@ -41,8 +45,8 @@ import BaseLayout from '../layouts/BaseLayout.astro';
       <!-- 错误信息框 -->
       <div class="bg-xuanzhi-50 border-2 border-juanbo-300 p-6 mb-8 rounded-lg">
         <p class="text-mo-600 font-song text-sm mb-4">
-          <span class="font-bold text-zhusha-600">【状况说明】</span><br/>
-          服务器暂遇故障，如阁中突遇风雨。<br/>
+          <span class="font-bold text-zhusha-600">【状况说明】</span><br />
+          服务器暂遇故障，如阁中突遇风雨。<br />
           工匠已闻讯前往，即刻修缮中。
         </p>
         <p class="text-mo-500 font-song text-xs italic">
@@ -57,8 +61,18 @@ import BaseLayout from '../layouts/BaseLayout.astro';
           class="group px-8 py-3 bg-gradient-to-r from-zhusha-500 to-zhusha-600 hover:from-zhusha-600 hover:to-zhusha-700 text-white rounded-lg transition-all shadow-md hover:shadow-lg font-song"
         >
           <span class="flex items-center justify-center">
-            <svg class="w-5 h-5 mr-2 group-hover:rotate-180 transition-transform duration-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path>
+            <svg
+              class="w-5 h-5 mr-2 group-hover:rotate-180 transition-transform duration-500"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"
+              ></path>
             </svg>
             重整旗鼓 · 刷新页面
           </span>
@@ -68,8 +82,18 @@ import BaseLayout from '../layouts/BaseLayout.astro';
           class="group px-8 py-3 bg-xuanzhi-100 hover:bg-xuanzhi-200 text-mo-600 rounded-lg transition-all border border-juanbo-300 font-song"
         >
           <span class="flex items-center justify-center">
-            <svg class="w-5 h-5 mr-2 group-hover:-translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"></path>
+            <svg
+              class="w-5 h-5 mr-2 group-hover:-translate-x-1 transition-transform"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"
+              ></path>
             </svg>
             另辟蹊径 · 返回首页
           </span>
@@ -78,13 +102,15 @@ import BaseLayout from '../layouts/BaseLayout.astro';
 
       <!-- 技术信息（折叠） -->
       <details class="text-left max-w-md mx-auto mb-8">
-        <summary class="cursor-pointer text-mo-400 text-xs font-song hover:text-mo-500 transition-colors">
+        <summary
+          class="cursor-pointer text-mo-400 text-xs font-song hover:text-mo-500 transition-colors"
+        >
           【查看技术细节】
         </summary>
         <div class="mt-4 p-4 bg-mo-50 rounded border border-juanbo-200">
           <p class="text-mo-500 text-xs font-mono">
-            Error: Internal Server Error<br/>
-            Status: 500<br/>
+            Error: Internal Server Error<br />
+            Status: 500<br />
             Please contact administrator if this persists.
           </p>
         </div>

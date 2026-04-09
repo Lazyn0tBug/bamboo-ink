@@ -69,7 +69,7 @@ let data: GujiData | null = null;
 
 try {
   const rawData = gujiDataRaw[slug as keyof typeof gujiDataRaw];
-  
+
   if (!rawData) {
     // 数据不存在，返回 404
     return Astro.redirect('/404');
@@ -77,7 +77,7 @@ try {
 
   // 验证数据结构
   const validated = GujiDataSchema.safeParse(rawData);
-  
+
   if (!validated.success) {
     // 数据验证失败
     console.error('[Guji Page] Validation error:', validated.error.message);
@@ -104,7 +104,11 @@ const template = new URL(Astro.request.url).searchParams.get('template') || 'cla
 <BaseLayout title={data.title} template={template as 'classic' | 'simple' | 'deluxe'}>
   <!-- 面包屑导航 -->
   <nav class="mb-6" aria-label="面包屑导航">
-    <ol class="flex items-center space-x-2 text-sm text-text-secondary" itemscope itemtype="https://schema.org/BreadcrumbList">
+    <ol
+      class="flex items-center space-x-2 text-sm text-text-secondary"
+      itemscope
+      itemtype="https://schema.org/BreadcrumbList"
+    >
       <li itemprop="itemListElement" itemscope itemtype="https://schema.org/ListItem">
         <a href="/" class="hover:text-accent" itemprop="item">
           <span itemprop="name">首页</span>
