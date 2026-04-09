@@ -1,0 +1,56 @@
+@import "tailwindcss";
+
+/* 中国传统色自定义 */
+@theme {
+  --color-xuanzhi-50: #FEFDFB;
+  --color-xuanzhi-100: #F7F5F0;
+  --color-xuanzhi-200: #EFEBE1;
+  --color-xuanzhi-300: #E0D8C8;
+  --color-xuanzhi-400: #C8B898;
+  --color-xuanzhi-500: #A89878;
+  
+  --color-mo-50: #F5F5F5;
+  --color-mo-100: #E5E5E5;
+  --color-mo-200: #CCCCCC;
+  --color-mo-300: #A8A8A8;
+  --color-mo-400: #5C5C5C;
+  --color-mo-500: #2C2C2C;
+  --color-mo-600: #1A1A1A;
+  --color-mo-700: #0D0D0D;
+  
+  --color-zhusha-50: #FEF5F5;
+  --color-zhusha-100: #FDE8E8;
+  --color-zhusha-200: #FAC8C8;
+  --color-zhusha-300: #F59898;
+  --color-zhusha-400: #E86868;
+  --color-zhusha-500: #C43C3C;
+  --color-zhusha-600: #A02828;
+  --color-zhusha-700: #802020;
+  
+  --color-juanbo-50: #FEFEFB;
+  --color-juanbo-100: #F9F8F0;
+  --color-juanbo-200: #F0EDD8;
+  --color-juanbo-300: #E0D8C8;
+  --color-juanbo-400: #C8B898;
+  --color-juanbo-500: #A89878;
+  
+  --font-family-song: "Noto Serif SC", "Source Han Serif SC", "STSong", "SimSun", serif;
+  --font-family-kai: "Noto Serif SC", "STKaiti", "KaiTi", serif;
+  --font-family-hei: "Noto Sans SC", "Source Han Sans SC", "STHeiti", sans-serif;
+}
+
+/* 古籍文本样式 */
+.guji-text {
+  font-family: var(--font-family-song);
+  font-size: 18px;
+  line-height: 2.2;
+}
+
+.guji-text p {
+  margin-bottom: 1.5rem;
+  text-indent: 2em;
+}
+
+.guji-text h3 {
+  margin-top: 2rem;
+}

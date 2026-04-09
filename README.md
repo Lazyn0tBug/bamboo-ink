@@ -5,8 +5,8 @@
 [![GitHub](https://img.shields.io/badge/GitHub-bamboo--ink-24292e?logo=github)](https://github.com/Lazyn0tBug/bamboo-ink)
 [![License](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 [![Bun](https://img.shields.io/badge/Bun-1.x-fbf0df?logo=bun)](https://bun.sh/)
-[![Astro](https://img.shields.io/badge/Astro-4.x-ff5e57?logo=astro)](https://astro.build/)
-[![Tailwind](https://img.shields.io/badge/Tailwind-3.x-38bdf8?logo=tailwindcss)](https://tailwindcss.com/)
+[![Astro](https://img.shields.io/badge/Astro-5.x-ff5e57?logo=astro)](https://astro.build/)
+[![Tailwind](https://img.shields.io/badge/Tailwind-4.x-38bdf8?logo=tailwindcss)](https://tailwindcss.com/)
 
 ## 📋 项目状态
 
@@ -142,15 +142,17 @@ guji-modern/
 
 ## 🛠️ 技术栈
 
-| 类别 | 技术 |
-|------|------|
-| **包管理** | Bun 1.x |
-| **框架** | Astro 4.x |
-| **样式** | Tailwind CSS 3.x |
-| **字体** | Noto Serif SC |
-| **转换** | Cheerio, Turndown |
-| **搜索** | FlexSearch (待集成) |
-| **AI** | OpenAI API (待集成) |
+| 类别 | 技术 | 版本 |
+|------|------|------|
+| **包管理** | Bun | 1.x |
+| **框架** | Astro | 5.x ⭐ |
+| **样式** | Tailwind CSS | 4.x ⭐ |
+| **集成** | @astrojs/tailwind | 6.x |
+| **字体** | Noto Serif SC | Latest |
+| **转换** | Cheerio | 1.x |
+| **转换** | Turndown | 7.x |
+| **搜索** | FlexSearch | 待集成 |
+| **AI** | OpenAI API | 待集成 |
 
 ## 📝 实施计划
 
