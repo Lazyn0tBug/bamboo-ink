@@ -2,9 +2,9 @@ import { defineConfig } from 'astro/config';
 import { fontProviders } from 'astro/config';
 
 export default defineConfig({
-  // Astro 6 安全配置 - 临时禁用 CSP 以排查问题
+  // Astro 6 安全配置 - 启用 CSP
   security: {
-    csp: false,
+    csp: true,
   },
 
   // Astro 6 实验性功能 - Rust 编译器

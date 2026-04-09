@@ -7,7 +7,7 @@ interface Props {
   template?: 'classic' | 'simple' | 'deluxe';
 }
 
-const { title } = Astro.props;
+const { title, template = 'classic' } = Astro.props;
 ---
 
 <!doctype html>
@@ -21,47 +21,6 @@ const { title } = Astro.props;
     <Font cssVariable="--font-noto" preload />
     <Font cssVariable="--font-ma-shan-zheng" preload />
     <title>{title} - 古籍图书馆</title>
-    <style>
-      /* HTML data-template 属性控制模板切换 */
-      html[data-template='classic'] body {
-        background-color: #f7f5f0;
-      }
-      html[data-template='classic'] .layout-border {
-        border-color: #e0d8c8;
-      }
-      html[data-template='classic'] .layout-pattern {
-        display: block;
-      }
-      html[data-template='classic'] .template-nav {
-        background-color: rgba(254, 253, 251, 0.9);
-      }
-
-      html[data-template='simple'] body {
-        background-color: #ffffff;
-      }
-      html[data-template='simple'] .layout-border {
-        border-color: #cccccc;
-      }
-      html[data-template='simple'] .layout-pattern {
-        display: none;
-      }
-      html[data-template='simple'] .template-nav {
-        background-color: rgba(255, 255, 255, 0.9);
-      }
-
-      html[data-template='deluxe'] body {
-        background: linear-gradient(to bottom, #fefdfb, #efebd1);
-      }
-      html[data-template='deluxe'] .layout-border {
-        border-color: #f59898;
-      }
-      html[data-template='deluxe'] .layout-pattern {
-        display: block;
-      }
-      html[data-template='deluxe'] .template-nav {
-        background: linear-gradient(135deg, rgba(254, 245, 245, 0.95), rgba(253, 232, 232, 0.9));
-      }
-    </style>
   </head>
   <body class="min-h-screen font-kai text-text bg-background transition-colors duration-300">
     <!-- 宣纸纹理背景（仅 classic 和 deluxe 模板） -->
@@ -109,22 +68,20 @@ const { title } = Astro.props;
           </div>
 
           <!-- 模板切换 -->
-          <div class="flex items-center space-x-2 border-r border-border pr-4 mr-4">
+          <div class="flex items-center space-x-2 border-r border-border pr-4 mr-4" data-current-template={template}>
             <button
               data-template="classic"
-              class="px-3 py-1.5 rounded text-sm text-text-secondary hover:bg-surface/50">古典</button
+              class={`px-3 py-1.5 rounded text-sm ${template === 'classic' ? 'bg-accent text-white' : 'text-text-secondary hover:bg-surface/50'}`}>古典</button
             >
             <button
               data-template="simple"
-              class="px-3 py-1.5 rounded text-sm text-text-secondary hover:bg-surface/50">简约</button
+              class={`px-3 py-1.5 rounded text-sm ${template === 'simple' ? 'bg-accent text-white' : 'text-text-secondary hover:bg-surface/50'}`}>简约</button
             >
             <button
               data-template="deluxe"
-              class="px-3 py-1.5 rounded text-sm text-text-secondary hover:bg-surface/50">华丽</button
+              class={`px-3 py-1.5 rounded text-sm ${template === 'deluxe' ? 'bg-accent text-white' : 'text-text-secondary hover:bg-surface/50'}`}>华丽</button
             >
           </div>
-
-          <!-- 明暗主题切换按钮 -->
           <button
             id="theme-toggle"
             type="button"
@@ -153,7 +110,7 @@ const { title } = Astro.props;
     <footer class="border-t layout-border mt-16 py-8 template-nav">
       <div class="max-w-6xl mx-auto px-4 text-center">
         <p class="mo-text text-sm">古籍现代化改造项目 © 2026</p>
-        <p class="mt-2 text-sm text-mo-400">Powered by Astro & Tailwind CSS</p>
+        <p class="mt-2 text-sm text-text-tertiary">Powered by Astro & Tailwind CSS</p>
       </div>
     </footer>
 
@@ -181,6 +138,10 @@ const { title } = Astro.props;
     <!-- 模板切换脚本 -->
     <script is:inline>
       (function() {
+        // 调试日志控制 - 通过环境变量或 URL 参数启用
+        const DEBUG = import.meta.env?.DEV || new URLSearchParams(window.location.search).has('debug');
+        const log = (...args) => DEBUG && console.log('[Theme]', ...args);
+
         function init() {
           const html = document.documentElement;
           const themeToggle = document.getElementById('theme-toggle');
@@ -192,7 +153,7 @@ const { title } = Astro.props;
             return;
           }
 
-          console.log('[Theme] Initialized');
+          log('Initialized');
 
           // 设置主题
           function applyTheme(theme) {
@@ -208,7 +169,7 @@ const { title } = Astro.props;
               moonIcon.style.display = 'none';
             }
             
-            console.log('[Theme] Applied:', theme);
+            log('Applied:', theme);
           }
 
           // 点击切换
