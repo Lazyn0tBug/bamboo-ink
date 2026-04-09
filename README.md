@@ -4,6 +4,7 @@
 
 [![GitHub](https://img.shields.io/badge/GitHub-bamboo--ink-24292e?logo=github)](https://github.com/Lazyn0tBug/bamboo-ink)
 [![License](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
+[![Bun](https://img.shields.io/badge/Bun-1.x-fbf0df?logo=bun)](https://bun.sh/)
 [![Astro](https://img.shields.io/badge/Astro-4.x-ff5e57?logo=astro)](https://astro.build/)
 [![Tailwind](https://img.shields.io/badge/Tailwind-3.x-38bdf8?logo=tailwindcss)](https://tailwindcss.com/)
 
@@ -42,16 +43,25 @@
 
 ## 🚀 快速开始
 
+### 前置要求
+
+- [Bun](https://bun.sh/) 1.0+ (推荐使用 Bun 管理项目)
+
+```bash
+# 安装 Bun
+curl -fsSL https://bun.sh/install | bash
+```
+
 ### 安装依赖
 
 ```bash
-npm install
+bun install
 ```
 
 ### 开发模式
 
 ```bash
-npm run dev
+bun run dev
 ```
 
 访问 http://localhost:4321
@@ -59,14 +69,14 @@ npm run dev
 ### 构建
 
 ```bash
-npm run build
-npm run preview
+bun run build
+bun run preview
 ```
 
 ### 转换古籍
 
 ```bash
-npm run convert
+bun run convert
 ```
 
 ## 📁 目录结构
@@ -134,6 +144,7 @@ guji-modern/
 
 | 类别 | 技术 |
 |------|------|
+| **包管理** | Bun 1.x |
 | **框架** | Astro 4.x |
 | **样式** | Tailwind CSS 3.x |
 | **字体** | Noto Serif SC |

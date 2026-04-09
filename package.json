@@ -1,13 +1,13 @@
 {
-  "name": "guji-modern",
+  "name": "bamboo-ink",
   "type": "module",
   "version": "1.0.0",
-  "description": "古籍现代化改造项目",
+  "description": "🎋 古籍现代化改造项目 - 传承中华文化，让古籍阅读更现代化",
   "scripts": {
     "dev": "astro dev",
     "build": "astro build",
     "preview": "astro preview",
-    "convert": "node scripts/convert-htm-to-md.js"
+    "convert": "bun run scripts/convert-htm-to-md.js"
   },
   "dependencies": {
     "@astrojs/tailwind": "^5.1.0",

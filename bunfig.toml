@@ -1,0 +1,12 @@
+# Bun 配置文件
+# https://bun.sh/docs/project/bunfig
+
+[install]
+# 自动保存锁定文件
+save = true
+
+# 使用精确版本
+exact = true
+
+# 生产环境依赖
+production = false

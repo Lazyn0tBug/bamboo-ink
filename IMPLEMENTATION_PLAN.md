@@ -33,6 +33,7 @@
 
 | 层级 | 技术 | 说明 |
 |------|------|------|
+| **包管理** | Bun 1.x | 快速、现代的包管理器 |
 | **框架** | Astro 4.x | 静态站点生成器 |
 | **样式** | Tailwind CSS | 原子化 CSS |
 | **字体** | Noto Serif SC | 思源宋体 |
@@ -114,19 +115,19 @@
 ```bash
 # 1. 安装依赖
 cd ~/code/guji-modern
-npm install
+bun install
 
 # 2. 测试转换 (前 10 个文件)
-npm run convert
+bun run convert
 
 # 3. 检查转换结果
 cat content/经/zhong-yong.md
 
 # 4. 批量转换 (全部文件)
-node scripts/convert-htm-to-md.js --all
+bun run scripts/convert-htm-to-md.js --all
 
 # 5. 生成索引
-node scripts/generate-index.js
+bun run scripts/generate-index.js
 ```
 
 ---
