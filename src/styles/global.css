@@ -114,8 +114,72 @@
 }
 
 /* 应用模板样式 */
+html[data-theme='light'] body {
+  background-color: white;
+}
+html[data-theme='dark'] body {
+  background-color: oklch(18% 0.02 260);
+}
+
 body {
   transition: background-color 0.3s ease;
+}
+
+/* 导航背景 */
+.template-nav {
+  transition: background-color 0.3s ease;
+}
+html[data-theme='light'] .template-nav {
+  background-color: rgba(254, 253, 251, 0.9);
+}
+html[data-theme='dark'] .template-nav {
+  background-color: rgba(30, 30, 30, 0.9);
+}
+
+/* 卡片背景 */
+.card-bg {
+  background-color: white;
+  transition: background-color 0.3s ease;
+}
+html[data-theme='dark'] .card-bg {
+  background-color: oklch(24% 0.025 260);
+}
+
+/* 边框颜色 */
+.layout-border {
+  transition: border-color 0.3s ease;
+}
+[data-template='classic'] .layout-border {
+  border-color: var(--juanbo-300);
+}
+[data-template='simple'] .layout-border {
+  border-color: var(--mo-200);
+}
+[data-template='deluxe'] .layout-border {
+  border-color: var(--zhusha-300);
+}
+html[data-theme='dark'][data-template='classic'] .layout-border {
+  border-color: oklch(35% 0.03 260);
+}
+html[data-theme='dark'][data-template='simple'] .layout-border {
+  border-color: oklch(35% 0.03 260);
+}
+html[data-theme='dark'][data-template='deluxe'] .layout-border {
+  border-color: oklch(40% 0.04 260);
+}
+
+/* 纹样显示 */
+.layout-pattern {
+  transition: opacity 0.3s ease;
+}
+[data-template='classic'] .layout-pattern,
+[data-template='deluxe'] .layout-pattern {
+  display: block;
+  opacity: 0.05;
+}
+[data-template='simple'] .layout-pattern {
+  display: none;
+  opacity: 0;
 }
 
 /* 卡片和导航背景 */
