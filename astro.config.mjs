@@ -6,6 +6,11 @@ export default defineConfig({
     csp: true,
   },
 
+  // Astro 6 实验性功能 - Rust 编译器
+  experimental: {
+    rustCompiler: true,
+  },
+
   output: 'static',
   build: {
     format: 'file',

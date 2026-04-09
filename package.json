@@ -20,6 +20,7 @@
     "validate": "bun run lint && bun run format && bun run check"
   },
   "dependencies": {
+    "@astrojs/compiler-rs": "0.1.6",
     "@fontsource/ma-shan-zheng": "5.2.9",
     "@fontsource/noto-serif-sc": "5.2.8",
     "@tailwindcss/postcss": "^4.0.0",
