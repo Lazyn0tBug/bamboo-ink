@@ -44,6 +44,7 @@ bun run validate && bun run test && bun run build
 ```
 
 **原则说明：**
+
 1. **代码审查优先** - 任何改动必须先通过 lint 检查
 2. **测试驱动开发** - 新功能必须先写测试，再写实现
 3. **测试覆盖** - 每个功能模块必须有对应测试文件
@@ -70,10 +71,187 @@ git commit -m "type: description"
 
 ### Astro 最佳实践
 
-- 使用 Astro 6 静态站点生成
-- 优先使用 Astro 组件语法
-- 动态路由实现 `getStaticPaths`
-- 客户端脚本使用 `is:inline` 或 `is:script`
+#### 组件架构
+
+```astro
+---
+// 使用 Astro 6 组件脚本
+import { getCollection } from 'astro:content';
+
+// 类型安全 Props
+interface Props {
+  title: string;
+  template?: 'classic' | 'simple' | 'deluxe';
+}
+
+const { title } = Astro.props;
+
+// 静态数据优先 prerender
+const data = await getCollection('guji');
+---
+
+<!-- 语义化 HTML -->
+<article>
+  <slot />
+</article>
+```
+
+**原则：**
+
+- ✅ 使用 `<script>` 标签定义组件逻辑
+- ✅ Props 必须定义 TypeScript 接口
+- ✅ 优先静态生成，必要时使用 `prerender = false`
+- ✅ 使用 `<slot>` 进行内容投射
+- ✅ 组件职责单一，保持 <300 行
+
+#### 动态路由
+
+```typescript
+// src/pages/guji/[slug].astro
+export async function getStaticPaths() {
+  const gujiEntries = await getCollection('guji');
+
+  return gujiEntries.map((entry) => ({
+    params: { slug: entry.slug },
+    props: { entry },
+  }));
+}
+```
+
+**原则：**
+
+- ✅ 必须实现 `getStaticPaths`
+- ✅ 返回 `{ params, props }` 结构
+- ✅ 使用 `Astro.params.slug` 访问参数
+- ✅ 错误处理：缺失路径返回 404
+
+#### 客户端交互
+
+```astro
+<!-- 按需加载客户端 JavaScript -->
+<script is:inline>
+  // 纯客户端逻辑（模板切换、动画）
+  const button = document.querySelector('[data-template]');
+  button?.addEventListener('click', handler);
+</script>
+
+<!-- 需要打包的脚本 -->
+<script>
+  // 需要 npm 包的逻辑
+  import { something } from 'package';
+</script>
+```
+
+**原则：**
+
+- ✅ 默认静态，除非必须交互
+- ✅ 使用 `is:inline` 避免打包开销
+- ✅ 事件委托优于逐个绑定
+- ✅ 使用 localStorage 保存状态
+
+#### 数据加载
+
+```astro
+---
+// 构建时数据（优先）
+const staticData = await getCollection('guji');
+
+// 运行时数据（必要时）
+export const prerender = false;
+const runtimeData = await fetchAPI(Aastro.request.url);
+---
+```
+
+**原则：**
+
+- ✅ 优先构建时 prerender
+- ✅ 运行时数据使用 `prerender = false`
+- ✅ 数据验证使用 Zod
+- ✅ 错误边界：try-catch 处理 API 失败
+
+#### 图片优化
+
+```astro
+---
+import Image from 'astro:assets';
+import heroImage from '../assets/hero.jpg';
+---
+
+<!-- Astro 自动优化 -->
+<Image src={heroImage} alt="描述" width="800" height="600" loading="lazy" />
+```
+
+**原则：**
+
+- ✅ 使用 `astro:assets` 自动优化
+- ✅ 始终提供 `alt` 文本
+- ✅ 使用 `loading="lazy"` 懒加载
+- ✅ 指定 `width` 和 `height` 避免 CLS
+- ✅ 响应式图片使用 `srcset`
+
+#### SEO 优化
+
+```astro
+---
+const { title, description } = Astro.props;
+const canonicalURL = new URL(Astro.url.pathname, Astro.site);
+---
+
+<head>
+  <title>{title} - 古籍图书馆</title>
+  <meta name="description" content={description} />
+  <link rel="canonical" href={canonicalURL} />
+  <meta property="og:title" content={title} />
+  <meta property="og:image" content="/og-image.png" />
+  <meta name="twitter:card" content="summary_large_image" />
+</head>
+```
+
+**原则：**
+
+- ✅ 每个页面唯一 `<title>`
+- ✅ 提供 `<meta description>`
+- ✅ 使用 `<link rel="canonical">`
+- ✅ Open Graph 和 Twitter Card 元标签
+- ✅ 结构化数据（JSON-LD）
+
+#### 性能优化
+
+```astro
+---
+// 按需加载重型组件
+const HeavyComponent = await import('../components/Heavy.astro').then((m) => m.default);
+---
+
+<!-- 使用 view transitions -->
+<html lang="zh-CN" style="view-transition-name: root;"></html>
+```
+
+**原则：**
+
+- ✅ 使用 Astro Rust 编译器
+- ✅ 组件按需加载（`await import`）
+- ✅ 启用 View Transitions API
+- ✅ 字体使用 `font-display: swap`
+- ✅ CSS 使用 `@theme` 定义变量
+
+#### CSP 安全
+
+```javascript
+// astro.config.mjs
+export default defineConfig({
+  security: {
+    csp: true,
+  },
+});
+```
+
+**原则：**
+
+- ✅ 启用 CSP 自动哈希
+- ✅ 避免内联脚本（使用外部文件）
+- ✅ 字体自托管（Fonts API）
+- ✅ 定期审查 CSP 报告
 
 ### 样式规范
 
@@ -81,6 +259,7 @@ git commit -m "type: description"
 - 中国传统色系 (宣纸/浓墨/朱砂/绢帛/黛色/赭色)
 - OKLCH 颜色空间定义
 - 响应式设计优先 (Mobile First)
+- 使用 CSS 变量实现模板切换
 
 ### 字体系统
 
@@ -88,12 +267,39 @@ git commit -m "type: description"
 - 标题：隶书 (`font-li`)
 - 印章：篆书 (`font-zhuan`)
 - 英文：宋体 (`font-song`)
+- 使用 Astro Fonts API 自托管
 
 ### 模板系统
 
 - **古典** - 宣纸背景 + 绢帛边框 + 传统纹样
 - **简约** - 纯白背景 + 灰色边框 + 无纹样
 - **华丽** - 渐变宣纸 + 朱砂边框 + 增强纹样
+
+### 可访问性 (A11y)
+
+```astro
+<!-- 语义化 HTML -->
+<nav aria-label="主导航">
+  <ul>
+    <li><a href="/" aria-current="page">首页</a></li>
+  </ul>
+</nav>
+
+<!-- 图片替代文本 -->
+<img src={image} alt="古籍页面扫描图" />
+
+<!-- 表单标签 -->
+<label for="search">搜索古籍</label>
+<input id="search" type="search" aria-describedby="search-help" />
+```
+
+**原则：**
+
+- ✅ 使用语义化 HTML 元素
+- ✅ 所有图片提供 `alt` 文本
+- ✅ 表单控件关联 `<label>`
+- ✅ 颜色对比度符合 WCAG AA
+- ✅ 键盘导航支持（`:focus-visible`）
 
 ## 可用的 Skills
 
@@ -197,14 +403,55 @@ bun run validate
 
 # 5. 构建测试
 bun run build
+
+# 6. 测试验证（必须）
+bun run test
+```
+
+### 测试策略
+
+**测试覆盖要求：**
+
+- 新功能必须添加对应测试
+- 测试文件位于 `tests/` 目录
+- 命名格式：`{FeatureName}.test.ts`
+- 测试类型：单元测试 + 集成测试
+
+**测试编写原则：**
+
+1. **黑盒测试** - 测试行为而非实现
+2. **边缘情况** - 覆盖边界值和错误情况
+3. **回归测试** - Bug 修复必须添加回归测试
+4. **测试独立性** - 每个测试用例独立运行
+
+**示例测试结构：**
+
+```typescript
+// tests/FeatureName.test.ts
+import { describe, it, expect } from 'vitest';
+
+describe('FeatureName', () => {
+  it('should work correctly', () => {
+    expect(true).toBe(true);
+  });
+
+  it('should handle edge cases', () => {
+    // 边缘情况测试
+  });
+
+  it('should not regress on fix', () => {
+    // 回归测试
+  });
+});
 ```
 
 ### Git 工作流
 
 - `feature/guji-modernization` - 主开发分支
 - `feature/astro6-upgrade` - Astro 6 升级分支
-- 提交前运行 `bun run validate`
+- **提交前必须运行** `bun run validate && bun run test`
 - 提交信息遵循约定式提交
+- **禁止** 无测试的提交
 
 ## 项目命令
 
@@ -267,8 +514,12 @@ bamboo-ink/
 │   │   └── guji/[slug].astro
 │   └── styles/        # 全局样式
 │       └── global.css
+├── tests/             # 测试文件（必须维护）
+│   ├── BaseLayout.test.ts
+│   └── colors.test.ts
 ├── astro.config.mjs   # Astro 配置
 ├── postcss.config.js  # PostCSS 配置
+├── vitest.config.ts   # Vitest 测试配置
 ├── package.json       # 依赖配置
 └── tsconfig.json      # TypeScript 配置
 ```
@@ -278,11 +529,35 @@ bamboo-ink/
 ### Astro 配置 (astro.config.mjs)
 
 ```javascript
+import { defineConfig } from 'astro/config';
+import { fontProviders } from 'astro/config';
+
 export default defineConfig({
-  security: { csp: true }, // CSP 安全策略
-  experimental: { rustCompiler: true }, // Rust 编译器
-  output: 'static', // 静态站点
-  build: { format: 'file' }, // 文件输出格式
+  // 安全配置
+  security: {
+    csp: true,
+  },
+
+  // 性能优化
+  experimental: {
+    rustCompiler: true,
+  },
+
+  // 字体 API
+  fonts: [
+    {
+      name: 'Noto Serif SC',
+      cssVariable: '--font-noto',
+      provider: fontProviders.fontsource(),
+      weights: [300, 400, 500, 600, 700],
+    },
+  ],
+
+  // 输出配置
+  output: 'static',
+  build: {
+    format: 'file',
+  },
 });
 ```
 
@@ -295,12 +570,30 @@ export default defineConfig({
   /* 中国传统色 - OKLCH */
   --color-xuanzhi-100: oklch(96% 0.015 85);
   --color-zhusha-500: oklch(48% 0.22 25);
-  /* ... */
-
+  
   /* 书法字体 */
   --font-kai: 'Kaiti SC', 'STKaiti', ...;
   --font-li: 'LiSu', 'STLiti', ...;
 }
+```
+
+### 性能监控
+
+**核心性能指标 (Core Web Vitals)：**
+- LCP (Largest Contentful Paint): < 2.5s
+- FID (First Input Delay): < 100ms
+- CLS (Cumulative Layout Shift): < 0.1
+
+**优化检查清单：**
+```bash
+# 构建后检查文件大小
+ls -lh dist/
+
+# 使用 Lighthouse 审计
+lighthouse http://localhost:4321/
+
+# 检查字体加载
+chrome://net-internals/#dns
 ```
 
 ## 注意事项
@@ -312,6 +605,9 @@ export default defineConfig({
 5. **无障礙性** - 使用语义化 HTML、ARIA 属性
 6. **模板切换** - 使用 `data-template` 属性和 localStorage
 7. **CSP 兼容性** - 避免内联样式（Shiki 警告可忽略）
+8. **测试必须** - 任何功能改动必须更新测试并验证通过
+9. **审查优先** - 提交前必须运行 lint 和 test
+10. **零容忍** - lint/test/build 任何失败都禁止提交
 
 ## 性能优化
 
