@@ -22,6 +22,37 @@ const { title } = Astro.props;
     <Font cssVariable="--font-ma-shan-zheng" preload />
     <title>{title} - 古籍图书馆</title>
     <style>
+      /* 明暗主题样式 - 直接内联确保生效 */
+      html[data-theme='light'] body {
+        background-color: #f7f5f0 !important;
+      }
+      html[data-theme='dark'] body {
+        background-color: #1a1a1a !important;
+        color: #e5e5e5 !important;
+      }
+      html[data-theme='dark'] .template-nav {
+        background-color: rgba(30, 30, 30, 0.95) !important;
+        border-color: #333 !important;
+      }
+      html[data-theme='dark'] .layout-border {
+        border-color: #333 !important;
+      }
+      html[data-theme='dark'] article,
+      html[data-theme='dark'] .card-bg {
+        background-color: #242424 !important;
+        border-color: #333 !important;
+      }
+      html[data-theme='dark'] input {
+        background-color: #2a2a2a !important;
+        color: #e5e5e5 !important;
+        border-color: #444 !important;
+      }
+      /* 主题切换按钮图标 */
+      #sun-icon, #moon-icon {
+        transition: opacity 0.2s ease;
+      }
+    </style>
+    <style>
       /* HTML data-template 属性控制模板切换 */
       html[data-template='classic'] body {
         background-color: #f7f5f0;
@@ -127,14 +158,15 @@ const { title } = Astro.props;
           <!-- 明暗主题切换按钮 -->
           <button
             id="theme-toggle"
+            type="button"
             class="p-2 rounded-lg hover:bg-xuanzhi-200 transition-colors"
             aria-label="切换明暗主题"
             title="切换明暗主题">
             <!-- 太阳图标 (暗色主题时显示) -->
-            <svg id="sun-icon" class="w-5 h-5 text-mo-500 hidden" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <svg id="sun-icon" class="w-5 h-5 text-mo-500" style="display:none" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z"></path>
             </svg>
-            <!-- 月亮图标 (默认显示) -->
+            <!-- 月亮图标 (亮色主题时显示) -->
             <svg id="moon-icon" class="w-5 h-5 text-mo-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z"></path>
             </svg>
@@ -180,101 +212,53 @@ const { title } = Astro.props;
     <!-- 模板切换脚本 -->
     <script is:inline>
       (function() {
-        // 等待 DOM 加载完成
         function init() {
           const html = document.documentElement;
-          const templateButtons = document.querySelectorAll('[data-template]');
           const themeToggle = document.getElementById('theme-toggle');
           const sunIcon = document.getElementById('sun-icon');
           const moonIcon = document.getElementById('moon-icon');
 
-          if (!themeToggle) {
-            console.error('[Theme] theme-toggle button not found');
-            return;
-          }
-          if (!sunIcon || !moonIcon) {
-            console.error('[Theme] icons not found');
+          if (!themeToggle || !sunIcon || !moonIcon) {
+            console.error('[Theme] Elements missing');
             return;
           }
 
-          // 设置模板
-          function setTemplate(template) {
-            html.setAttribute('data-template', template);
-            localStorage.setItem('preferredTemplate', template);
+          console.log('[Theme] Initialized');
 
-            templateButtons.forEach((btn) => {
-              const buttonTemplate = btn.getAttribute('data-template');
-              if (buttonTemplate === template) {
-                btn.classList.add('bg-zhusha-500', 'text-white');
-                btn.classList.remove('text-mo-500', 'hover:bg-xuanzhi-200');
-              } else {
-                btn.classList.remove('bg-zhusha-500', 'text-white');
-                btn.classList.add('text-mo-500', 'hover:bg-xuanzhi-200');
-              }
-            });
-          }
-
-          // 设置明暗主题
-          function setTheme(theme) {
-            console.log('[Theme] Setting theme to:', theme);
+          // 设置主题
+          function applyTheme(theme) {
             html.setAttribute('data-theme', theme);
             localStorage.setItem('preferredTheme', theme);
-
+            
+            // 更新图标：dark 显示太阳，light 显示月亮
             if (theme === 'dark') {
-              sunIcon.classList.remove('hidden');
-              moonIcon.classList.add('hidden');
+              sunIcon.style.display = '';
+              moonIcon.style.display = 'none';
             } else {
-              sunIcon.classList.add('hidden');
-              moonIcon.classList.remove('hidden');
+              sunIcon.style.display = 'none';
+              moonIcon.style.display = '';
             }
+            
+            console.log('[Theme] Applied:', theme);
           }
 
-          // 初始化主题
-          function initTheme() {
-            const savedTheme = localStorage.getItem('preferredTheme');
-            const systemTheme = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
-            const theme = savedTheme || systemTheme;
-            console.log('[Theme] Initializing theme:', theme);
-            setTheme(theme);
-          }
-
-          // 绑定模板切换事件
-          templateButtons.forEach((btn) => {
-            btn.addEventListener('click', function() {
-              const template = this.getAttribute('data-template');
-              setTemplate(template);
-            });
-          });
-
-          // 绑定主题切换事件
-          themeToggle.addEventListener('click', function() {
-            const currentTheme = html.getAttribute('data-theme') || 'light';
-            const newTheme = currentTheme === 'light' ? 'dark' : 'light';
-            console.log('[Theme] Toggle clicked, current:', currentTheme, 'new:', newTheme);
-            setTheme(newTheme);
+          // 点击切换
+          themeToggle.addEventListener('click', function(e) {
+            e.preventDefault();
+            const current = html.getAttribute('data-theme') || 'light';
+            const next = current === 'dark' ? 'light' : 'dark';
+            applyTheme(next);
           });
 
           // 初始化
-          const urlTemplate = new URLSearchParams(window.location.search).get('template');
-          const savedTemplate = localStorage.getItem('preferredTemplate') || 'classic';
-
-          if (urlTemplate) {
-            setTemplate(urlTemplate);
-          } else {
-            setTemplate(savedTemplate);
-          }
-
-          initTheme();
-
-          // 监听系统主题变化
-          window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', function(e) {
-            if (!localStorage.getItem('preferredTheme')) {
-              setTheme(e.matches ? 'dark' : 'light');
-            }
-          });
+          const saved = localStorage.getItem('preferredTheme');
+          const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+          const initial = saved || (prefersDark ? 'dark' : 'light');
+          
+          // 确保初始主题正确应用
+          applyTheme(initial);
         }
 
-        // 如果 DOM 已加载完成，立即执行；否则等待 DOMContentLoaded
         if (document.readyState === 'loading') {
           document.addEventListener('DOMContentLoaded', init);
         } else {
