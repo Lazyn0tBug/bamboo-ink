@@ -90,20 +90,20 @@ const currentTemplate = templates[template];
 
           <!-- 模板切换 -->
           <div class="flex items-center space-x-2">
-            <a
-              href="?template=classic"
+            <button
+              data-template="classic"
               class={`px-3 py-1.5 rounded text-sm ${template === 'classic' ? 'bg-zhusha-500 text-white' : 'text-mo-500 hover:bg-xuanzhi-200'}`}
-              >古典</a
+              >古典</button
             >
-            <a
-              href="?template=simple"
+            <button
+              data-template="simple"
               class={`px-3 py-1.5 rounded text-sm ${template === 'simple' ? 'bg-zhusha-500 text-white' : 'text-mo-500 hover:bg-xuanzhi-200'}`}
-              >简约</a
+              >简约</button
             >
-            <a
-              href="?template=deluxe"
+            <button
+              data-template="deluxe"
               class={`px-3 py-1.5 rounded text-sm ${template === 'deluxe' ? 'bg-zhusha-500 text-white' : 'text-mo-500 hover:bg-xuanzhi-200'}`}
-              >华丽</a
+              >华丽</button
             >
           </div>
         </div>
@@ -132,5 +132,52 @@ const currentTemplate = templates[template];
         </div>
       )
     }
+
+    <!-- 模板切换脚本 -->
+    <script is:inline>
+      // 模板切换功能 - 使用 localStorage 保存偏好
+      const templateButtons = document.querySelectorAll('[data-template]');
+
+      // 更新按钮状态
+      function updateButtonState() {
+        const template = new URLSearchParams(window.location.search).get('template') || 'classic';
+        templateButtons.forEach((btn) => {
+          const buttonTemplate = btn.getAttribute('data-template');
+          if (buttonTemplate === template) {
+            btn.classList.add('bg-zhusha-500', 'text-white');
+            btn.classList.remove('text-mo-500', 'hover:bg-xuanzhi-200');
+          } else {
+            btn.classList.remove('bg-zhusha-500', 'text-white');
+            btn.classList.add('text-mo-500', 'hover:bg-xuanzhi-200');
+          }
+        });
+      }
+
+      // 绑定点击事件
+      templateButtons.forEach((btn) => {
+        btn.addEventListener('click', () => {
+          const template = btn.getAttribute('data-template');
+          const url = new URL(window.location.href);
+          url.searchParams.set('template', template);
+
+          // 保存到 localStorage
+          localStorage.setItem('preferredTemplate', template);
+
+          // 跳转
+          window.location.href = url.toString();
+        });
+      });
+
+      // 初始化状态
+      updateButtonState();
+
+      // 如果 URL 没有 template 参数，使用 localStorage 的偏好
+      if (!new URLSearchParams(window.location.search).has('template')) {
+        const preferred = localStorage.getItem('preferredTemplate') || 'classic';
+        const url = new URL(window.location.href);
+        url.searchParams.set('template', preferred);
+        window.location.replace(url.toString());
+      }
+    </script>
   </body>
 </html>
