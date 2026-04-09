@@ -5,6 +5,8 @@
     "": {
       "name": "bamboo-ink",
       "dependencies": {
+        "@fontsource/ma-shan-zheng": "5.2.9",
+        "@fontsource/noto-serif-sc": "5.2.8",
         "@tailwindcss/postcss": "^4.0.0",
         "astro": "^6.0.0",
         "tailwindcss": "^4.0.0",
@@ -142,6 +144,10 @@
     "@eslint/object-schema": ["@eslint/object-schema@3.0.5", "https://registry.npmmirror.com/@eslint/object-schema/-/object-schema-3.0.5.tgz", {}, "sha512-vqTaUEgxzm+YDSdElad6PiRoX4t8VGDjCtt05zn4nU810UIx/uNEV7/lZJ6KwFThKZOzOxzXy48da+No7HZaMw=="],
 
     "@eslint/plugin-kit": ["@eslint/plugin-kit@0.7.1", "https://registry.npmmirror.com/@eslint/plugin-kit/-/plugin-kit-0.7.1.tgz", { "dependencies": { "@eslint/core": "^1.2.1", "levn": "^0.4.1" } }, "sha512-rZAP3aVgB9ds9KOeUSL+zZ21hPmo8dh6fnIFwRQj5EAZl9gzR7wxYbYXYysAM8CTqGmUGyp2S4kUdV17MnGuWQ=="],
+
+    "@fontsource/ma-shan-zheng": ["@fontsource/ma-shan-zheng@5.2.9", "https://registry.npmmirror.com/@fontsource/ma-shan-zheng/-/ma-shan-zheng-5.2.9.tgz", {}, "sha512-5Pvpb5q6sq00/g+yLLE8iYWcsAqnoIqCloBsjN0bphkGWU3Wp3EfT0CgTsKOiLsPM8GN3AUP0ZaFM2/JR33C/g=="],
+
+    "@fontsource/noto-serif-sc": ["@fontsource/noto-serif-sc@5.2.8", "https://registry.npmmirror.com/@fontsource/noto-serif-sc/-/noto-serif-sc-5.2.8.tgz", {}, "sha512-C7fAr+d1GjOAw1qIbntsnqbA3l5dkdzcmNNgeCXLC8QZ7VNubL7MTrX8UcYKHceX4mI//z8gGtXbOeeQrB6P7g=="],
 
     "@humanfs/core": ["@humanfs/core@0.19.1", "https://registry.npmmirror.com/@humanfs/core/-/core-0.19.1.tgz", {}, "sha512-5DyQ4+1JEUzejeK1JGICcideyfUbGixgS9jNgex5nqkW+cY7WZhxBigmieN5Qnw9ZosSNVC9KQKyb+GUaGyKUA=="],
 

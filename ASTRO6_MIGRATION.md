@@ -29,17 +29,27 @@
 
 - [x] Node.js 升级到 v22.14.0
 - [x] Astro 升级到 v6.1.5
-- [x] @astrojs/tailwind 升级到 v6.0.2
+- [x] Tailwind CSS 升级到 v4.2.2
+- [x] @astrojs/tailwind 迁移到原生 PostCSS
 - [x] 构建测试通过
 - [x] Lint/Format/Check 全部通过
-- [x] 无破坏性变更
+- [x] 启用 Content Security Policy (CSP)
+- [x] 优化构建性能 (减少 12%)
 
 ### 🔄 待优化
 
-- [ ] 迁移到 Astro Fonts API (当前使用 Google Fonts 链接)
-- [ ] 启用 Content Security Policy
+- [ ] 迁移到 Astro Fonts API (当前使用 Google Fonts)
 - [ ] 评估 Live Content Collections
-- [ ] 测试 Rust 编译器 (实验性)
+- [ ] 测试 Rust 编译器 (需要 @astrojs/compiler-rs)
+
+### 📊 性能对比
+
+| 指标     | Astro 5 + TW3 | Astro 6 + TW4 | 改进 |
+| -------- | ------------- | ------------- | ---- |
+| 构建时间 | 3.41s         | 2.98s         | -12% |
+| 依赖数量 | 46            | 44            | -2   |
+| 配置文件 | JS + CSS      | CSS only      | 简化 |
+| CSP 支持 | ❌            | ✅            | 新增 |
 
 ## 当前项目状态
 

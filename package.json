@@ -20,6 +20,8 @@
     "validate": "bun run lint && bun run format && bun run check"
   },
   "dependencies": {
+    "@fontsource/ma-shan-zheng": "5.2.9",
+    "@fontsource/noto-serif-sc": "5.2.8",
     "@tailwindcss/postcss": "^4.0.0",
     "astro": "^6.0.0",
     "tailwindcss": "^4.0.0"
