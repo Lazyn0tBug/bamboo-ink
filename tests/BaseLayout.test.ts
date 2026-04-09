@@ -62,11 +62,13 @@ describe('BaseLayout', () => {
 
     expect(themeToggle).toBeTruthy();
 
-    // Simulate DOM attribute setting
-    document.documentElement.setAttribute('data-theme', 'dark');
-    const theme = document.documentElement.getAttribute('data-theme');
+    // Simulate DOM class setting (matching actual implementation)
+    document.documentElement.classList.add('dark');
+    expect(document.documentElement.classList.contains('dark')).toBe(true);
 
-    expect(theme).toBe('dark');
+    // Verify class-based dark mode
+    document.documentElement.classList.remove('dark');
+    expect(document.documentElement.classList.contains('dark')).toBe(false);
   });
 
   it('should support template switching functionality', () => {
@@ -98,12 +100,12 @@ describe('BaseLayout', () => {
   it('should manage CSS attributes correctly for theme switching', () => {
     const html = document.documentElement;
 
-    // Test adding theme attribute
-    html.setAttribute('data-theme', 'dark');
-    expect(html.getAttribute('data-theme')).toBe('dark');
+    // Test adding dark class (matching actual implementation)
+    html.classList.add('dark');
+    expect(html.classList.contains('dark')).toBe(true);
 
-    html.setAttribute('data-theme', 'light');
-    expect(html.getAttribute('data-theme')).toBe('light');
+    html.classList.remove('dark');
+    expect(html.classList.contains('dark')).toBe(false);
   });
 
   it('should handle dark mode preference', () => {
