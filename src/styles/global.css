@@ -60,7 +60,10 @@
   --font-hei: 'Noto Sans SC', 'Source Han Sans SC', 'STHeiti', sans-serif;
 }
 
-/* 中国传统色 CSS 变量 */
+/* Tailwind v4 明暗主题变体 - 使用 data-attribute */
+@variant dark (&:where([data-theme="dark"], [data-theme="dark"] *));
+
+/* 中国传统色 CSS 变量 - 明暗主题通用 */
 :root {
   --xuanzhi-50: oklch(98% 0.01 90);
   --xuanzhi-100: oklch(96% 0.015 85);
@@ -110,108 +113,63 @@
   --zhu-500: oklch(45% 0.24 30);
 }
 
-/* 明暗主题变量 */
-:root[data-theme='light'] {
-  --bg-primary: var(--xuanzhi-100);
-  --bg-secondary: #ffffff;
-  --bg-tertiary: var(--xuanzhi-50);
-  --text-primary: var(--mo-600);
-  --text-secondary: var(--mo-500);
-  --text-tertiary: var(--mo-400);
-  --border-color: var(--juanbo-300);
-  --card-bg: #ffffff;
-  --nav-bg: rgba(254, 253, 251, 0.9);
-}
-
-:root[data-theme='dark'] {
-  --bg-primary: oklch(18% 0.02 260);
-  --bg-secondary: oklch(22% 0.025 260);
-  --bg-tertiary: oklch(26% 0.03 260);
-  --text-primary: oklch(85% 0.02 260);
-  --text-secondary: oklch(70% 0.025 260);
-  --text-tertiary: oklch(55% 0.03 260);
-  --border-color: oklch(35% 0.03 260);
-  --card-bg: oklch(24% 0.025 260);
-  --nav-bg: rgba(30, 30, 30, 0.9);
-}
-
-/* 古籍模板样式 - 通过 data-template 属性切换 */
-html[data-template='classic'] {
-  --template-bg: var(--bg-primary);
-  --template-border: var(--border-color);
-  --template-pattern-opacity: 0.05;
-  --template-pattern-display: block;
-}
-
-html[data-template='simple'] {
-  --template-bg: var(--bg-secondary);
-  --template-border: var(--mo-200);
-  --template-pattern-opacity: 0;
-  --template-pattern-display: none;
-}
-
-html[data-template='deluxe'] {
-  --template-bg: linear-gradient(to bottom, var(--xuanzhi-50), var(--xuanzhi-200));
-  --template-border: var(--zhusha-300);
-  --template-pattern-opacity: 0.08;
-  --template-pattern-display: block;
-}
-
-/* 暗色模板覆盖 */
-:root[data-theme='dark'][data-template='classic'] {
-  --template-bg: var(--bg-primary);
-}
-
-:root[data-theme='dark'][data-template='simple'] {
-  --template-bg: var(--bg-secondary);
-}
-
-:root[data-theme='dark'][data-template='deluxe'] {
-  --template-bg: linear-gradient(to bottom, var(--bg-tertiary), var(--bg-secondary));
-}
-
 /* 应用模板样式 */
 body {
-  background-color: var(--template-bg);
   transition: background-color 0.3s ease;
 }
 
+/* 卡片和导航背景 */
+.card-bg {
+  background-color: white;
+  transition: background-color 0.3s ease;
+}
+[data-theme='dark'] .card-bg {
+  background-color: oklch(24% 0.025 260);
+}
+
+.nav-bg {
+  background-color: rgba(254, 253, 251, 0.9);
+  transition: background-color 0.3s ease;
+}
+[data-theme='dark'] .nav-bg {
+  background-color: rgba(30, 30, 30, 0.9);
+}
+
+/* 边框颜色 */
 .layout-border {
-  border-color: var(--template-border);
   transition: border-color 0.3s ease;
 }
+[data-template='classic'] .layout-border {
+  border-color: var(--juanbo-300);
+}
+[data-template='simple'] .layout-border {
+  border-color: var(--mo-200);
+}
+[data-template='deluxe'] .layout-border {
+  border-color: var(--zhusha-300);
+}
+[data-theme='dark'][data-template='classic'] .layout-border {
+  border-color: oklch(35% 0.03 260);
+}
+[data-theme='dark'][data-template='simple'] .layout-border {
+  border-color: oklch(35% 0.03 260);
+}
+[data-theme='dark'][data-template='deluxe'] .layout-border {
+  border-color: oklch(40% 0.04 260);
+}
 
+/* 纹样显示 */
 .layout-pattern {
-  display: var(--template-pattern-display);
-  opacity: var(--template-pattern-opacity);
-  transition:
-    opacity 0.3s ease,
-    display 0.3s ease;
+  transition: opacity 0.3s ease;
 }
-
-/* 卡片背景 */
-.card-bg {
-  background-color: var(--card-bg);
-  transition: background-color 0.3s ease;
+[data-template='classic'] .layout-pattern,
+[data-template='deluxe'] .layout-pattern {
+  display: block;
+  opacity: 0.05;
 }
-
-/* 导航背景 */
-.nav-bg {
-  background-color: var(--nav-bg);
-  transition: background-color 0.3s ease;
-}
-
-/* 文字颜色 */
-.text-primary {
-  color: var(--text-primary);
-}
-
-.text-secondary {
-  color: var(--text-secondary);
-}
-
-.text-tertiary {
-  color: var(--text-tertiary);
+[data-template='simple'] .layout-pattern {
+  display: none;
+  opacity: 0;
 }
 
 /* 书法字体类 */
