@@ -2,6 +2,11 @@
 
 > 传承中华文化，让古籍阅读更现代化
 
+[![GitHub](https://img.shields.io/badge/GitHub-bamboo--ink-24292e?logo=github)](https://github.com/Lazyn0tBug/bamboo-ink)
+[![License](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
+[![Astro](https://img.shields.io/badge/Astro-4.x-ff5e57?logo=astro)](https://astro.build/)
+[![Tailwind](https://img.shields.io/badge/Tailwind-3.x-38bdf8?logo=tailwindcss)](https://tailwindcss.com/)
+
 ## 📋 项目状态
 
 - [x] 项目框架搭建
