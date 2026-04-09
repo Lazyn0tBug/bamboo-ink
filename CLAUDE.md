@@ -94,6 +94,7 @@
   - 更好的错误诊断
 
 ### 测试相关
+
 - `vitest` - 单元测试框架
   - 使用 `bun run test` 运行测试
   - 测试文件位于 `tests/` 目录
@@ -185,6 +186,11 @@ bun run check
 
 # 完整验证流程
 bun run validate
+
+# 测试命令
+bun run test          # 运行单元测试
+bun run test:ui       # 打开测试 Web UI
+bun run test:coverage # 生成覆盖率报告
 ```
 
 ## 文件结构

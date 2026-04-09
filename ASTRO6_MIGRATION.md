@@ -34,13 +34,14 @@
 - [x] 构建测试通过
 - [x] Lint/Format/Check 全部通过
 - [x] 启用 Content Security Policy (CSP)
-- [x] 优化构建性能 (减少 12%)
+- [x] 启用 Rust 编译器 (构建提速 20%)
+- [x] 迁移到 Astro Fonts API (自托管)
+- [x] 添加 Vitest 测试框架
 
 ### 🔄 待优化
 
-- [ ] 迁移到 Astro Fonts API (当前使用 Google Fonts)
+- [ ] 添加 E2E 测试 (Playwright)
 - [ ] 评估 Live Content Collections
-- [ ] 测试 Rust 编译器 (需要 @astrojs/compiler-rs)
 
 ### 📊 性能对比
 

@@ -5,7 +5,15 @@ import tseslint from 'typescript-eslint';
 
 export default tseslint.config(
   {
-    ignores: ['dist', '.astro', 'public', '**/*.min.js', 'src/env.d.ts'],
+    ignores: [
+      'dist',
+      '.astro',
+      'public',
+      '**/*.min.js',
+      'src/env.d.ts',
+      'tests/',
+      'vitest.config.ts',
+    ],
   },
   ...tseslint.configs.recommended,
   ...pluginAstro.configs['flat/recommended'],
