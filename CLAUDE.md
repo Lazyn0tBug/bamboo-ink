@@ -94,10 +94,15 @@
   - 更好的错误诊断
 
 ### 测试相关
+- `vitest` - 单元测试框架
+  - 使用 `bun run test` 运行测试
+  - 测试文件位于 `tests/` 目录
+  - 使用 `bun run test:coverage` 生成覆盖率报告
+  - 使用 `bun run test:ui` 打开 Web UI
 
 - `astro-testing` - Astro 测试最佳实践
-  - 使用 Vitest 进行单元测试
-  - 使用 Playwright 进行 E2E 测试
+  - 组件测试使用黑盒方式
+  - 测试行为而非实现
 
 ### 工具链
 
