@@ -10,6 +10,7 @@
         "@fontsource/noto-serif-sc": "5.2.8",
         "@tailwindcss/postcss": "^4.0.0",
         "astro": "^6.0.0",
+        "remixicon": "4.9.1",
         "tailwindcss": "^4.0.0",
       },
       "devDependencies": {
@@ -1186,6 +1187,8 @@
     "remark-smartypants": ["remark-smartypants@3.0.2", "https://registry.npmmirror.com/remark-smartypants/-/remark-smartypants-3.0.2.tgz", { "dependencies": { "retext": "^9.0.0", "retext-smartypants": "^6.0.0", "unified": "^11.0.4", "unist-util-visit": "^5.0.0" } }, "sha512-ILTWeOriIluwEvPjv67v7Blgrcx+LZOkAUVtKI3putuhlZm84FnqDORNXPPm+HY3NdZOMhyDwZ1E+eZB/Df5dA=="],
 
     "remark-stringify": ["remark-stringify@11.0.0", "https://registry.npmmirror.com/remark-stringify/-/remark-stringify-11.0.0.tgz", { "dependencies": { "@types/mdast": "^4.0.0", "mdast-util-to-markdown": "^2.0.0", "unified": "^11.0.0" } }, "sha512-1OSmLd3awB/t8qdoEOMazZkNsfVTeY4fTsgzcQFdXNq8ToTN4ZGwrMnlda4K6smTFKD+GRV6O48i6Z4iKgPPpw=="],
+
+    "remixicon": ["remixicon@4.9.1", "https://registry.npmmirror.com/remixicon/-/remixicon-4.9.1.tgz", {}, "sha512-36gLSoujkabnCFZFDyP17VNh9piuBA/rsXUb4auSJWLGsHVXtmxLj/EM5FjaEAGnk8oIAj1Azob/DZ2N+90lAQ=="],
 
     "request-light": ["request-light@0.7.0", "https://registry.npmmirror.com/request-light/-/request-light-0.7.0.tgz", {}, "sha512-lMbBMrDoxgsyO+yB3sDcrDuX85yYt7sS8BfQd11jtbW/z5ZWgLZRcEGLsLoYw7I0WSUGQBs8CC8ScIxkTX1+6Q=="],
 

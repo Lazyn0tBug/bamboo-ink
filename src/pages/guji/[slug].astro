@@ -159,47 +159,13 @@ const template = new URL(Astro.request.url).searchParams.get('template') || 'cla
           </div>
           <div class="flex items-center space-x-2">
             <button class="p-2 hover:bg-surface/50 rounded" title="调整字号">
-              <svg
-                class="w-5 h-5 text-text-tertiary"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path
-                  stroke-linecap="round"
-                  stroke-linejoin="round"
-                  stroke-width="2"
-                  d="M4 6h16M4 12h16m-7 6h7"></path>
-              </svg>
+              <i class="ri-font-size text-lg text-text-tertiary"></i>
             </button>
             <button class="p-2 hover:bg-surface/50 rounded" title="夜间模式">
-              <svg
-                class="w-5 h-5 text-text-tertiary"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path
-                  stroke-linecap="round"
-                  stroke-linejoin="round"
-                  stroke-width="2"
-                  d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z"
-                ></path>
-              </svg>
+              <i class="ri-moon-line text-lg text-text-tertiary"></i>
             </button>
             <button class="p-2 hover:bg-surface/50 rounded" title="加入书签">
-              <svg
-                class="w-5 h-5 text-text-tertiary"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path
-                  stroke-linecap="round"
-                  stroke-linejoin="round"
-                  stroke-width="2"
-                  d="M5 5a2 2 0 012-2h10a2 2 0 012 2v16l-7-3.57L5 21V5z"></path>
-              </svg>
+              <i class="ri-bookmark-line text-lg text-text-tertiary"></i>
             </button>
           </div>
         </div>
@@ -210,19 +176,7 @@ const template = new URL(Astro.request.url).searchParams.get('template') || 'cla
     <aside class="lg:col-span-1">
       <div class="bg-surface rounded-xl shadow-lg p-6 border border-border sticky top-24">
         <h3 class="text-lg font-bold text-text mb-4 flex items-center">
-          <svg
-            class="w-5 h-5 mr-2 text-accent"
-            fill="none"
-            stroke="currentColor"
-            viewBox="0 0 24 24"
-          >
-            <path
-              stroke-linecap="round"
-              stroke-linejoin="round"
-              stroke-width="2"
-              d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"
-            ></path>
-          </svg>
+          <i class="ri-book-mark-line text-lg text-accent mr-2"></i>
           智能标注
         </h3>
         <div class="space-y-3">
