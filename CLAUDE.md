@@ -611,6 +611,99 @@ chrome://net-internals/#dns
 9. **审查优先** - 提交前必须运行 lint 和 test
 10. **零容忍** - lint/test/build 任何失败都禁止提交
 
+## 调试代码规范
+
+### 基本原则
+
+**禁止** 提交包含无条件 `console.log` 的代码到生产环境。
+
+### 推荐的调试方式
+
+#### 1. 客户端 JavaScript - 环境变量控制
+
+```javascript
+// 开发环境或 URL 带 ?debug 参数时启用日志
+const DEBUG = import.meta.env?.DEV || new URLSearchParams(window.location.search).has('debug');
+const log = (...args) => DEBUG && console.log('[模块名]', ...args);
+
+// 使用
+log('Initialized', state); // 仅在 DEBUG=true 时输出
+log('State changed:', newState);
+```
+
+#### 2. 服务端 Astro - 使用 Astro.env
+
+```astro
+---
+// 开发环境启用详细日志
+const isDev = Astro.env?.NODE_ENV === 'development';
+if (isDev) {
+  console.log('[Server] Processing request:', Astro.request.url);
+}
+---
+```
+
+#### 3. 临时排查问题
+
+```javascript
+// 通过 URL 参数临时启用调试
+// 访问: http://yoursite.com/?debug
+if (new URLSearchParams(window.location.search).has('debug')) {
+  console.log('[Debug] Detailed info:', data);
+  debugger; // 会暂停执行，等待开发者工具
+}
+```
+
+### 日志级别使用指南
+
+| 方法            | 使用场景     | 生产环境                |
+| --------------- | ------------ | ----------------------- |
+| `console.log`   | 调试信息     | ❌ 禁止（除非条件控制） |
+| `console.info`  | 重要操作记录 | ⚠️ 谨慎使用             |
+| `console.warn`  | 潜在问题警告 | ✅ 允许                 |
+| `console.error` | 错误追踪     | ✅ 允许（用于错误边界） |
+| `debugger`      | 断点调试     | ❌ 禁止提交             |
+
+### 提交前检查清单
+
+```bash
+# 检查是否有遗留的 console.log
+grep -r "console\.log" src/ --include="*.js" --include="*.ts" --include="*.astro"
+
+# 检查是否有遗留的 debugger 语句
+grep -r "debugger" src/ --include="*.js" --include="*.ts" --include="*.astro"
+```
+
+### 错误处理最佳实践
+
+```javascript
+// ✅ 正确：错误始终记录
+try {
+  await fetchData();
+} catch (error) {
+  console.error('[Module] Failed to fetch data:', error);
+  // 用户友好的错误提示
+  showError('加载失败，请重试');
+}
+
+// ❌ 错误：吞掉错误
+try {
+  await fetchData();
+} catch (error) {
+  // 什么都不做 - 这会导致难以排查的问题
+}
+```
+
+### 生产环境监控
+
+对于生产环境，建议接入专业错误追踪服务：
+
+- **Sentry** - 错误追踪和性能监控
+- **LogRocket** - 会话回放和日志
+- **Vercel Analytics** - 性能指标
+
+这些服务会自动捕获 `console.error` 并提供堆栈追踪、用户行为回放等功能。
+
 ## 性能优化
 
 - **Rust 编译器** - 构建速度提升 20%
