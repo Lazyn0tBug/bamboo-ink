@@ -2,10 +2,97 @@
 @import 'remixicon/fonts/remixicon.css';
 
 /* ========================================
-   Tailwind v4 Theme - 中国传统色 + 语义化变量
+   Tailwind v4 变体配置
+   ======================================== */
+@variant dark (&:is(.dark *));
+
+/* ========================================
+   @layer base - 全局基础样式
+   ======================================== */
+@layer base {
+  /* 全局重置 */
+  * {
+    @apply border-border outline-ring/50;
+  }
+
+  /* 全局过渡效果 */
+  body {
+    @apply bg-background text-foreground;
+    background-color: var(--color-background);
+    color: var(--color-text-primary);
+    transition:
+      background-color 0.3s ease,
+      color 0.3s ease;
+    line-height: clamp(1.4, 1.5cqi, 1.6);
+  }
+
+  /* 滚动条样式 */
+  html {
+    scroll-behavior: smooth;
+    scrollbar-color: oklch(var(--color-text-secondary)) oklch(var(--color-background));
+    scrollbar-gutter: stable;
+  }
+
+  ::-webkit-scrollbar {
+    width: 0.5rem;
+    height: 0.5rem;
+  }
+
+  ::-webkit-scrollbar-track {
+    background: oklch(var(--color-background));
+    border-radius: 0.25rem;
+  }
+
+  ::-webkit-scrollbar-thumb {
+    background: oklch(var(--color-text-secondary));
+    border-radius: 0.25rem;
+    border: 0.125rem solid oklch(var(--color-background));
+  }
+
+  ::-webkit-scrollbar-thumb:hover {
+    background: oklch(var(--color-text-primary) / 0.5);
+  }
+
+  ::-webkit-scrollbar:horizontal {
+    height: 0.375rem;
+  }
+
+  /* 流体排版 */
+  .text-balance {
+    text-wrap: balance;
+  }
+
+  .text-pretty {
+    text-wrap: pretty;
+  }
+
+  h1 {
+    font-size: clamp(2rem, 5cqi + 1rem, 4rem);
+    text-wrap: balance;
+  }
+
+  h2 {
+    font-size: clamp(1.5rem, 3cqi + 0.75rem, 2.5rem);
+    text-wrap: balance;
+  }
+
+  h3 {
+    font-size: clamp(1.25rem, 2cqi + 0.5rem, 1.75rem);
+    text-wrap: balance;
+  }
+
+  p {
+    text-wrap: pretty;
+  }
+}
+
+/* ========================================
+   @theme - Tailwind v4 主题配置
    ======================================== */
 @theme {
-  /* 中国传统色 - OKLCH 颜色空间 */
+  /* ========================================
+     中国传统色 - OKLCH 颜色空间
+     ======================================== */
   --color-xuanzhi-50: oklch(98% 0.01 90);
   --color-xuanzhi-100: oklch(96% 0.015 85);
   --color-xuanzhi-200: oklch(93% 0.02 80);
@@ -53,7 +140,9 @@
   --color-zhu-400: oklch(52% 0.2 30);
   --color-zhu-500: oklch(45% 0.24 30);
 
-  /* 书法字体 */
+  /* ========================================
+     书法字体
+     ======================================== */
   --font-kai: 'Kaiti SC', 'STKaiti', 'KaiTi', 'AR PL UKai CN', 'Noto Serif CJK SC', serif;
   --font-li: 'LiSu', 'STLiti', 'Noto Serif CJK SC', serif;
   --font-zhuan: 'ZhuanTi', 'FangZhuan', 'STZhuan', serif;
@@ -62,47 +151,93 @@
   --font-song: 'Noto Serif SC', 'Source Han Serif SC', 'STSong', 'SimSun', serif;
   --font-hei: 'Noto Sans SC', 'Source Han Sans SC', 'STHeiti', sans-serif;
 
-  /* 语义化主题颜色 - 映射到 CSS 变量 */
+  /* ========================================
+     语义化颜色变量 - 映射到 CSS 变量
+     ======================================== */
   --color-background: var(--bg-primary);
-  --color-surface: var(--bg-secondary);
-  --color-surface-elevated: var(--bg-elevated);
-  --color-text: var(--text-primary);
+  --color-foreground: var(--text-primary);
+  --color-text-primary: var(--text-primary);
   --color-text-secondary: var(--text-secondary);
   --color-text-tertiary: var(--text-tertiary);
+
+  --color-card: var(--bg-secondary);
+  --color-card-foreground: var(--text-primary);
+
+  --color-popover: var(--bg-elevated);
+  --color-popover-foreground: var(--text-primary);
+
+  --color-primary: var(--accent-primary);
+  --color-primary-foreground: var(--text-inverse);
+
+  --color-secondary: var(--bg-tertiary);
+  --color-secondary-foreground: var(--text-secondary);
+
+  --color-muted: var(--bg-tertiary);
+  --color-muted-foreground: var(--text-secondary);
+
+  --color-accent: var(--accent-primary);
+  --color-accent-foreground: var(--text-inverse);
+
+  --color-destructive: oklch(60% 0.2 25);
+  --color-destructive-foreground: var(--text-inverse);
+
   --color-border: var(--border-primary);
   --color-border-secondary: var(--border-secondary);
-  --color-accent: var(--accent-primary);
+  --color-input: var(--border-secondary);
+  --color-ring: var(--accent-primary);
+
+  --color-chart-1: var(--zhusha-500);
+  --color-chart-2: var(--dai-400);
+  --color-chart-3: var(--zhu-400);
+  --color-chart-4: var(--juanbo-400);
+  --color-chart-5: var(--mo-400);
+
+  /* ========================================
+     几何与布局 Tokens
+     ======================================== */
+  --radius-lg: var(--radius);
+  --radius-md: calc(var(--radius) - 0.125rem);
+  --radius-sm: calc(var(--radius) - 0.25rem);
+  --radius-xl: calc(var(--radius) + 0.25rem);
+
+  --shadow-nav-glow: 0 0 10px rgba(0, 0, 0, 0.1);
+
+  /* ========================================
+     微型排版 Tokens
+     ======================================== */
+  --text-xxs: 0.625rem;
+  --text-xxs--line-height: 0.875rem;
+
+  --text-tiny: 0.6875rem;
+  --text-tiny--line-height: 1rem;
 }
 
 /* ========================================
-   Tailwind v4 明暗主题变体
-   ======================================== */
-@variant dark (&:where([data-theme="dark"], [data-theme="dark"] *));
-
-/* ========================================
-   语义化主题变量 - 亮色主题 (默认)
+   CSS 变量 - 亮色主题 (默认)
    ======================================== */
 :root {
+  --radius: 0.75rem;
+
   /* 背景色 */
-  --bg-primary: oklch(96% 0.015 85); /* 宣纸主背景 */
-  --bg-secondary: oklch(100% 0 0); /* 纯白卡片背景 */
-  --bg-tertiary: oklch(98% 0.01 90); /* 浅色区域 */
-  --bg-elevated: oklch(100% 0 0); /* 浮层/弹窗 */
+  --bg-primary: oklch(96% 0.015 85);
+  --bg-secondary: oklch(100% 0 0);
+  --bg-tertiary: oklch(98% 0.01 90);
+  --bg-elevated: oklch(100% 0 0);
 
   /* 文字色 */
-  --text-primary: oklch(10% 0.04 260); /* 浓墨正文 */
-  --text-secondary: oklch(35% 0.03 260); /* 次要文字 */
-  --text-tertiary: oklch(65% 0.025 260); /* 辅助文字 */
-  --text-inverse: oklch(100% 0 0); /* 反白文字 */
+  --text-primary: oklch(10% 0.04 260);
+  --text-secondary: oklch(35% 0.03 260);
+  --text-tertiary: oklch(65% 0.025 260);
+  --text-inverse: oklch(100% 0 0);
 
   /* 边框色 */
-  --border-primary: oklch(88% 0.025 75); /* 绢帛边框 */
-  --border-secondary: oklch(80% 0.02 260); /* 细边框 */
-  --border-focus: oklch(48% 0.22 25); /* 焦点边框 */
+  --border-primary: oklch(88% 0.025 75);
+  --border-secondary: oklch(80% 0.02 260);
+  --border-focus: oklch(48% 0.22 25);
 
   /* 品牌色 */
-  --accent-primary: oklch(48% 0.22 25); /* 朱砂主色 */
-  --accent-secondary: oklch(58% 0.18 25); /* 朱砂浅色 */
+  --accent-primary: oklch(48% 0.22 25);
+  --accent-secondary: oklch(58% 0.18 25);
 
   /* 阴影 */
   --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.05);
@@ -111,167 +246,143 @@
 }
 
 /* ========================================
-   语义化主题变量 - 暗色主题
+   CSS 变量 - 暗色主题
    ======================================== */
-:root[data-theme='dark'] {
+.dark {
   /* 背景色 */
-  --bg-primary: oklch(18% 0.02 260); /* 深色主背景 */
-  --bg-secondary: oklch(24% 0.025 260); /* 卡片背景 */
-  --bg-tertiary: oklch(26% 0.03 260); /* 浅色区域 */
-  --bg-elevated: oklch(28% 0.03 260); /* 浮层/弹窗 */
+  --bg-primary: oklch(18% 0.02 260);
+  --bg-secondary: oklch(24% 0.025 260);
+  --bg-tertiary: oklch(26% 0.03 260);
+  --bg-elevated: oklch(28% 0.03 260);
 
   /* 文字色 */
-  --text-primary: oklch(85% 0.02 260); /* 浅色正文 */
-  --text-secondary: oklch(70% 0.025 260); /* 次要文字 */
-  --text-tertiary: oklch(55% 0.03 260); /* 辅助文字 */
-  --text-inverse: oklch(10% 0.04 260); /* 反白文字 */
+  --text-primary: oklch(85% 0.02 260);
+  --text-secondary: oklch(70% 0.025 260);
+  --text-tertiary: oklch(55% 0.03 260);
+  --text-inverse: oklch(10% 0.04 260);
 
   /* 边框色 */
-  --border-primary: oklch(35% 0.03 260); /* 深色边框 */
+  --border-primary: oklch(35% 0.03 260);
   --border-secondary: oklch(30% 0.025 260);
-  --border-focus: oklch(58% 0.18 25); /* 焦点边框 */
+  --border-focus: oklch(58% 0.18 25);
 
   /* 品牌色 */
-  --accent-primary: oklch(58% 0.18 25); /* 朱砂浅色 */
-  --accent-secondary: oklch(70% 0.12 25); /* 朱砂更浅 */
+  --accent-primary: oklch(58% 0.18 25);
+  --accent-secondary: oklch(70% 0.12 25);
 
-  /* 阴影 (暗色主题需要更柔和的阴影) */
+  /* 阴影 */
   --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.2);
   --shadow-md: 0 4px 6px rgba(0, 0, 0, 0.3);
   --shadow-lg: 0 10px 15px rgba(0, 0, 0, 0.4);
 }
 
 /* ========================================
-   @layer base - 全局基础样式
-   ======================================== */
-@layer base {
-  /* 全局过渡效果 */
-  body {
-    background-color: var(--bg-primary);
-    color: var(--text-primary);
-    transition:
-      background-color 0.3s ease,
-      color 0.3s ease;
-  }
-
-  /* 导航栏 */
-  .template-nav {
-    background-color: var(--bg-secondary);
-    border-color: var(--border-primary);
-    transition:
-      background-color 0.3s ease,
-      border-color 0.3s ease;
-  }
-
-  /* 卡片组件 */
-  article,
-  .card-bg {
-    background-color: var(--bg-secondary);
-    border-color: var(--border-primary);
-    box-shadow: var(--shadow-md);
-    transition:
-      background-color 0.3s ease,
-      border-color 0.3s ease,
-      box-shadow 0.3s ease;
-  }
-
-  /* 边框 */
-  .layout-border {
-    border-color: var(--border-primary);
-    transition: border-color 0.3s ease;
-  }
-
-  /* 纹样显示/隐藏 */
-  .layout-pattern {
-    transition: opacity 0.3s ease;
-  }
-  [data-template='classic'] .layout-pattern,
-  [data-template='deluxe'] .layout-pattern {
-    display: block;
-    opacity: 0.05;
-  }
-  [data-template='simple'] .layout-pattern {
-    display: none;
-    opacity: 0;
-  }
-
-  /* 输入框 */
-  input,
-  select,
-  textarea {
-    background-color: var(--bg-secondary);
-    color: var(--text-primary);
-    border-color: var(--border-secondary);
-    transition:
-      background-color 0.3s ease,
-      border-color 0.3s ease,
-      color 0.3s ease;
-  }
-  input:focus,
-  select:focus,
-  textarea:focus {
-    border-color: var(--border-focus);
-    outline: none;
-    box-shadow: 0 0 0 2px var(--accent-primary);
-  }
-}
-
-/* ========================================
    @layer components - 组件样式
    ======================================== */
 @layer components {
-  /* 书法字体类 */
+  /* ========================================
+     书法字体类
+     ======================================== */
   .font-kai {
     font-family: var(--font-kai);
   }
+
   .font-li {
     font-family: var(--font-li);
   }
+
   .font-zhuan {
     font-family: var(--font-zhuan);
   }
+
   .font-wei {
     font-family: var(--font-wei);
   }
+
   .font-yuan {
     font-family: var(--font-yuan);
   }
+
   .font-song {
     font-family: var(--font-song);
   }
+
   .font-hei {
     font-family: var(--font-hei);
   }
 
-  /* 古籍文本样式 */
+  /* ========================================
+     古籍文本样式
+     ======================================== */
   .guji-text {
     font-family: var(--font-kai);
     font-size: 18px;
     line-height: 2.2;
   }
+
   .guji-text p {
     margin-bottom: 1.5rem;
     text-indent: 2em;
   }
+
   .guji-text h3 {
     margin-top: 2rem;
   }
+
   .guji-title {
     font-family: var(--font-li);
   }
 
-  /* 宣纸纹理效果 */
+  /* ========================================
+     容器与响应式布局
+     ======================================== */
+  .page-container {
+    container-type: inline-size;
+    container-name: page;
+  }
+
+  .page-padding-x {
+    padding-inline: clamp(1rem, 5cqi, 3rem);
+  }
+
+  .page-gap {
+    gap: clamp(1rem, 3cqi, 2.5rem);
+  }
+
+  .grid-responsive {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 16rem), 1fr));
+    gap: clamp(1rem, 3cqi, 2rem);
+  }
+
+  .flex-responsive {
+    display: flex;
+    flex-wrap: wrap;
+    gap: clamp(1rem, 3cqi, 2rem);
+  }
+
+  .flex-responsive > * {
+    flex: 1 1 min(100%, 20rem);
+  }
+
+  /* ========================================
+     宣纸纹理效果
+     ======================================== */
   .xuanzhi-texture {
     background-image: url("data:image/svg+xml,%3Csvg width='100' height='100' viewBox='0 0 100 100' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100' height='100' filter='url(%23noise)' opacity='0.08'/%3E%3C/svg%3E");
   }
 
-  /* 浓墨文字效果 */
+  /* ========================================
+     浓墨文字效果
+     ======================================== */
   .mo-text {
     color: var(--mo-600);
     text-shadow: 0 0 1px rgba(0, 0, 0, 0.1);
   }
 
-  /* 朱砂印章效果 */
+  /* ========================================
+     朱砂印章效果
+     ======================================== */
   .zhusha-seal {
     background-color: var(--zhusha-500);
     color: white;
@@ -282,20 +393,78 @@
     display: inline-block;
   }
 
-  /* 绢帛边框效果 */
+  /* ========================================
+     绢帛边框效果
+     ======================================== */
   .juanbo-border {
     border: 3px double var(--juanbo-400);
     background: linear-gradient(135deg, rgba(249, 248, 240, 0.5), rgba(240, 237, 216, 0.3));
   }
 
-  /* 黛色边框 */
+  /* ========================================
+     黛色边框
+     ======================================== */
   .dai-border {
     border: 2px solid var(--dai-400);
   }
 
-  /* 赭色装饰 */
+  /* ========================================
+     赭色装饰
+     ======================================== */
   .zhu-accent {
     color: var(--zhu-500);
+  }
+
+  /* ========================================
+     :has() 智能交互状态
+     ======================================== */
+  .form-group:has(:invalid:not(:placeholder-shown)) .form-label {
+    color: oklch(var(--destructive));
+  }
+
+  .form-group:has(:required) .form-label::after {
+    content: ' *';
+    color: oklch(var(--destructive));
+  }
+
+  .card:has(img) {
+    overflow: hidden;
+  }
+
+  .nav-item:has(.active) {
+    background-color: oklch(var(--color-accent));
+    color: oklch(var(--color-accent-foreground));
+  }
+
+  .input-wrapper:has(:focus) {
+    border-color: oklch(var(--color-ring));
+    box-shadow: 0 0 0 0.125rem oklch(var(--color-ring) / 0.2);
+  }
+
+  .card:has(:focus-visible) {
+    outline: 0.125rem solid oklch(var(--color-ring));
+    outline-offset: 0.125rem;
+  }
+
+  /* ========================================
+     移动端横向滑动容器
+     ======================================== */
+  .mobile-swipe-row {
+    @apply flex md:grid gap-4 md:gap-6 overflow-x-auto md:overflow-visible snap-x snap-mandatory -mx-4 px-4 md:mx-0 md:px-0 pb-6 md:pb-0;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+  }
+
+  .mobile-swipe-row::-webkit-scrollbar {
+    display: none;
+  }
+
+  .mobile-swipe-card {
+    @apply shrink-0 snap-center md:w-auto;
+  }
+
+  .mobile-grid-2 {
+    @apply grid grid-cols-2 md:grid-cols-2 lg:grid-cols-4 gap-3 md:gap-6;
   }
 }
 
@@ -303,14 +472,41 @@
    @layer utilities - 工具类
    ======================================== */
 @layer utilities {
+  /* 宽高比 */
+  .aspect-video {
+    aspect-ratio: 16 / 9;
+  }
+
+  .aspect-square {
+    aspect-ratio: 1 / 1;
+  }
+
+  .aspect-card {
+    aspect-ratio: 3 / 2;
+  }
+
   /* 模板特定边框 */
   [data-template='classic'] .layout-border {
     border-color: var(--juanbo-300);
   }
+
   [data-template='simple'] .layout-border {
     border-color: var(--mo-200);
   }
+
   [data-template='deluxe'] .layout-border {
     border-color: var(--zhusha-300);
+  }
+
+  /* 纹样显示/隐藏 */
+  [data-template='classic'] .layout-pattern,
+  [data-template='deluxe'] .layout-pattern {
+    display: block;
+    opacity: 0.05;
+  }
+
+  [data-template='simple'] .layout-pattern {
+    display: none;
+    opacity: 0;
   }
 }
