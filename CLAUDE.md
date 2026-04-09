@@ -570,7 +570,7 @@ export default defineConfig({
   /* 中国传统色 - OKLCH */
   --color-xuanzhi-100: oklch(96% 0.015 85);
   --color-zhusha-500: oklch(48% 0.22 25);
-  
+
   /* 书法字体 */
   --font-kai: 'Kaiti SC', 'STKaiti', ...;
   --font-li: 'LiSu', 'STLiti', ...;
@@ -580,11 +580,13 @@ export default defineConfig({
 ### 性能监控
 
 **核心性能指标 (Core Web Vitals)：**
+
 - LCP (Largest Contentful Paint): < 2.5s
 - FID (First Input Delay): < 100ms
 - CLS (Cumulative Layout Shift): < 0.1
 
 **优化检查清单：**
+
 ```bash
 # 构建后检查文件大小
 ls -lh dist/

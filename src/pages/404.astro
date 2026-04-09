@@ -1,0 +1,62 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+
+// 404 页面 - 处理所有未匹配的路由
+---
+
+<BaseLayout title="页面未找到">
+  <div class="min-h-[60vh] flex items-center justify-center">
+    <div class="text-center max-w-md mx-auto p-8">
+      <!-- 404 图标 -->
+      <div class="w-24 h-24 bg-zhusha-100 rounded-full flex items-center justify-center mx-auto mb-6">
+        <svg
+          class="w-12 h-12 text-zhusha-500"
+          fill="none"
+          stroke="currentColor"
+          viewBox="0 0 24 24"
+        >
+          <path
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            stroke-width="2"
+            d="M9.172 16.172a4 4 0 015.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+          ></path>
+        </svg>
+      </div>
+
+      <!-- 错误信息 -->
+      <h1 class="text-6xl font-bold text-mo-600 mb-4 font-li">404</h1>
+      <h2 class="text-2xl font-bold text-mo-500 mb-4">页面未找到</h2>
+      <p class="text-mo-400 mb-8">
+        抱歉，您访问的页面不存在或已被移除。
+      </p>
+
+      <!-- 操作按钮 -->
+      <div class="flex flex-col sm:flex-row gap-4 justify-center">
+        <a
+          href="/"
+          class="px-6 py-3 bg-zhusha-500 hover:bg-zhusha-600 text-white rounded-lg transition-colors font-medium"
+        >
+          返回首页 →
+        </a>
+        <a
+          href="/guji/zhong-yong"
+          class="px-6 py-3 bg-xuanzhi-100 hover:bg-xuanzhi-200 text-mo-600 rounded-lg transition-colors font-medium"
+        >
+          浏览古籍
+        </a>
+      </div>
+
+      <!-- 快速链接 -->
+      <div class="mt-12 pt-8 border-t border-juanbo-200">
+        <h3 class="text-sm font-bold text-mo-500 mb-4">快速访问</h3>
+        <div class="grid grid-cols-2 gap-3 text-sm">
+          <a href="/经部" class="text-mo-400 hover:text-zhusha-500 transition-colors">经部</a>
+          <a href="/史部" class="text-mo-400 hover:text-zhusha-500 transition-colors">史部</a>
+          <a href="/子部" class="text-mo-400 hover:text-zhusha-500 transition-colors">子部</a>
+          <a href="/集部" class="text-mo-400 hover:text-zhusha-500 transition-colors">集部</a>
+        </div>
+      </div>
+    </div>
+  </div>
+</BaseLayout>
