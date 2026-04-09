@@ -485,45 +485,96 @@
     aspect-ratio: 3 / 2;
   }
 
-  /* 模板特定边框 */
+  /* ========================================
+     模板特定样式 - 古典/简约/华丽
+     ======================================== */
+
+  /* ========== 古典模板 ========== */
   [data-template='classic'] .layout-border {
     border-color: var(--juanbo-300);
     border-width: 2px;
   }
 
+  [data-template='classic'] .template-nav {
+    background: linear-gradient(to bottom, var(--juanbo-50), var(--bg-primary));
+    border-bottom: 2px solid var(--juanbo-300);
+  }
+
+  [data-template='classic'] .card,
+  [data-template='classic'] article {
+    border: 1px solid var(--juanbo-200);
+    box-shadow: 2px 2px 8px rgba(0, 0, 0, 0.08);
+  }
+
+  [data-template='classic'] .layout-pattern {
+    display: block;
+    opacity: 0.08;
+  }
+
+  [data-template='classic'] body {
+    background-color: var(--bg-primary);
+  }
+
+  /* ========== 简约模板 ========== */
   [data-template='simple'] .layout-border {
     border-color: var(--mo-200);
     border-width: 1px;
   }
 
-  [data-template='deluxe'] .layout-border {
-    border-color: var(--zhusha-300);
-    border-width: 3px;
-    border-style: double;
+  [data-template='simple'] .template-nav {
+    background: var(--bg-secondary);
+    border-bottom: 1px solid var(--mo-200);
   }
 
-  /* 模板特定背景 */
-  [data-template='classic'] body {
-    background-color: var(--bg-primary);
+  [data-template='simple'] .card,
+  [data-template='simple'] article {
+    border: 1px solid var(--mo-100);
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+  }
+
+  [data-template='simple'] .layout-pattern {
+    display: none;
+    opacity: 0;
   }
 
   [data-template='simple'] body {
     background-color: oklch(100% 0 0);
   }
 
-  [data-template='deluxe'] body {
-    background: linear-gradient(135deg, var(--bg-primary), var(--bg-tertiary));
+  [data-template='simple'] .xuanzhi-texture {
+    display: none;
   }
 
-  /* 纹样显示/隐藏 */
-  [data-template='classic'] .layout-pattern,
+  /* ========== 华丽模板 ========== */
+  [data-template='deluxe'] .layout-border {
+    border-color: var(--zhusha-300);
+    border-width: 3px;
+    border-style: double;
+  }
+
+  [data-template='deluxe'] .template-nav {
+    background: linear-gradient(135deg, var(--zhusha-50), var(--juanbo-50), var(--zhusha-50));
+    border-bottom: 3px double var(--zhusha-400);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  }
+
+  [data-template='deluxe'] .card,
+  [data-template='deluxe'] article {
+    border: 2px double var(--zhusha-300);
+    box-shadow: 4px 4px 16px rgba(0, 0, 0, 0.12);
+    background: linear-gradient(135deg, var(--bg-secondary), var(--xuanzhi-50));
+  }
+
   [data-template='deluxe'] .layout-pattern {
     display: block;
-    opacity: 0.05;
+    opacity: 0.12;
   }
 
-  [data-template='simple'] .layout-pattern {
-    display: none;
-    opacity: 0;
+  [data-template='deluxe'] body {
+    background: linear-gradient(180deg, var(--xuanzhi-50), var(--bg-primary), var(--xuanzhi-100));
+  }
+
+  [data-template='deluxe'] .xuanzhi-texture {
+    opacity: 0.15;
   }
 }
