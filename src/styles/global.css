@@ -1,10 +1,67 @@
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
+@import 'tailwindcss';
 
-/* 中国传统色 CSS 变量 - OKLCH 颜色空间 */
+/* 自定义主题配置 - Tailwind v4 CSS variables */
+@theme {
+  /* 中国传统色 - OKLCH 颜色空间 */
+  --color-xuanzhi-50: oklch(98% 0.01 90);
+  --color-xuanzhi-100: oklch(96% 0.015 85);
+  --color-xuanzhi-200: oklch(93% 0.02 80);
+  --color-xuanzhi-300: oklch(88% 0.025 75);
+  --color-xuanzhi-400: oklch(78% 0.035 70);
+  --color-xuanzhi-500: oklch(65% 0.045 65);
+
+  --color-mo-50: oklch(96% 0.01 260);
+  --color-mo-100: oklch(90% 0.015 260);
+  --color-mo-200: oklch(80% 0.02 260);
+  --color-mo-300: oklch(65% 0.025 260);
+  --color-mo-400: oklch(35% 0.03 260);
+  --color-mo-500: oklch(18% 0.035 260);
+  --color-mo-600: oklch(10% 0.04 260);
+  --color-mo-700: oklch(5% 0.045 260);
+
+  --color-zhusha-50: oklch(97% 0.02 25);
+  --color-zhusha-100: oklch(94% 0.035 25);
+  --color-zhusha-200: oklch(85% 0.06 25);
+  --color-zhusha-300: oklch(70% 0.12 25);
+  --color-zhusha-400: oklch(58% 0.18 25);
+  --color-zhusha-500: oklch(48% 0.22 25);
+  --color-zhusha-600: oklch(40% 0.24 25);
+  --color-zhusha-700: oklch(32% 0.26 25);
+
+  --color-juanbo-50: oklch(98% 0.008 95);
+  --color-juanbo-100: oklch(96% 0.012 90);
+  --color-juanbo-200: oklch(92% 0.02 85);
+  --color-juanbo-300: oklch(88% 0.025 80);
+  --color-juanbo-400: oklch(78% 0.035 75);
+  --color-juanbo-500: oklch(65% 0.045 70);
+
+  --color-dai-50: oklch(97% 0.015 220);
+  --color-dai-100: oklch(92% 0.025 220);
+  --color-dai-200: oklch(82% 0.04 220);
+  --color-dai-300: oklch(68% 0.08 220);
+  --color-dai-400: oklch(52% 0.14 220);
+  --color-dai-500: oklch(42% 0.18 220);
+  --color-dai-600: oklch(35% 0.22 220);
+
+  --color-zhu-50: oklch(96% 0.02 30);
+  --color-zhu-100: oklch(90% 0.04 30);
+  --color-zhu-200: oklch(80% 0.08 30);
+  --color-zhu-300: oklch(65% 0.14 30);
+  --color-zhu-400: oklch(52% 0.2 30);
+  --color-zhu-500: oklch(45% 0.24 30);
+
+  /* 书法字体 */
+  --font-kai: 'Kaiti SC', 'STKaiti', 'KaiTi', 'AR PL UKai CN', 'Noto Serif CJK SC', serif;
+  --font-li: 'LiSu', 'STLiti', 'Noto Serif CJK SC', serif;
+  --font-zhuan: 'ZhuanTi', 'FangZhuan', 'STZhuan', serif;
+  --font-wei: 'WeiTi', 'STWeiti', 'Noto Serif CJK SC', serif;
+  --font-yuan: 'Yuanti SC', 'STYuanti', 'Yuanti', 'Noto Serif CJK SC', serif;
+  --font-song: 'Noto Serif SC', 'Source Han Serif SC', 'STSong', 'SimSun', serif;
+  --font-hei: 'Noto Sans SC', 'Source Han Sans SC', 'STHeiti', sans-serif;
+}
+
+/* 中国传统色 CSS 变量 */
 :root {
-  /* 宣纸色系 */
   --xuanzhi-50: oklch(98% 0.01 90);
   --xuanzhi-100: oklch(96% 0.015 85);
   --xuanzhi-200: oklch(93% 0.02 80);
@@ -12,7 +69,6 @@
   --xuanzhi-400: oklch(78% 0.035 70);
   --xuanzhi-500: oklch(65% 0.045 65);
 
-  /* 浓墨色系 */
   --mo-50: oklch(96% 0.01 260);
   --mo-100: oklch(90% 0.015 260);
   --mo-200: oklch(80% 0.02 260);
@@ -22,7 +78,6 @@
   --mo-600: oklch(10% 0.04 260);
   --mo-700: oklch(5% 0.045 260);
 
-  /* 朱砂色系 */
   --zhusha-50: oklch(97% 0.02 25);
   --zhusha-100: oklch(94% 0.035 25);
   --zhusha-200: oklch(85% 0.06 25);
@@ -32,7 +87,6 @@
   --zhusha-600: oklch(40% 0.24 25);
   --zhusha-700: oklch(32% 0.26 25);
 
-  /* 绢帛色系 */
   --juanbo-50: oklch(98% 0.008 95);
   --juanbo-100: oklch(96% 0.012 90);
   --juanbo-200: oklch(92% 0.02 85);
@@ -40,7 +94,6 @@
   --juanbo-400: oklch(78% 0.035 75);
   --juanbo-500: oklch(65% 0.045 70);
 
-  /* 黛色色系 */
   --dai-50: oklch(97% 0.015 220);
   --dai-100: oklch(92% 0.025 220);
   --dai-200: oklch(82% 0.04 220);
@@ -49,7 +102,6 @@
   --dai-500: oklch(42% 0.18 220);
   --dai-600: oklch(35% 0.22 220);
 
-  /* 赭色色系 */
   --zhu-50: oklch(96% 0.02 30);
   --zhu-100: oklch(90% 0.04 30);
   --zhu-200: oklch(80% 0.08 30);
@@ -101,28 +153,28 @@ body {
 
 /* 书法字体类 */
 .font-kai {
-  font-family: 'Kaiti SC', 'STKaiti', 'KaiTi', 'AR PL UKai CN', 'Noto Serif CJK SC', serif;
+  font-family: var(--font-kai);
 }
 
 .font-li {
-  font-family: 'LiSu', 'STLiti', 'Noto Serif CJK SC', serif;
+  font-family: var(--font-li);
 }
 
 .font-zhuan {
-  font-family: 'ZhuanTi', 'FangZhuan', 'STZhuan', serif;
+  font-family: var(--font-zhuan);
 }
 
 .font-wei {
-  font-family: 'WeiTi', 'STWeiti', 'Noto Serif CJK SC', serif;
+  font-family: var(--font-wei);
 }
 
 .font-yuan {
-  font-family: 'Yuanti SC', 'STYuanti', 'Yuanti', 'Noto Serif CJK SC', serif;
+  font-family: var(--font-yuan);
 }
 
 /* 古籍文本样式 */
 .guji-text {
-  font-family: 'Kaiti SC', 'STKaiti', 'KaiTi', 'Noto Serif CJK SC', serif;
+  font-family: var(--font-kai);
   font-size: 18px;
   line-height: 2.2;
 }
@@ -138,7 +190,7 @@ body {
 
 /* 标题使用隶书 */
 .guji-title {
-  font-family: 'LiSu', 'STLiti', 'Noto Serif CJK SC', serif;
+  font-family: var(--font-li);
 }
 
 /* 宣纸纹理效果 */
@@ -159,7 +211,7 @@ body {
   border: 2px solid var(--zhusha-600);
   border-radius: 4px;
   padding: 4px 8px;
-  font-family: 'ZhuanTi', 'FangZhuan', 'STZhuan', serif;
+  font-family: var(--font-zhuan);
   display: inline-block;
 }
 
@@ -177,89 +229,4 @@ body {
 /* 赭色装饰 */
 .zhu-accent {
   color: var(--zhu-500);
-}
-
-/* 古籍模板样式 - 通过 data-template 属性切换 */
-html[data-template='classic'] {
-  --template-bg: var(--xuanzhi-100);
-  --template-border: var(--juanbo-300);
-  --template-pattern-opacity: 0.05;
-  --template-pattern-display: block;
-}
-
-html[data-template='simple'] {
-  --template-bg: #ffffff;
-  --template-border: var(--mo-200);
-  --template-pattern-opacity: 0;
-  --template-pattern-display: none;
-}
-
-html[data-template='deluxe'] {
-  --template-bg: linear-gradient(to bottom, var(--xuanzhi-50), var(--xuanzhi-200));
-  --template-border: var(--zhusha-300);
-  --template-pattern-opacity: 0.08;
-  --template-pattern-display: block;
-}
-
-/* 应用模板样式 */
-body {
-  background-color: var(--template-bg);
-  transition: background-color 0.3s ease;
-}
-
-.layout-border {
-  border-color: var(--template-border);
-  transition: border-color 0.3s ease;
-}
-
-.layout-pattern {
-  display: var(--template-pattern-display);
-  opacity: var(--template-pattern-opacity);
-  transition:
-    opacity 0.3s ease,
-    display 0.3s ease;
-}
-
-/* 古籍文本样式 */
-.guji-text {
-  font-family: 'Noto Serif SC', 'Source Han Serif SC', 'STSong', 'SimSun', serif;
-  font-size: 18px;
-  line-height: 2.2;
-}
-
-.guji-text p {
-  margin-bottom: 1.5rem;
-  text-indent: 2em;
-}
-
-.guji-text h3 {
-  margin-top: 2rem;
-}
-
-/* 宣纸纹理效果 */
-.xuanzhi-texture {
-  background-image: url("data:image/svg+xml,%3Csvg width='100' height='100' viewBox='0 0 100 100' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100' height='100' filter='url(%23noise)' opacity='0.08'/%3E%3C/svg%3E");
-}
-
-/* 浓墨文字效果 */
-.mo-text {
-  color: var(--mo-600);
-  text-shadow: 0 0 1px rgba(0, 0, 0, 0.1);
-}
-
-/* 朱砂印章效果 */
-.zhusha-seal {
-  background-color: var(--zhusha-500);
-  color: white;
-  border: 2px solid var(--zhusha-600);
-  border-radius: 4px;
-  padding: 4px 8px;
-  font-family: 'STKaiti', 'KaiTi', serif;
-  display: inline-block;
-}
-
-/* 绢帛边框效果 */
-.juanbo-border {
-  border: 3px double var(--juanbo-400);
-  background: linear-gradient(135deg, rgba(249, 248, 240, 0.5), rgba(240, 237, 216, 0.3));
 }
