@@ -2,6 +2,86 @@
 @tailwind components;
 @tailwind utilities;
 
+/* 中国传统色 CSS 变量 */
+:root {
+  /* 宣纸色系 */
+  --xuanzhi-50: #fefdfb;
+  --xuanzhi-100: #f7f5f0;
+  --xuanzhi-200: #efebd1;
+  --xuanzhi-300: #e0d8c8;
+  --xuanzhi-400: #c8b898;
+  --xuanzhi-500: #a89878;
+
+  /* 浓墨色系 */
+  --mo-50: #f5f5f5;
+  --mo-100: #e5e5e5;
+  --mo-200: #cccccc;
+  --mo-300: #a8a8a8;
+  --mo-400: #5c5c5c;
+  --mo-500: #2c2c2c;
+  --mo-600: #1a1a1a;
+  --mo-700: #0d0d0d;
+
+  /* 朱砂色系 */
+  --zhusha-50: #fef5f5;
+  --zhusha-100: #fde8e8;
+  --zhusha-200: #fac8c8;
+  --zhusha-300: #f59898;
+  --zhusha-400: #e86868;
+  --zhusha-500: #c43c3c;
+  --zhusha-600: #a02828;
+  --zhusha-700: #802020;
+
+  /* 绢帛色系 */
+  --juanbo-50: #fefefb;
+  --juanbo-100: #f9f8f0;
+  --juanbo-200: #f0edd8;
+  --juanbo-300: #e0d8c8;
+  --juanbo-400: #c8b898;
+  --juanbo-500: #a89878;
+}
+
+/* 古籍模板样式 - 通过 data-template 属性切换 */
+html[data-template='classic'] {
+  --template-bg: var(--xuanzhi-100);
+  --template-border: var(--juanbo-300);
+  --template-pattern-opacity: 0.05;
+  --template-pattern-display: block;
+}
+
+html[data-template='simple'] {
+  --template-bg: #ffffff;
+  --template-border: var(--mo-200);
+  --template-pattern-opacity: 0;
+  --template-pattern-display: none;
+}
+
+html[data-template='deluxe'] {
+  --template-bg: linear-gradient(to bottom, var(--xuanzhi-50), var(--xuanzhi-200));
+  --template-border: var(--zhusha-300);
+  --template-pattern-opacity: 0.08;
+  --template-pattern-display: block;
+}
+
+/* 应用模板样式 */
+body {
+  background-color: var(--template-bg);
+  transition: background-color 0.3s ease;
+}
+
+.layout-border {
+  border-color: var(--template-border);
+  transition: border-color 0.3s ease;
+}
+
+.layout-pattern {
+  display: var(--template-pattern-display);
+  opacity: var(--template-pattern-opacity);
+  transition:
+    opacity 0.3s ease,
+    display 0.3s ease;
+}
+
 /* 古籍文本样式 */
 .guji-text {
   font-family: 'Noto Serif SC', 'Source Han Serif SC', 'STSong', 'SimSun', serif;
@@ -16,4 +96,32 @@
 
 .guji-text h3 {
   margin-top: 2rem;
+}
+
+/* 宣纸纹理效果 */
+.xuanzhi-texture {
+  background-image: url("data:image/svg+xml,%3Csvg width='100' height='100' viewBox='0 0 100 100' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100' height='100' filter='url(%23noise)' opacity='0.08'/%3E%3C/svg%3E");
+}
+
+/* 浓墨文字效果 */
+.mo-text {
+  color: var(--mo-600);
+  text-shadow: 0 0 1px rgba(0, 0, 0, 0.1);
+}
+
+/* 朱砂印章效果 */
+.zhusha-seal {
+  background-color: var(--zhusha-500);
+  color: white;
+  border: 2px solid var(--zhusha-600);
+  border-radius: 4px;
+  padding: 4px 8px;
+  font-family: 'STKaiti', 'KaiTi', serif;
+  display: inline-block;
+}
+
+/* 绢帛边框效果 */
+.juanbo-border {
+  border: 3px double var(--juanbo-400);
+  background: linear-gradient(135deg, rgba(249, 248, 240, 0.5), rgba(240, 237, 216, 0.3));
 }
