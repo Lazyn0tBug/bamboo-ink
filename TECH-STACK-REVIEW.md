@@ -8,16 +8,16 @@
 
 ## 📊 当前技术栈
 
-| 层级 | 当前技术 | 状态 |
-|------|----------|------|
-| **包管理** | Bun 1.x | ✅ 现代化 |
-| **框架** | Astro 4.x | ✅ 静态站点 |
-| **样式** | Tailwind CSS 3.x | ✅ 原子化 |
-| **字体** | Noto Serif SC | ✅ 开源字体 |
-| **转换** | Cheerio + Turndown | ⚠️ 基础功能 |
-| **搜索** | 待集成 | ❌ 缺失 |
-| **AI** | 待集成 | ❌ 缺失 |
-| **部署** | 本地 | ⚠️ 需完善 |
+| 层级       | 当前技术           | 状态        |
+| ---------- | ------------------ | ----------- |
+| **包管理** | Bun 1.x            | ✅ 现代化   |
+| **框架**   | Astro 4.x          | ✅ 静态站点 |
+| **样式**   | Tailwind CSS 3.x   | ✅ 原子化   |
+| **字体**   | Noto Serif SC      | ✅ 开源字体 |
+| **转换**   | Cheerio + Turndown | ⚠️ 基础功能 |
+| **搜索**   | 待集成             | ❌ 缺失     |
+| **AI**     | 待集成             | ❌ 缺失     |
+| **部署**   | 本地               | ⚠️ 需完善   |
 
 ---
 
@@ -25,11 +25,11 @@
 
 ### 1. 关注点分离 ✅
 
-| 原则 | 当前实现 | 评分 |
-|------|----------|------|
-| 内容/样式/行为分离 | Astro + Tailwind | ⭐⭐⭐⭐⭐ |
+| 原则               | 当前实现                 | 评分       |
+| ------------------ | ------------------------ | ---------- |
+| 内容/样式/行为分离 | Astro + Tailwind         | ⭐⭐⭐⭐⭐ |
 | 布局/页面/组件分离 | layouts/pages/components | ⭐⭐⭐⭐⭐ |
-| 转换脚本独立 | scripts/目录 | ⭐⭐⭐⭐⭐ |
+| 转换脚本独立       | scripts/目录             | ⭐⭐⭐⭐⭐ |
 
 **建议**: 保持当前架构，已经很清晰。
 
@@ -37,11 +37,11 @@
 
 ### 2. AI 优先 ❌
 
-| 原则 | 当前实现 | 评分 | 改进建议 |
-|------|----------|------|----------|
-| AI 特定能力抽象 | 无 | ⭐ | 集成 AI 标注 |
-| 多模型支持 | 无 | ⭐ | 支持多 LLM |
-| 知识库建设 | 无 | ⭐ | 向量化存储 |
+| 原则            | 当前实现 | 评分 | 改进建议     |
+| --------------- | -------- | ---- | ------------ |
+| AI 特定能力抽象 | 无       | ⭐   | 集成 AI 标注 |
+| 多模型支持      | 无       | ⭐   | 支持多 LLM   |
+| 知识库建设      | 无       | ⭐   | 向量化存储   |
 
 **改进建议**:
 
@@ -67,12 +67,12 @@
 
 ### 3. 工程化落地 ⚠️
 
-| 原则 | 当前实现 | 评分 | 改进建议 |
-|------|----------|------|----------|
-| 批量转换 | 脚本已写 | ⭐⭐⭐⭐ | 增加进度条和错误处理 |
-| 质量控制 | 无 | ⭐ | 添加校验和测试 |
-| 文档完善 | 有 README | ⭐⭐⭐⭐ | 添加 API 文档 |
-| CI/CD | 无 | ⭐ | 添加 GitHub Actions |
+| 原则     | 当前实现  | 评分     | 改进建议             |
+| -------- | --------- | -------- | -------------------- |
+| 批量转换 | 脚本已写  | ⭐⭐⭐⭐ | 增加进度条和错误处理 |
+| 质量控制 | 无        | ⭐       | 添加校验和测试       |
+| 文档完善 | 有 README | ⭐⭐⭐⭐ | 添加 API 文档        |
+| CI/CD    | 无        | ⭐       | 添加 GitHub Actions  |
 
 **改进建议**:
 
@@ -95,12 +95,12 @@ jobs:
 
 ### 4. 可观测性内建 ❌
 
-| 原则 | 当前实现 | 评分 | 改进建议 |
-|------|----------|------|----------|
-| 日志记录 | 无 | ⭐ | 添加转换日志 |
-| 错误追踪 | 无 | ⭐ | 添加错误报告 |
-| 性能监控 | 无 | ⭐ | 添加性能指标 |
-| 审计日志 | 无 | ⭐ | 记录用户行为 |
+| 原则     | 当前实现 | 评分 | 改进建议     |
+| -------- | -------- | ---- | ------------ |
+| 日志记录 | 无       | ⭐   | 添加转换日志 |
+| 错误追踪 | 无       | ⭐   | 添加错误报告 |
+| 性能监控 | 无       | ⭐   | 添加性能指标 |
+| 审计日志 | 无       | ⭐   | 记录用户行为 |
 
 **改进建议**:
 
@@ -120,7 +120,7 @@ export const logger = {
   progress: (current, total, item) => {
     const percent = ((current / total) * 100).toFixed(1);
     console.log(`[PROGRESS] ${percent}% - ${item}`);
-  }
+  },
 };
 ```
 
@@ -130,27 +130,27 @@ export const logger = {
 
 ### P0 - 必须改进
 
-| 任务 | 工作量 | 说明 |
-|------|--------|------|
-| **1. AI 标注集成** | 8h | 人物/地名/典故识别 |
-| **2. 全文搜索** | 6h | FlexSearch 集成 |
-| **3. 转换日志** | 2h | 记录转换过程和错误 |
+| 任务               | 工作量 | 说明               |
+| ------------------ | ------ | ------------------ |
+| **1. AI 标注集成** | 8h     | 人物/地名/典故识别 |
+| **2. 全文搜索**    | 6h     | FlexSearch 集成    |
+| **3. 转换日志**    | 2h     | 记录转换过程和错误 |
 
 ### P1 - 应该改进
 
-| 任务 | 工作量 | 说明 |
-|------|--------|------|
-| **4. CI/CD** | 4h | GitHub Actions 配置 |
-| **5. 错误处理** | 4h | 转换脚本错误恢复 |
-| **6. 质量检查** | 4h | Markdown 格式校验 |
+| 任务            | 工作量 | 说明                |
+| --------------- | ------ | ------------------- |
+| **4. CI/CD**    | 4h     | GitHub Actions 配置 |
+| **5. 错误处理** | 4h     | 转换脚本错误恢复    |
+| **6. 质量检查** | 4h     | Markdown 格式校验   |
 
 ### P2 - 可以改进
 
-| 任务 | 工作量 | 说明 |
-|------|--------|------|
-| **7. 性能监控** | 4h | 页面加载时间监控 |
-| **8. 用户行为分析** | 4h | 阅读习惯统计 |
-| **9. API 文档** | 2h | 技术文档完善 |
+| 任务                | 工作量 | 说明             |
+| ------------------- | ------ | ---------------- |
+| **7. 性能监控**     | 4h     | 页面加载时间监控 |
+| **8. 用户行为分析** | 4h     | 阅读习惯统计     |
+| **9. API 文档**     | 2h     | 技术文档完善     |
 
 ---
 
@@ -215,7 +215,7 @@ export const searchIndex = new FlexSearch.Document({
 
 // 构建索引
 export async function buildIndex(posts) {
-  posts.forEach(post => {
+  posts.forEach((post) => {
     searchIndex.add({
       id: post.id,
       title: post.title,
@@ -258,7 +258,7 @@ export async function annotate(text) {
     }),
     prompt: `请标注以下古籍文本中的人物、地名、典故、时间：\n\n${text}`,
   });
-  
+
   return object;
 }
 ```
@@ -280,11 +280,13 @@ const client = new QdrantClient({
 // 存储文本块
 export async function storeEmbedding(id, text, embedding) {
   await client.upsert('guji-texts', {
-    points: [{
-      id,
-      vector: embedding,
-      payload: { text, created_at: new Date().toISOString() },
-    }],
+    points: [
+      {
+        id,
+        vector: embedding,
+        payload: { text, created_at: new Date().toISOString() },
+      },
+    ],
   });
 }
 
@@ -316,18 +318,18 @@ export const logger = {
     await appendFile(CONVERT_LOG, line);
     console.log(line.trim());
   },
-  
+
   async error(msg, error) {
     const line = `[${new Date().toISOString()}] [ERROR] ${msg}\n${error.stack}\n`;
     await appendFile(ERROR_LOG, line);
     console.error(line.trim());
   },
-  
+
   async progress(current, total, item) {
     const percent = ((current / total) * 100).toFixed(1);
     const msg = `[PROGRESS] ${percent}% (${current}/${total}) - ${item}`;
     await this.info(msg);
-  }
+  },
 };
 ```
 

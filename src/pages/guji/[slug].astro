@@ -11,7 +11,7 @@ export async function getStaticPaths() {
   const gujiData = {
     'zhong-yong': { title: '中庸', section: '经部' },
   };
-  
+
   return Object.entries(gujiData).map(([slug, data]) => ({
     params: { slug },
     props: { data },
@@ -108,27 +108,59 @@ const template = new URL(Astro.request.url).searchParams.get('template') || 'cla
         <!-- 阅读工具栏 -->
         <div class="mt-8 pt-6 border-t border-juanbo-200 flex items-center justify-between">
           <div class="flex items-center space-x-4">
-            <button class="px-4 py-2 bg-xuanzhi-100 hover:bg-xuanzhi-200 text-mo-600 rounded-lg transition-colors">
+            <button
+              class="px-4 py-2 bg-xuanzhi-100 hover:bg-xuanzhi-200 text-mo-600 rounded-lg transition-colors"
+            >
               ← 上一章
             </button>
-            <button class="px-4 py-2 bg-xuanzhi-100 hover:bg-xuanzhi-200 text-mo-600 rounded-lg transition-colors">
+            <button
+              class="px-4 py-2 bg-xuanzhi-100 hover:bg-xuanzhi-200 text-mo-600 rounded-lg transition-colors"
+            >
               下一章 →
             </button>
           </div>
           <div class="flex items-center space-x-2">
             <button class="p-2 hover:bg-xuanzhi-100 rounded" title="调整字号">
-              <svg class="w-5 h-5 text-mo-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16m-7 6h7" />
+              <svg
+                class="w-5 h-5 text-mo-400"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  stroke-width="2"
+                  d="M4 6h16M4 12h16m-7 6h7"></path>
               </svg>
             </button>
             <button class="p-2 hover:bg-xuanzhi-100 rounded" title="夜间模式">
-              <svg class="w-5 h-5 text-mo-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z" />
+              <svg
+                class="w-5 h-5 text-mo-400"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  stroke-width="2"
+                  d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z"
+                ></path>
               </svg>
             </button>
             <button class="p-2 hover:bg-xuanzhi-100 rounded" title="加入书签">
-              <svg class="w-5 h-5 text-mo-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 5a2 2 0 012-2h10a2 2 0 012 2v16l-7-3.57L5 21V5z" />
+              <svg
+                class="w-5 h-5 text-mo-400"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  stroke-width="2"
+                  d="M5 5a2 2 0 012-2h10a2 2 0 012 2v16l-7-3.57L5 21V5z"></path>
               </svg>
             </button>
           </div>
@@ -140,34 +172,57 @@ const template = new URL(Astro.request.url).searchParams.get('template') || 'cla
     <aside class="lg:col-span-1">
       <div class="bg-white rounded-xl shadow-lg p-6 border border-juanbo-200 sticky top-24">
         <h3 class="text-lg font-bold text-mo-600 mb-4 flex items-center">
-          <svg class="w-5 h-5 mr-2 text-zhusha-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+          <svg
+            class="w-5 h-5 mr-2 text-zhusha-500"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+          >
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"
+            ></path>
           </svg>
           智能标注
         </h3>
         <div class="space-y-3">
-          {data.annotations.map((anno) => (
-            <div class="p-3 bg-xuanzhi-50 rounded-lg border border-juanbo-200">
-              <div class="flex items-center justify-between mb-1">
-                <span class="font-bold text-mo-600">{anno.term}</span>
-                <span class={`text-xs px-2 py-0.5 rounded ${
-                  anno.type === 'philosophy' ? 'bg-blue-100 text-blue-600' :
-                  anno.type === 'person' ? 'bg-green-100 text-green-600' :
-                  'bg-purple-100 text-purple-600'
-                }`}>
-                  {anno.type === 'philosophy' ? '哲学' : anno.type === 'person' ? '人物' : '概念'}
-                </span>
+          {
+            data.annotations.map((anno) => (
+              <div class="p-3 bg-xuanzhi-50 rounded-lg border border-juanbo-200">
+                <div class="flex items-center justify-between mb-1">
+                  <span class="font-bold text-mo-600">{anno.term}</span>
+                  <span
+                    class={`text-xs px-2 py-0.5 rounded ${
+                      anno.type === 'philosophy'
+                        ? 'bg-blue-100 text-blue-600'
+                        : anno.type === 'person'
+                          ? 'bg-green-100 text-green-600'
+                          : 'bg-purple-100 text-purple-600'
+                    }`}
+                  >
+                    {anno.type === 'philosophy' ? '哲学' : anno.type === 'person' ? '人物' : '概念'}
+                  </span>
+                </div>
+                <p class="text-sm text-mo-400">{anno.note}</p>
               </div>
-              <p class="text-sm text-mo-400">{anno.note}</p>
-            </div>
-          ))}
+            ))
+          }
         </div>
 
         <!-- AI 助手入口 -->
         <div class="mt-6 pt-6 border-t border-juanbo-200">
-          <button class="w-full py-3 bg-gradient-to-r from-zhusha-500 to-zhusha-600 text-white rounded-lg hover:from-zhusha-600 hover:to-zhusha-700 transition-all flex items-center justify-center">
+          <button
+            class="w-full py-3 bg-gradient-to-r from-zhusha-500 to-zhusha-600 text-white rounded-lg hover:from-zhusha-600 hover:to-zhusha-700 transition-all flex items-center justify-center"
+          >
             <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z" />
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z"
+              ></path>
             </svg>
             向 AI 提问
           </button>

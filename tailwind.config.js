@@ -5,7 +5,7 @@ export default {
     extend: {
       colors: {
         // 中国传统色
-        'xuanzhi': {
+        xuanzhi: {
           50: '#FEFDFB',
           100: '#F7F5F0',
           200: '#EFEBE1',
@@ -13,7 +13,7 @@ export default {
           400: '#C8B898',
           500: '#A89878',
         },
-        'mo': {
+        mo: {
           50: '#F5F5F5',
           100: '#E5E5E5',
           200: '#CCCCCC',
@@ -23,7 +23,7 @@ export default {
           600: '#1A1A1A',
           700: '#0D0D0D',
         },
-        'zhusha': {
+        zhusha: {
           50: '#FEF5F5',
           100: '#FDE8E8',
           200: '#FAC8C8',
@@ -33,7 +33,7 @@ export default {
           600: '#A02828',
           700: '#802020',
         },
-        'juanbo': {
+        juanbo: {
           50: '#FEFEFB',
           100: '#F9F8F0',
           200: '#F0EDD8',
@@ -43,11 +43,11 @@ export default {
         },
       },
       fontFamily: {
-        'song': ['Noto Serif SC', 'Source Han Serif SC', 'STSong', 'SimSun', 'serif'],
-        'kai': ['Noto Serif SC', 'STKaiti', 'KaiTi', 'serif'],
-        'hei': ['Noto Sans SC', 'Source Han Sans SC', 'STHeiti', 'sans-serif'],
+        song: ['Noto Serif SC', 'Source Han Serif SC', 'STSong', 'SimSun', 'serif'],
+        kai: ['Noto Serif SC', 'STKaiti', 'KaiTi', 'serif'],
+        hei: ['Noto Sans SC', 'Source Han Sans SC', 'STHeiti', 'sans-serif'],
       },
     },
   },
   plugins: [],
-}
+};

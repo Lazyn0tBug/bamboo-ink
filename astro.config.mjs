@@ -5,11 +5,11 @@ export default defineConfig({
   integrations: [tailwind()],
   output: 'static',
   build: {
-    format: 'file'
+    format: 'file',
   },
   vite: {
     build: {
-      assetsInlineLimit: 0
-    }
-  }
+      assetsInlineLimit: 0,
+    },
+  },
 });
