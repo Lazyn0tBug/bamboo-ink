@@ -1,6 +1,8 @@
 @import 'tailwindcss';
 
-/* 自定义主题配置 - Tailwind v4 CSS variables */
+/* ========================================
+   Tailwind v4 Theme - 中国传统色 + 语义化变量
+   ======================================== */
 @theme {
   /* 中国传统色 - OKLCH 颜色空间 */
   --color-xuanzhi-50: oklch(98% 0.01 90);
@@ -58,260 +60,256 @@
   --font-yuan: 'Yuanti SC', 'STYuanti', 'Yuanti', 'Noto Serif CJK SC', serif;
   --font-song: 'Noto Serif SC', 'Source Han Serif SC', 'STSong', 'SimSun', serif;
   --font-hei: 'Noto Sans SC', 'Source Han Sans SC', 'STHeiti', sans-serif;
+
+  /* 语义化主题颜色 - 映射到 CSS 变量 */
+  --color-background: var(--bg-primary);
+  --color-surface: var(--bg-secondary);
+  --color-surface-elevated: var(--bg-elevated);
+  --color-text: var(--text-primary);
+  --color-text-secondary: var(--text-secondary);
+  --color-text-tertiary: var(--text-tertiary);
+  --color-border: var(--border-primary);
+  --color-border-secondary: var(--border-secondary);
+  --color-accent: var(--accent-primary);
 }
 
-/* Tailwind v4 明暗主题变体 - 使用 data-attribute */
+/* ========================================
+   Tailwind v4 明暗主题变体
+   ======================================== */
 @variant dark (&:where([data-theme="dark"], [data-theme="dark"] *));
 
-/* 中国传统色 CSS 变量 - 明暗主题通用 */
+/* ========================================
+   语义化主题变量 - 亮色主题 (默认)
+   ======================================== */
 :root {
-  --xuanzhi-50: oklch(98% 0.01 90);
-  --xuanzhi-100: oklch(96% 0.015 85);
-  --xuanzhi-200: oklch(93% 0.02 80);
-  --xuanzhi-300: oklch(88% 0.025 75);
-  --xuanzhi-400: oklch(78% 0.035 70);
-  --xuanzhi-500: oklch(65% 0.045 65);
+  /* 背景色 */
+  --bg-primary: oklch(96% 0.015 85); /* 宣纸主背景 */
+  --bg-secondary: oklch(100% 0 0); /* 纯白卡片背景 */
+  --bg-tertiary: oklch(98% 0.01 90); /* 浅色区域 */
+  --bg-elevated: oklch(100% 0 0); /* 浮层/弹窗 */
 
-  --mo-50: oklch(96% 0.01 260);
-  --mo-100: oklch(90% 0.015 260);
-  --mo-200: oklch(80% 0.02 260);
-  --mo-300: oklch(65% 0.025 260);
-  --mo-400: oklch(35% 0.03 260);
-  --mo-500: oklch(18% 0.035 260);
-  --mo-600: oklch(10% 0.04 260);
-  --mo-700: oklch(5% 0.045 260);
+  /* 文字色 */
+  --text-primary: oklch(10% 0.04 260); /* 浓墨正文 */
+  --text-secondary: oklch(35% 0.03 260); /* 次要文字 */
+  --text-tertiary: oklch(65% 0.025 260); /* 辅助文字 */
+  --text-inverse: oklch(100% 0 0); /* 反白文字 */
 
-  --zhusha-50: oklch(97% 0.02 25);
-  --zhusha-100: oklch(94% 0.035 25);
-  --zhusha-200: oklch(85% 0.06 25);
-  --zhusha-300: oklch(70% 0.12 25);
-  --zhusha-400: oklch(58% 0.18 25);
-  --zhusha-500: oklch(48% 0.22 25);
-  --zhusha-600: oklch(40% 0.24 25);
-  --zhusha-700: oklch(32% 0.26 25);
+  /* 边框色 */
+  --border-primary: oklch(88% 0.025 75); /* 绢帛边框 */
+  --border-secondary: oklch(80% 0.02 260); /* 细边框 */
+  --border-focus: oklch(48% 0.22 25); /* 焦点边框 */
 
-  --juanbo-50: oklch(98% 0.008 95);
-  --juanbo-100: oklch(96% 0.012 90);
-  --juanbo-200: oklch(92% 0.02 85);
-  --juanbo-300: oklch(88% 0.025 80);
-  --juanbo-400: oklch(78% 0.035 75);
-  --juanbo-500: oklch(65% 0.045 70);
+  /* 品牌色 */
+  --accent-primary: oklch(48% 0.22 25); /* 朱砂主色 */
+  --accent-secondary: oklch(58% 0.18 25); /* 朱砂浅色 */
 
-  --dai-50: oklch(97% 0.015 220);
-  --dai-100: oklch(92% 0.025 220);
-  --dai-200: oklch(82% 0.04 220);
-  --dai-300: oklch(68% 0.08 220);
-  --dai-400: oklch(52% 0.14 220);
-  --dai-500: oklch(42% 0.18 220);
-  --dai-600: oklch(35% 0.22 220);
-
-  --zhu-50: oklch(96% 0.02 30);
-  --zhu-100: oklch(90% 0.04 30);
-  --zhu-200: oklch(80% 0.08 30);
-  --zhu-300: oklch(65% 0.14 30);
-  --zhu-400: oklch(52% 0.2 30);
-  --zhu-500: oklch(45% 0.24 30);
+  /* 阴影 */
+  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.05);
+  --shadow-md: 0 4px 6px rgba(0, 0, 0, 0.07);
+  --shadow-lg: 0 10px 15px rgba(0, 0, 0, 0.1);
 }
 
-/* 应用模板样式 */
-html[data-theme='light'] body {
-  background-color: white;
-}
-html[data-theme='dark'] body {
-  background-color: oklch(18% 0.02 260);
+/* ========================================
+   语义化主题变量 - 暗色主题
+   ======================================== */
+:root[data-theme='dark'] {
+  /* 背景色 */
+  --bg-primary: oklch(18% 0.02 260); /* 深色主背景 */
+  --bg-secondary: oklch(24% 0.025 260); /* 卡片背景 */
+  --bg-tertiary: oklch(26% 0.03 260); /* 浅色区域 */
+  --bg-elevated: oklch(28% 0.03 260); /* 浮层/弹窗 */
+
+  /* 文字色 */
+  --text-primary: oklch(85% 0.02 260); /* 浅色正文 */
+  --text-secondary: oklch(70% 0.025 260); /* 次要文字 */
+  --text-tertiary: oklch(55% 0.03 260); /* 辅助文字 */
+  --text-inverse: oklch(10% 0.04 260); /* 反白文字 */
+
+  /* 边框色 */
+  --border-primary: oklch(35% 0.03 260); /* 深色边框 */
+  --border-secondary: oklch(30% 0.025 260);
+  --border-focus: oklch(58% 0.18 25); /* 焦点边框 */
+
+  /* 品牌色 */
+  --accent-primary: oklch(58% 0.18 25); /* 朱砂浅色 */
+  --accent-secondary: oklch(70% 0.12 25); /* 朱砂更浅 */
+
+  /* 阴影 (暗色主题需要更柔和的阴影) */
+  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.2);
+  --shadow-md: 0 4px 6px rgba(0, 0, 0, 0.3);
+  --shadow-lg: 0 10px 15px rgba(0, 0, 0, 0.4);
 }
 
-body {
-  transition: background-color 0.3s ease;
+/* ========================================
+   @layer base - 全局基础样式
+   ======================================== */
+@layer base {
+  /* 全局过渡效果 */
+  body {
+    background-color: var(--bg-primary);
+    color: var(--text-primary);
+    transition:
+      background-color 0.3s ease,
+      color 0.3s ease;
+  }
+
+  /* 导航栏 */
+  .template-nav {
+    background-color: var(--bg-secondary);
+    border-color: var(--border-primary);
+    transition:
+      background-color 0.3s ease,
+      border-color 0.3s ease;
+  }
+
+  /* 卡片组件 */
+  article,
+  .card-bg {
+    background-color: var(--bg-secondary);
+    border-color: var(--border-primary);
+    box-shadow: var(--shadow-md);
+    transition:
+      background-color 0.3s ease,
+      border-color 0.3s ease,
+      box-shadow 0.3s ease;
+  }
+
+  /* 边框 */
+  .layout-border {
+    border-color: var(--border-primary);
+    transition: border-color 0.3s ease;
+  }
+
+  /* 纹样显示/隐藏 */
+  .layout-pattern {
+    transition: opacity 0.3s ease;
+  }
+  [data-template='classic'] .layout-pattern,
+  [data-template='deluxe'] .layout-pattern {
+    display: block;
+    opacity: 0.05;
+  }
+  [data-template='simple'] .layout-pattern {
+    display: none;
+    opacity: 0;
+  }
+
+  /* 输入框 */
+  input,
+  select,
+  textarea {
+    background-color: var(--bg-secondary);
+    color: var(--text-primary);
+    border-color: var(--border-secondary);
+    transition:
+      background-color 0.3s ease,
+      border-color 0.3s ease,
+      color 0.3s ease;
+  }
+  input:focus,
+  select:focus,
+  textarea:focus {
+    border-color: var(--border-focus);
+    outline: none;
+    box-shadow: 0 0 0 2px var(--accent-primary);
+  }
 }
 
-/* 导航背景 */
-.template-nav {
-  transition: background-color 0.3s ease;
-}
-html[data-theme='light'] .template-nav {
-  background-color: rgba(254, 253, 251, 0.9);
-}
-html[data-theme='dark'] .template-nav {
-  background-color: rgba(30, 30, 30, 0.9);
+/* ========================================
+   @layer components - 组件样式
+   ======================================== */
+@layer components {
+  /* 书法字体类 */
+  .font-kai {
+    font-family: var(--font-kai);
+  }
+  .font-li {
+    font-family: var(--font-li);
+  }
+  .font-zhuan {
+    font-family: var(--font-zhuan);
+  }
+  .font-wei {
+    font-family: var(--font-wei);
+  }
+  .font-yuan {
+    font-family: var(--font-yuan);
+  }
+  .font-song {
+    font-family: var(--font-song);
+  }
+  .font-hei {
+    font-family: var(--font-hei);
+  }
+
+  /* 古籍文本样式 */
+  .guji-text {
+    font-family: var(--font-kai);
+    font-size: 18px;
+    line-height: 2.2;
+  }
+  .guji-text p {
+    margin-bottom: 1.5rem;
+    text-indent: 2em;
+  }
+  .guji-text h3 {
+    margin-top: 2rem;
+  }
+  .guji-title {
+    font-family: var(--font-li);
+  }
+
+  /* 宣纸纹理效果 */
+  .xuanzhi-texture {
+    background-image: url("data:image/svg+xml,%3Csvg width='100' height='100' viewBox='0 0 100 100' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100' height='100' filter='url(%23noise)' opacity='0.08'/%3E%3C/svg%3E");
+  }
+
+  /* 浓墨文字效果 */
+  .mo-text {
+    color: var(--mo-600);
+    text-shadow: 0 0 1px rgba(0, 0, 0, 0.1);
+  }
+
+  /* 朱砂印章效果 */
+  .zhusha-seal {
+    background-color: var(--zhusha-500);
+    color: white;
+    border: 2px solid var(--zhusha-600);
+    border-radius: 4px;
+    padding: 4px 8px;
+    font-family: var(--font-zhuan);
+    display: inline-block;
+  }
+
+  /* 绢帛边框效果 */
+  .juanbo-border {
+    border: 3px double var(--juanbo-400);
+    background: linear-gradient(135deg, rgba(249, 248, 240, 0.5), rgba(240, 237, 216, 0.3));
+  }
+
+  /* 黛色边框 */
+  .dai-border {
+    border: 2px solid var(--dai-400);
+  }
+
+  /* 赭色装饰 */
+  .zhu-accent {
+    color: var(--zhu-500);
+  }
 }
 
-/* 卡片背景 */
-.card-bg {
-  background-color: white;
-  transition: background-color 0.3s ease;
-}
-html[data-theme='dark'] .card-bg {
-  background-color: oklch(24% 0.025 260);
-}
-
-/* 边框颜色 */
-.layout-border {
-  transition: border-color 0.3s ease;
-}
-[data-template='classic'] .layout-border {
-  border-color: var(--juanbo-300);
-}
-[data-template='simple'] .layout-border {
-  border-color: var(--mo-200);
-}
-[data-template='deluxe'] .layout-border {
-  border-color: var(--zhusha-300);
-}
-html[data-theme='dark'][data-template='classic'] .layout-border {
-  border-color: oklch(35% 0.03 260);
-}
-html[data-theme='dark'][data-template='simple'] .layout-border {
-  border-color: oklch(35% 0.03 260);
-}
-html[data-theme='dark'][data-template='deluxe'] .layout-border {
-  border-color: oklch(40% 0.04 260);
-}
-
-/* 纹样显示 */
-.layout-pattern {
-  transition: opacity 0.3s ease;
-}
-[data-template='classic'] .layout-pattern,
-[data-template='deluxe'] .layout-pattern {
-  display: block;
-  opacity: 0.05;
-}
-[data-template='simple'] .layout-pattern {
-  display: none;
-  opacity: 0;
-}
-
-/* 卡片和导航背景 */
-.card-bg {
-  background-color: white;
-  transition: background-color 0.3s ease;
-}
-[data-theme='dark'] .card-bg {
-  background-color: oklch(24% 0.025 260);
-}
-
-.nav-bg {
-  background-color: rgba(254, 253, 251, 0.9);
-  transition: background-color 0.3s ease;
-}
-[data-theme='dark'] .nav-bg {
-  background-color: rgba(30, 30, 30, 0.9);
-}
-
-/* 边框颜色 */
-.layout-border {
-  transition: border-color 0.3s ease;
-}
-[data-template='classic'] .layout-border {
-  border-color: var(--juanbo-300);
-}
-[data-template='simple'] .layout-border {
-  border-color: var(--mo-200);
-}
-[data-template='deluxe'] .layout-border {
-  border-color: var(--zhusha-300);
-}
-[data-theme='dark'][data-template='classic'] .layout-border {
-  border-color: oklch(35% 0.03 260);
-}
-[data-theme='dark'][data-template='simple'] .layout-border {
-  border-color: oklch(35% 0.03 260);
-}
-[data-theme='dark'][data-template='deluxe'] .layout-border {
-  border-color: oklch(40% 0.04 260);
-}
-
-/* 纹样显示 */
-.layout-pattern {
-  transition: opacity 0.3s ease;
-}
-[data-template='classic'] .layout-pattern,
-[data-template='deluxe'] .layout-pattern {
-  display: block;
-  opacity: 0.05;
-}
-[data-template='simple'] .layout-pattern {
-  display: none;
-  opacity: 0;
-}
-
-/* 书法字体类 */
-.font-kai {
-  font-family: var(--font-kai);
-}
-
-.font-li {
-  font-family: var(--font-li);
-}
-
-.font-zhuan {
-  font-family: var(--font-zhuan);
-}
-
-.font-wei {
-  font-family: var(--font-wei);
-}
-
-.font-yuan {
-  font-family: var(--font-yuan);
-}
-
-/* 古籍文本样式 */
-.guji-text {
-  font-family: var(--font-kai);
-  font-size: 18px;
-  line-height: 2.2;
-}
-
-.guji-text p {
-  margin-bottom: 1.5rem;
-  text-indent: 2em;
-}
-
-.guji-text h3 {
-  margin-top: 2rem;
-}
-
-/* 标题使用隶书 */
-.guji-title {
-  font-family: var(--font-li);
-}
-
-/* 宣纸纹理效果 */
-.xuanzhi-texture {
-  background-image: url("data:image/svg+xml,%3Csvg width='100' height='100' viewBox='0 0 100 100' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100' height='100' filter='url(%23noise)' opacity='0.08'/%3E%3C/svg%3E");
-}
-
-/* 浓墨文字效果 */
-.mo-text {
-  color: var(--mo-600);
-  text-shadow: 0 0 1px rgba(0, 0, 0, 0.1);
-}
-
-/* 朱砂印章效果 */
-.zhusha-seal {
-  background-color: var(--zhusha-500);
-  color: white;
-  border: 2px solid var(--zhusha-600);
-  border-radius: 4px;
-  padding: 4px 8px;
-  font-family: var(--font-zhuan);
-  display: inline-block;
-}
-
-/* 绢帛边框效果 */
-.juanbo-border {
-  border: 3px double var(--juanbo-400);
-  background: linear-gradient(135deg, rgba(249, 248, 240, 0.5), rgba(240, 237, 216, 0.3));
-}
-
-/* 黛色边框 */
-.dai-border {
-  border: 2px solid var(--dai-400);
-}
-
-/* 赭色装饰 */
-.zhu-accent {
-  color: var(--zhu-500);
+/* ========================================
+   @layer utilities - 工具类
+   ======================================== */
+@layer utilities {
+  /* 模板特定边框 */
+  [data-template='classic'] .layout-border {
+    border-color: var(--juanbo-300);
+  }
+  [data-template='simple'] .layout-border {
+    border-color: var(--mo-200);
+  }
+  [data-template='deluxe'] .layout-border {
+    border-color: var(--zhusha-300);
+  }
 }
