@@ -19,7 +19,7 @@ const { title } = Astro.props;
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link
-      href="https://fonts.googleapis.com/css2?family=Noto+Serif+SC:wght@300;400;500;600;700&display=swap"
+      href="https://fonts.googleapis.com/css2?family=Noto+Serif+SC:wght@300;400;500;600;700&family=Ma+Shan+Zheng&family=ZCOOL+KuaiLe&display=swap"
       rel="stylesheet"
     />
     <title>{title} - 古籍图书馆</title>
@@ -65,7 +65,7 @@ const { title } = Astro.props;
       }
     </style>
   </head>
-  <body class="min-h-screen font-song text-mo-500">
+  <body class="min-h-screen font-kai text-mo-500">
     <!-- 宣纸纹理背景（仅 classic 和 deluxe 模板） -->
     <div class="xuanzhi-texture fixed inset-0 pointer-events-none z-0 layout-pattern"></div>
 
@@ -76,12 +76,14 @@ const { title } = Astro.props;
       <div class="max-w-6xl mx-auto px-4 py-3">
         <div class="flex items-center justify-between">
           <a href="/" class="flex items-center space-x-3">
-            <div class="w-10 h-10 bg-zhusha-500 rounded-lg flex items-center justify-center">
-              <span class="text-white text-xl font-bold">古</span>
+            <div
+              class="w-10 h-10 bg-zhusha-500 rounded-lg flex items-center justify-center font-li"
+            >
+              <span class="text-white text-2xl">古</span>
             </div>
             <div>
-              <h1 class="text-lg font-bold text-mo-600">古籍图书馆</h1>
-              <p class="text-xs text-mo-400">Classic Library</p>
+              <h1 class="text-lg font-bold text-mo-600 font-li">古籍图书馆</h1>
+              <p class="text-xs text-mo-400 font-song">Classic Library</p>
             </div>
           </a>
 
