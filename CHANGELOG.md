@@ -10,15 +10,15 @@
 ## [Unreleased]
 
 ### Updated
-- 升级 Astro 4.x → 5.1.0
-- 升级 Tailwind CSS 3.x → 4.0.0
-- 升级 @astrojs/tailwind 5.x → 6.0.0
+- 降级 Astro 5.x → 4.16.19 (稳定版)
+- 使用 Tailwind CSS 3.4.19 (稳定版)
+- 使用 @astrojs/tailwind 5.1.5
 - 升级 cheerio 1.0.0-rc.12 → 1.0.0
 - 升级 turndown 7.1.2 → 7.2.0
 
 ### Changed
-- Tailwind CSS v4 配置迁移到 CSS 文件
-- 使用新的 `@theme` 指令定义自定义颜色和字体
+- 修复 CSS 配置为 Tailwind v3 语法
+- 移除不兼容的 @tailwindcss/postcss
 
 ---
 
