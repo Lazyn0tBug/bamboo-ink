@@ -1,9 +1,29 @@
 ---
 import BaseLayout from '../../layouts/BaseLayout.astro';
+import { z } from 'astro/zod';
 
 interface Props {
   slug: string;
+  data: GujiData;
 }
+
+// 数据验证 Schema
+const GujiAnnotationSchema = z.object({
+  term: z.string(),
+  note: z.string(),
+  type: z.enum(['philosophy', 'person', 'concept', 'place', 'event']),
+});
+
+const GujiDataSchema = z.object({
+  title: z.string(),
+  section: z.string(),
+  author: z.string(),
+  description: z.string(),
+  content: z.string(),
+  annotations: z.array(GujiAnnotationSchema).default([]),
+});
+
+type GujiData = z.infer<typeof GujiDataSchema>;
 
 const { slug } = Astro.props;
 
@@ -19,7 +39,7 @@ export async function getStaticPaths() {
 }
 
 // 示例数据 - 实际会从 Markdown 文件读取
-const gujiData = {
+const gujiDataRaw = {
   'zhong-yong': {
     title: '中庸',
     section: '经部',
@@ -34,66 +54,84 @@ const gujiData = {
           <p class="mb-4 leading-loose">
             <span class="text-mo-600">天命之谓性，率性之谓道，修道之谓教。</span>
           </p>
-          <p class="mb-4 leading-loose">
-            <span class="text-mo-600">道也者，不可须臾离也；可离，非道也。是故君子戒慎乎其所不睹，恐惧乎其所不闻。</span>
-          </p>
-          <p class="mb-4 leading-loose">
-            <span class="text-mo-600">莫见乎隐，莫显乎微，故君子慎其独也。</span>
-          </p>
-          <p class="mb-4 leading-loose">
-            <span class="text-mo-600">喜怒哀乐之未发，谓之中；发而皆中节，谓之和。中也者，天下之大本也；和也者，天下之达道也。</span>
-          </p>
-          <p class="mb-4 leading-loose">
-            <span class="text-mo-600">致中和，天地位焉，万物育焉。</span>
-          </p>
-        </div>
-
-        <div class="chapter mb-8">
-          <h3 class="text-xl font-bold text-zhusha-500 mb-4">第二章</h3>
-          <p class="mb-4 leading-loose">
-            <span class="text-mo-600">仲尼曰：「君子中庸，小人反中庸。」</span>
-          </p>
-          <p class="mb-4 leading-loose">
-            <span class="text-mo-600">君子之中庸也，君子而时中；小人之中庸也，小人而无忌惮也。</span>
-          </p>
         </div>
       </div>
     `,
     annotations: [
       { term: '天命', note: '上天赋予的本性', type: 'philosophy' },
       { term: '性', note: '人的本性、天性', type: 'philosophy' },
-      { term: '道', note: '人生应遵循的正确道路', type: 'philosophy' },
-      { term: '君子', note: '有德行的人', type: 'person' },
-      { term: '慎独', note: '在独处时也要谨慎自律', type: 'concept' },
     ],
   },
 };
 
-const data = gujiData[slug as keyof typeof gujiData] || gujiData['zhong-yong'];
+// 数据验证与错误处理
+let data: GujiData | null = null;
+
+try {
+  const rawData = gujiDataRaw[slug as keyof typeof gujiDataRaw];
+  
+  if (!rawData) {
+    // 数据不存在，返回 404
+    return Astro.redirect('/404');
+  }
+
+  // 验证数据结构
+  const validated = GujiDataSchema.safeParse(rawData);
+  
+  if (!validated.success) {
+    // 数据验证失败
+    console.error('[Guji Page] Validation error:', validated.error.message);
+    return Astro.redirect('/404');
+  }
+
+  data = validated.data;
+} catch (e) {
+  // 未知错误处理
+  const error = e instanceof Error ? e : new Error('未知错误');
+  console.error('[Guji Page] Unexpected error:', error);
+  return Astro.redirect('/404');
+}
+
+// 最终检查：确保数据存在
+if (!data) {
+  console.error('[Guji Page] Data not found after validation:', slug);
+  return Astro.redirect('/404');
+}
+
 const template = new URL(Astro.request.url).searchParams.get('template') || 'classic';
 ---
 
 <BaseLayout title={data.title} template={template as 'classic' | 'simple' | 'deluxe'}>
   <!-- 面包屑导航 -->
-  <nav class="mb-6">
-    <ol class="flex items-center space-x-2 text-sm text-mo-400">
-      <li><a href="/" class="hover:text-zhusha-500">首页</a></li>
+  <nav class="mb-6" aria-label="面包屑导航">
+    <ol class="flex items-center space-x-2 text-sm text-text-secondary" itemscope itemtype="https://schema.org/BreadcrumbList">
+      <li itemprop="itemListElement" itemscope itemtype="https://schema.org/ListItem">
+        <a href="/" class="hover:text-accent" itemprop="item">
+          <span itemprop="name">首页</span>
+        </a>
+        <meta itemprop="position" content="1" />
+      </li>
       <li>/</li>
-      <li><a href={`/${data.section}`} class="hover:text-zhusha-500">{data.section}</a></li>
+      <li itemprop="itemListElement" itemscope itemtype="https://schema.org/ListItem">
+        <a href={`/${data.section}`} class="hover:text-accent" itemprop="item">
+          <span itemprop="name">{data.section}</span>
+        </a>
+        <meta itemprop="position" content="2" />
+      </li>
       <li>/</li>
-      <li class="text-mo-600">{data.title}</li>
+      <li class="text-text" aria-current="page">{data.title}</li>
     </ol>
   </nav>
 
   <div class="grid grid-cols-1 lg:grid-cols-4 gap-8">
     <!-- 主内容区 -->
     <div class="lg:col-span-3">
-      <article class="bg-white rounded-xl shadow-lg p-8 border border-juanbo-200">
+      <article class="bg-surface rounded-xl shadow-lg p-8 border border-border">
         <!-- 标题区域 -->
-        <header class="mb-8 pb-6 border-b border-juanbo-200">
-          <h1 class="text-4xl font-bold text-mo-600 mb-2">{data.title}</h1>
-          <p class="text-mo-400 mb-2">{data.description}</p>
-          <div class="flex items-center space-x-4 text-sm text-mo-400">
+        <header class="mb-8 pb-6 border-b border-border">
+          <h1 class="text-4xl font-bold text-text mb-2">{data.title}</h1>
+          <p class="text-text-secondary mb-2">{data.description}</p>
+          <div class="flex items-center space-x-4 text-sm text-text-secondary">
             <span>作者：{data.author}</span>
             <span>•</span>
             <span>{data.section}</span>
@@ -106,62 +144,28 @@ const template = new URL(Astro.request.url).searchParams.get('template') || 'cla
         </div>
 
         <!-- 阅读工具栏 -->
-        <div class="mt-8 pt-6 border-t border-juanbo-200 flex items-center justify-between">
+        <div class="mt-8 pt-6 border-t border-border flex items-center justify-between">
           <div class="flex items-center space-x-4">
             <button
-              class="px-4 py-2 bg-xuanzhi-100 hover:bg-xuanzhi-200 text-mo-600 rounded-lg transition-colors"
+              class="px-4 py-2 bg-surface hover:bg-surface/80 text-text rounded-lg transition-colors"
             >
               ← 上一章
             </button>
             <button
-              class="px-4 py-2 bg-xuanzhi-100 hover:bg-xuanzhi-200 text-mo-600 rounded-lg transition-colors"
+              class="px-4 py-2 bg-surface hover:bg-surface/80 text-text rounded-lg transition-colors"
             >
               下一章 →
             </button>
           </div>
           <div class="flex items-center space-x-2">
-            <button class="p-2 hover:bg-xuanzhi-100 rounded" title="调整字号">
-              <svg
-                class="w-5 h-5 text-mo-400"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path
-                  stroke-linecap="round"
-                  stroke-linejoin="round"
-                  stroke-width="2"
-                  d="M4 6h16M4 12h16m-7 6h7"></path>
-              </svg>
+            <button class="p-2 hover:bg-surface/50 rounded" title="调整字号">
+              <i class="ri-font-size text-lg text-text-tertiary"></i>
             </button>
-            <button class="p-2 hover:bg-xuanzhi-100 rounded" title="夜间模式">
-              <svg
-                class="w-5 h-5 text-mo-400"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path
-                  stroke-linecap="round"
-                  stroke-linejoin="round"
-                  stroke-width="2"
-                  d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z"
-                ></path>
-              </svg>
+            <button class="p-2 hover:bg-surface/50 rounded" title="夜间模式">
+              <i class="ri-moon-line text-lg text-text-tertiary"></i>
             </button>
-            <button class="p-2 hover:bg-xuanzhi-100 rounded" title="加入书签">
-              <svg
-                class="w-5 h-5 text-mo-400"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path
-                  stroke-linecap="round"
-                  stroke-linejoin="round"
-                  stroke-width="2"
-                  d="M5 5a2 2 0 012-2h10a2 2 0 012 2v16l-7-3.57L5 21V5z"></path>
-              </svg>
+            <button class="p-2 hover:bg-surface/50 rounded" title="加入书签">
+              <i class="ri-bookmark-line text-lg text-text-tertiary"></i>
             </button>
           </div>
         </div>
@@ -170,29 +174,17 @@ const template = new URL(Astro.request.url).searchParams.get('template') || 'cla
 
     <!-- 侧边栏：智能标注 -->
     <aside class="lg:col-span-1">
-      <div class="bg-white rounded-xl shadow-lg p-6 border border-juanbo-200 sticky top-24">
-        <h3 class="text-lg font-bold text-mo-600 mb-4 flex items-center">
-          <svg
-            class="w-5 h-5 mr-2 text-zhusha-500"
-            fill="none"
-            stroke="currentColor"
-            viewBox="0 0 24 24"
-          >
-            <path
-              stroke-linecap="round"
-              stroke-linejoin="round"
-              stroke-width="2"
-              d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"
-            ></path>
-          </svg>
+      <div class="bg-surface rounded-xl shadow-lg p-6 border border-border sticky top-24">
+        <h3 class="text-lg font-bold text-text mb-4 flex items-center">
+          <i class="ri-book-mark-line text-lg text-accent mr-2"></i>
           智能标注
         </h3>
         <div class="space-y-3">
           {
             data.annotations.map((anno) => (
-              <div class="p-3 bg-xuanzhi-50 rounded-lg border border-juanbo-200">
+              <div class="p-3 bg-surface/50 rounded-lg border border-border">
                 <div class="flex items-center justify-between mb-1">
-                  <span class="font-bold text-mo-600">{anno.term}</span>
+                  <span class="font-bold text-text">{anno.term}</span>
                   <span
                     class={`text-xs px-2 py-0.5 rounded ${
                       anno.type === 'philosophy'
@@ -205,14 +197,14 @@ const template = new URL(Astro.request.url).searchParams.get('template') || 'cla
                     {anno.type === 'philosophy' ? '哲学' : anno.type === 'person' ? '人物' : '概念'}
                   </span>
                 </div>
-                <p class="text-sm text-mo-400">{anno.note}</p>
+                <p class="text-sm text-text-secondary">{anno.note}</p>
               </div>
             ))
           }
         </div>
 
         <!-- AI 助手入口 -->
-        <div class="mt-6 pt-6 border-t border-juanbo-200">
+        <div class="mt-6 pt-6 border-t border-border">
           <button
             class="w-full py-3 bg-gradient-to-r from-zhusha-500 to-zhusha-600 text-white rounded-lg hover:from-zhusha-600 hover:to-zhusha-700 transition-all flex items-center justify-center"
           >
@@ -230,20 +222,4 @@ const template = new URL(Astro.request.url).searchParams.get('template') || 'cla
       </div>
     </aside>
   </div>
-
-  <!-- 自定义样式 -->
-  <style>
-    .guji-text {
-      font-family: 'Noto Serif SC', 'Source Han Serif SC', 'STSong', serif;
-      font-size: 18px;
-      line-height: 2.2;
-    }
-    .guji-text p {
-      margin-bottom: 1.5rem;
-      text-indent: 2em;
-    }
-    .guji-text h3 {
-      margin-top: 2rem;
-    }
-  </style>
 </BaseLayout>

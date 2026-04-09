@@ -1,12 +1,13 @@
 ---
 import '../styles/global.css';
+import { Font } from 'astro:assets';
 
 interface Props {
   title: string;
   template?: 'classic' | 'simple' | 'deluxe';
 }
 
-const { title } = Astro.props;
+const { title, template = 'classic' } = Astro.props;
 ---
 
 <!doctype html>
@@ -16,56 +17,12 @@ const { title } = Astro.props;
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta name="description" content="古籍现代化阅读平台" />
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
-    <link rel="preconnect" href="https://fonts.googleapis.com" />
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <link
-      href="https://fonts.googleapis.com/css2?family=Noto+Serif+SC:wght@300;400;500;600;700&family=Ma+Shan+Zheng&family=ZCOOL+KuaiLe&display=swap"
-      rel="stylesheet"
-    />
+    <!-- Astro 6 Fonts API - 自托管字体 -->
+    <Font cssVariable="--font-noto" preload />
+    <Font cssVariable="--font-ma-shan-zheng" preload />
     <title>{title} - 古籍图书馆</title>
-    <style>
-      /* HTML data-template 属性控制模板切换 */
-      html[data-template='classic'] body {
-        background-color: #f7f5f0;
-      }
-      html[data-template='classic'] .layout-border {
-        border-color: #e0d8c8;
-      }
-      html[data-template='classic'] .layout-pattern {
-        display: block;
-      }
-      html[data-template='classic'] .template-nav {
-        background-color: rgba(254, 253, 251, 0.9);
-      }
-
-      html[data-template='simple'] body {
-        background-color: #ffffff;
-      }
-      html[data-template='simple'] .layout-border {
-        border-color: #cccccc;
-      }
-      html[data-template='simple'] .layout-pattern {
-        display: none;
-      }
-      html[data-template='simple'] .template-nav {
-        background-color: rgba(255, 255, 255, 0.9);
-      }
-
-      html[data-template='deluxe'] body {
-        background: linear-gradient(to bottom, #fefdfb, #efebd1);
-      }
-      html[data-template='deluxe'] .layout-border {
-        border-color: #f59898;
-      }
-      html[data-template='deluxe'] .layout-pattern {
-        display: block;
-      }
-      html[data-template='deluxe'] .template-nav {
-        background: linear-gradient(135deg, rgba(254, 245, 245, 0.95), rgba(253, 232, 232, 0.9));
-      }
-    </style>
   </head>
-  <body class="min-h-screen font-kai text-mo-500">
+  <body class="min-h-screen font-kai text-text bg-background transition-colors duration-300">
     <!-- 宣纸纹理背景（仅 classic 和 deluxe 模板） -->
     <div class="xuanzhi-texture fixed inset-0 pointer-events-none z-0 layout-pattern"></div>
 
@@ -82,8 +39,8 @@ const { title } = Astro.props;
               <span class="text-white text-2xl">古</span>
             </div>
             <div>
-              <h1 class="text-lg font-bold text-mo-600 font-li">古籍图书馆</h1>
-              <p class="text-xs text-mo-400 font-song">Classic Library</p>
+              <h1 class="text-lg font-bold text-text font-li">古籍图书馆</h1>
+              <p class="text-xs text-text-secondary font-song">Classic Library</p>
             </div>
           </a>
 
@@ -93,38 +50,38 @@ const { title } = Astro.props;
               <input
                 type="text"
                 placeholder="搜索古籍..."
-                class="w-full px-4 py-2 border border-juanbo-300 rounded-lg bg-white/80 focus:outline-none focus:ring-2 focus:ring-zhusha-500/50"
+                class="w-full px-4 py-2 pl-10 border border-border rounded-lg bg-surface/80 focus:outline-none focus:ring-2 focus:ring-accent/50 transition-colors"
               />
-              <svg
-                class="w-5 h-5 absolute right-3 top-2.5 text-mo-400"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path
-                  stroke-linecap="round"
-                  stroke-linejoin="round"
-                  stroke-width="2"
-                  d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
-              </svg>
+              <i class="ri-search-line absolute left-3 top-2.5 text-text-tertiary text-base"></i>
             </div>
           </div>
 
           <!-- 模板切换 -->
-          <div class="flex items-center space-x-2">
+          <div class="flex items-center space-x-2 border-r border-border pr-4 mr-4" data-current-template={template}>
             <button
               data-template="classic"
-              class="px-3 py-1.5 rounded text-sm text-mo-500 hover:bg-xuanzhi-200">古典</button
+              class={`px-3 py-1.5 rounded text-sm ${template === 'classic' ? 'bg-accent text-white' : 'text-text-secondary hover:bg-surface/50'}`}>古典</button
             >
             <button
               data-template="simple"
-              class="px-3 py-1.5 rounded text-sm text-mo-500 hover:bg-xuanzhi-200">简约</button
+              class={`px-3 py-1.5 rounded text-sm ${template === 'simple' ? 'bg-accent text-white' : 'text-text-secondary hover:bg-surface/50'}`}>简约</button
             >
             <button
               data-template="deluxe"
-              class="px-3 py-1.5 rounded text-sm text-mo-500 hover:bg-xuanzhi-200">华丽</button
+              class={`px-3 py-1.5 rounded text-sm ${template === 'deluxe' ? 'bg-accent text-white' : 'text-text-secondary hover:bg-surface/50'}`}>华丽</button
             >
           </div>
+          <button
+            id="theme-toggle"
+            type="button"
+            class="p-2 rounded-lg hover:bg-surface/50 transition-colors"
+            aria-label="切换明暗主题"
+            title="切换明暗主题">
+            <!-- 太阳图标 (亮色主题时显示) -->
+            <i id="sun-icon" class="ri-sun-line text-lg text-text-secondary"></i>
+            <!-- 月亮图标 (暗色主题时显示) -->
+            <i id="moon-icon" class="ri-moon-line text-lg text-text-secondary" style="display:none"></i>
+          </button>
         </div>
       </div>
     </nav>
@@ -138,7 +95,7 @@ const { title } = Astro.props;
     <footer class="border-t layout-border mt-16 py-8 template-nav">
       <div class="max-w-6xl mx-auto px-4 text-center">
         <p class="mo-text text-sm">古籍现代化改造项目 © 2026</p>
-        <p class="mt-2 text-sm text-mo-400">Powered by Astro & Tailwind CSS</p>
+        <p class="mt-2 text-sm text-text-tertiary">Powered by Astro & Tailwind CSS</p>
       </div>
     </footer>
 
@@ -165,45 +122,90 @@ const { title } = Astro.props;
 
     <!-- 模板切换脚本 -->
     <script is:inline>
-      // 模板切换功能 - 使用 localStorage 保存偏好
-      const html = document.documentElement;
-      const templateButtons = document.querySelectorAll('[data-template]');
+      (function() {
+        // 获取元素
+        const themeToggle = document.getElementById('theme-toggle');
+        const sunIcon = document.getElementById('sun-icon');
+        const moonIcon = document.getElementById('moon-icon');
+        const templateButtons = document.querySelectorAll('[data-template]');
 
-      // 设置模板
-      function setTemplate(template) {
-        html.setAttribute('data-template', template);
-        localStorage.setItem('preferredTemplate', template);
+        if (!themeToggle) {
+          console.error('[Theme] Theme toggle button not found');
+          return;
+        }
 
-        // 更新按钮状态
-        templateButtons.forEach((btn) => {
-          const buttonTemplate = btn.getAttribute('data-template');
-          if (buttonTemplate === template) {
-            btn.classList.add('bg-zhusha-500', 'text-white');
-            btn.classList.remove('text-mo-500', 'hover:bg-xuanzhi-200');
+        // 获取当前主题
+        function getCurrentTheme() {
+          // 优先从 localStorage，然后是系统偏好，最后是默认值
+          const saved = localStorage.getItem('preferredTheme');
+          const systemPrefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+          return saved || (systemPrefersDark ? 'dark' : 'light');
+        }
+
+        // 应用主题
+        function setTheme(theme) {
+          document.documentElement.setAttribute('data-theme', theme);
+          localStorage.setItem('preferredTheme', theme);
+
+          // 显示相应图标
+          if (theme === 'dark') {
+            sunIcon.style.display = 'none';
+            moonIcon.style.display = 'block';
           } else {
-            btn.classList.remove('bg-zhusha-500', 'text-white');
-            btn.classList.add('text-mo-500', 'hover:bg-xuanzhi-200');
+            sunIcon.style.display = 'block';
+            moonIcon.style.display = 'none';
           }
+        }
+
+        // 获取当前模板
+        function getCurrentTemplate() {
+          const saved = localStorage.getItem('preferredTemplate');
+          const urlParams = new URLSearchParams(window.location.search);
+          return urlParams.get('template') || saved || 'classic';
+        }
+
+        // 应用模板
+        function setTemplate(template) {
+          document.documentElement.setAttribute('data-template', template);
+          localStorage.setItem('preferredTemplate', template);
+
+          // 更新按钮状态
+          templateButtons.forEach(button => {
+            if (button.getAttribute('data-template') === template) {
+              button.classList.add('bg-accent', 'text-white');
+              button.classList.remove('text-text-secondary', 'hover:bg-surface/50');
+            } else {
+              button.classList.remove('bg-accent', 'text-white');
+              button.classList.add('text-text-secondary', 'hover:bg-surface/50');
+            }
+          });
+        }
+
+        // 绑定主题切换事件
+        themeToggle.addEventListener('click', function(e) {
+          e.preventDefault();
+          const currentTheme = document.documentElement.getAttribute('data-theme') || 'light';
+          const newTheme = currentTheme === 'light' ? 'dark' : 'light';
+          setTheme(newTheme);
         });
-      }
 
-      // 绑定点击事件
-      templateButtons.forEach((btn) => {
-        btn.addEventListener('click', () => {
-          const template = btn.getAttribute('data-template');
-          setTemplate(template);
+        // 绑定模板切换事件
+        templateButtons.forEach(button => {
+          button.addEventListener('click', function(e) {
+            e.preventDefault();
+            const template = this.getAttribute('data-template');
+            setTemplate(template);
+          });
         });
-      });
 
-      // 初始化：从 URL 或 localStorage 读取偏好
-      const urlTemplate = new URLSearchParams(window.location.search).get('template');
-      const savedTemplate = localStorage.getItem('preferredTemplate') || 'classic';
+        // 初始化 - 从 localStorage 加载偏好
+        const initialTheme = getCurrentTheme();
+        setTheme(initialTheme);
 
-      if (urlTemplate) {
-        setTemplate(urlTemplate);
-      } else {
-        setTemplate(savedTemplate);
-      }
+        const initialTemplate = getCurrentTemplate();
+        setTemplate(initialTemplate);
+
+      })();
     </script>
   </body>
 </html>
