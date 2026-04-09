@@ -7,6 +7,17 @@ interface Props {
 
 const { slug } = Astro.props;
 
+export async function getStaticPaths() {
+  const gujiData = {
+    'zhong-yong': { title: '中庸', section: '经部' },
+  };
+  
+  return Object.entries(gujiData).map(([slug, data]) => ({
+    params: { slug },
+    props: { data },
+  }));
+}
+
 // 示例数据 - 实际会从 Markdown 文件读取
 const gujiData = {
   'zhong-yong': {
@@ -59,10 +70,10 @@ const gujiData = {
 };
 
 const data = gujiData[slug as keyof typeof gujiData] || gujiData['zhong-yong'];
-const template = Astro.request.url.searchParams.get('template') || 'classic';
+const template = new URL(Astro.request.url).searchParams.get('template') || 'classic';
 ---
 
-<BaseLayout title={data.title} template={template}>
+<BaseLayout title={data.title} template={template as 'classic' | 'simple' | 'deluxe'}>
   <!-- 面包屑导航 -->
   <nav class="mb-6">
     <ol class="flex items-center space-x-2 text-sm text-mo-400">

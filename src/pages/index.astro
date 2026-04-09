@@ -46,9 +46,11 @@ const recentUpdates = [
   { title: '道德经', section: '子部', date: '2026-04-06' },
   { title: '诗经', section: '经部', date: '2026-04-05' },
 ];
+
+const template = new URL(Astro.request.url).searchParams.get('template') || 'classic';
 ---
 
-<BaseLayout title="首页" template={Astro.request.url.searchParams.get('template') || 'classic'}>
+<BaseLayout title="首页" template={template as 'classic' | 'simple' | 'deluxe'}>
   <!-- 欢迎区域 -->
   <div class="text-center py-12 mb-8">
     <h2 class="text-4xl font-bold text-mo-600 mb-4">古籍图书馆</h2>
