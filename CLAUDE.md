@@ -16,6 +16,58 @@
 
 ## 开发原则
 
+### 核心开发流程 - 完整改动必须遵守
+
+**每次完整改动都必须经过以下步骤，缺一不可：**
+
+```bash
+# 1. 代码审查 - 检查代码质量
+bun run lint
+
+# 2. 更新测试用例 - 新增功能必须添加对应测试
+# 在 tests/ 目录添加或更新 .test.ts 文件
+
+# 3. 运行测试 - 验证功能正确性
+bun run test
+
+# 4. 代码格式化
+bun run format
+
+# 5. Astro 类型检查
+bun run check
+
+# 6. 构建验证
+bun run build
+
+# 7. 完整验证流程（推荐）
+bun run validate && bun run test && bun run build
+```
+
+**原则说明：**
+1. **代码审查优先** - 任何改动必须先通过 lint 检查
+2. **测试驱动开发** - 新功能必须先写测试，再写实现
+3. **测试覆盖** - 每个功能模块必须有对应测试文件
+4. **验证完备** - 提交前必须通过所有验证（lint + test + build）
+5. **零容忍** - 任何一步失败都不能提交
+
+### Git 提交规范
+
+```bash
+# 提交前必须运行
+bun run validate && bun run test
+
+# 约定式提交格式
+git commit -m "type: description"
+
+# type 包括:
+# - feat: 新功能
+# - fix: Bug 修复
+# - test: 测试相关
+# - docs: 文档更新
+# - chore: 构建/工具配置
+# - refactor: 代码重构
+```
+
 ### Astro 最佳实践
 
 - 使用 Astro 6 静态站点生成
