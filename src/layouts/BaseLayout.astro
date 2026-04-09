@@ -138,62 +138,88 @@ const { title, template = 'classic' } = Astro.props;
     <!-- 模板切换脚本 -->
     <script is:inline>
       (function() {
-        // 调试日志控制 - 通过环境变量或 URL 参数启用
-        const DEBUG = import.meta.env?.DEV || new URLSearchParams(window.location.search).has('debug');
-        const log = (...args) => DEBUG && console.log('[Theme]', ...args);
+        // 获取元素
+        const themeToggle = document.getElementById('theme-toggle');
+        const sunIcon = document.getElementById('sun-icon');
+        const moonIcon = document.getElementById('moon-icon');
+        const templateButtons = document.querySelectorAll('[data-template]');
 
-        function init() {
-          const html = document.documentElement;
-          const themeToggle = document.getElementById('theme-toggle');
-          const sunIcon = document.getElementById('sun-icon');
-          const moonIcon = document.getElementById('moon-icon');
+        if (!themeToggle) {
+          console.error('[Theme] Theme toggle button not found');
+          return;
+        }
 
-          if (!themeToggle || !sunIcon || !moonIcon) {
-            console.error('[Theme] Elements missing');
-            return;
-          }
-
-          log('Initialized');
-
-          // 设置主题
-          function applyTheme(theme) {
-            html.setAttribute('data-theme', theme);
-            localStorage.setItem('preferredTheme', theme);
-            
-            // 更新图标：dark 显示月亮，light 显示太阳
-            if (theme === 'dark') {
-              sunIcon.style.display = 'none';
-              moonIcon.style.display = '';
-            } else {
-              sunIcon.style.display = '';
-              moonIcon.style.display = 'none';
-            }
-            
-            log('Applied:', theme);
-          }
-
-          // 点击切换
-          themeToggle.addEventListener('click', function(e) {
-            e.preventDefault();
-            const current = html.getAttribute('data-theme') || 'light';
-            const next = current === 'dark' ? 'light' : 'dark';
-            applyTheme(next);
-          });
-
-          // 初始化
+        // 获取当前主题
+        function getCurrentTheme() {
+          // 优先从 localStorage，然后是系统偏好，最后是默认值
           const saved = localStorage.getItem('preferredTheme');
-          const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
-          const initial = saved || (prefersDark ? 'dark' : 'light');
-          
-          // 确保初始主题正确应用
-          applyTheme(initial);
+          const systemPrefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+          return saved || (systemPrefersDark ? 'dark' : 'light');
         }
 
-        if (document.readyState === 'loading') {
-          document.addEventListener('DOMContentLoaded', init);
-        } else {
-          init();
+        // 应用主题
+        function setTheme(theme) {
+          document.documentElement.setAttribute('data-theme', theme);
+          localStorage.setItem('preferredTheme', theme);
+
+          // 显示相应图标
+          if (theme === 'dark') {
+            sunIcon.style.display = 'none';
+            moonIcon.style.display = 'block';
+          } else {
+            sunIcon.style.display = 'block';
+            moonIcon.style.display = 'none';
+          }
         }
+
+        // 获取当前模板
+        function getCurrentTemplate() {
+          const saved = localStorage.getItem('preferredTemplate');
+          const urlParams = new URLSearchParams(window.location.search);
+          return urlParams.get('template') || saved || 'classic';
+        }
+
+        // 应用模板
+        function setTemplate(template) {
+          document.documentElement.setAttribute('data-template', template);
+          localStorage.setItem('preferredTemplate', template);
+
+          // 更新按钮状态
+          templateButtons.forEach(button => {
+            if (button.getAttribute('data-template') === template) {
+              button.classList.add('bg-accent', 'text-white');
+              button.classList.remove('text-text-secondary', 'hover:bg-surface/50');
+            } else {
+              button.classList.remove('bg-accent', 'text-white');
+              button.classList.add('text-text-secondary', 'hover:bg-surface/50');
+            }
+          });
+        }
+
+        // 绑定主题切换事件
+        themeToggle.addEventListener('click', function(e) {
+          e.preventDefault();
+          const currentTheme = document.documentElement.getAttribute('data-theme') || 'light';
+          const newTheme = currentTheme === 'light' ? 'dark' : 'light';
+          setTheme(newTheme);
+        });
+
+        // 绑定模板切换事件
+        templateButtons.forEach(button => {
+          button.addEventListener('click', function(e) {
+            e.preventDefault();
+            const template = this.getAttribute('data-template');
+            setTemplate(template);
+          });
+        });
+
+        // 初始化 - 从 localStorage 加载偏好
+        const initialTheme = getCurrentTheme();
+        setTheme(initialTheme);
+
+        const initialTemplate = getCurrentTemplate();
+        setTemplate(initialTemplate);
+
       })();
     </script>
   </body>
