@@ -7,13 +7,6 @@
 @variant dark (&:is(.dark *));
 
 /* ========================================
-   模板系统契约 — 新增模板必须实现：
-     1. [data-template='xxx']:root     → 亮色主题
-     2. [data-template='xxx'].dark     → 暗色主题
-     缺一不可
-   ======================================== */
-
-/* ========================================
    @layer base - 全局基础样式
    ======================================== */
 @layer base {
@@ -219,183 +212,164 @@
   --text-tiny--line-height: 1rem;
 
   /* ========================================
-     纹理辅助变量 - 固定颜色，透明度在使用时应用
+     纹理辅助变量 - 固定颜色
      ======================================== */
-  /* 洒金宣纸金点颜色 - 固定色值 */
   --gold-fleck-small: oklch(70% 0.05 80);
   --gold-fleck-medium: oklch(65% 0.06 75);
   --gold-fleck-large: oklch(50% 0.1 70);
 }
 
 /* ========================================
-   @layer template - 亮色主题变量
+   主题变量 - 按优先级排列
+   新增模板必须同时添加 :root (亮) 和 .dark (暗)
    ======================================== */
-@layer template {
-  /* ----------------------------------------
-     默认亮色 - 宣纸风格
-     ---------------------------------------- */
-  :root {
-    --radius: 0.75rem;
 
-    /* 背景色 - 宣纸风格 (OKLCH) */
-    --bg-primary: oklch(94% 0.02 85);
-    --bg-secondary: oklch(96% 0.015 90);
-    --bg-tertiary: oklch(95% 0.018 88);
-    --bg-elevated: oklch(100% 0 0);
+/* 1. 默认亮色 */
+:root {
+  --radius: 0.75rem;
 
-    /* 文字色 - 墨色 (OKLCH) */
-    --text-primary: oklch(18% 0.02 30);
-    --text-secondary: oklch(30% 0.03 35);
-    --text-tertiary: oklch(42% 0.04 40);
-    --text-inverse: oklch(100% 0 0);
+  /* 背景色 - 宣纸风格 */
+  --bg-primary: oklch(94% 0.02 85);
+  --bg-secondary: oklch(96% 0.015 90);
+  --bg-tertiary: oklch(95% 0.018 88);
+  --bg-elevated: oklch(100% 0 0);
 
-    /* 纹理辅助变量 - 竹简和宣纸 */
-    --text-primary-transparent: oklch(18% 0.02 30 / 0.1);
-    --text-primary-semi-transparent: oklch(18% 0.02 30 / 0.2);
-    --text-primary-overlay: oklch(18% 0.02 30 / 0.3);
+  /* 文字色 - 墨色 */
+  --text-primary: oklch(18% 0.02 30);
+  --text-secondary: oklch(30% 0.03 35);
+  --text-tertiary: oklch(42% 0.04 40);
+  --text-inverse: oklch(100% 0 0);
 
-    /* 边框色 - 绢帛/黛色 (OKLCH) */
-    --border-primary: oklch(88% 0.03 80);
-    --border-secondary: oklch(82% 0.04 75);
-    --border-focus: oklch(55% 0.12 35);
+  /* 纹理辅助变量 */
+  --text-primary-transparent: oklch(18% 0.02 30 / 0.1);
+  --text-primary-semi-transparent: oklch(18% 0.02 30 / 0.2);
+  --text-primary-overlay: oklch(18% 0.02 30 / 0.3);
 
-    /* 品牌色 - 朱砂 (OKLCH) */
-    --accent-primary: oklch(52% 0.18 28);
-    --accent-secondary: oklch(58% 0.2 30);
+  /* 边框色 */
+  --border-primary: oklch(88% 0.03 80);
+  --border-secondary: oklch(82% 0.04 75);
+  --border-focus: oklch(55% 0.12 35);
 
-    /* 阴影 */
-    --shadow-sm: 0 1px 2px oklch(0% 0 0 / 0.08);
-    --shadow-md: 0 4px 6px oklch(0% 0 0 / 0.1);
-    --shadow-lg: 0 10px 15px oklch(0% 0 0 / 0.15);
-  }
+  /* 品牌色 - 朱砂 */
+  --accent-primary: oklch(52% 0.18 28);
+  --accent-secondary: oklch(58% 0.2 30);
 
-  /* ----------------------------------------
-     简约模板：亮色 - 更深的宣纸灰
-     ---------------------------------------- */
-  [data-template='simple']:root {
-    --bg-primary: oklch(90% 0.01 85);
-    --bg-secondary: oklch(92% 0.008 88);
-    --bg-tertiary: oklch(91% 0.01 86);
-    --bg-elevated: oklch(94% 0.005 90);
-    --text-primary: oklch(15% 0.015 30);
-    --text-secondary: oklch(28% 0.025 35);
-    --text-tertiary: oklch(40% 0.03 38);
-    --border-primary: oklch(80% 0.02 80);
-    --border-secondary: oklch(75% 0.03 75);
-  }
-
-  /* ----------------------------------------
-     古典模板：亮色 - 竹简风格（浅色化）
-     ---------------------------------------- */
-  [data-template='classic']:root {
-    --bg-primary: oklch(96% 0.03 80);
-    --bg-secondary: oklch(97% 0.025 82);
-    --bg-tertiary: oklch(95% 0.02 78);
-    --bg-elevated: oklch(98% 0.02 85);
-
-    --text-primary: oklch(18% 0.02 30);
-    --text-secondary: oklch(32% 0.03 35);
-    --text-tertiary: oklch(45% 0.04 40);
-    --text-inverse: oklch(95% 0.01 85);
-
-    --text-primary-transparent: oklch(18% 0.02 30 / 0.1);
-    --text-primary-semi-transparent: oklch(18% 0.02 30 / 0.2);
-    --text-primary-overlay: oklch(18% 0.02 30 / 0.3);
-
-    --border-primary: oklch(85% 0.04 75);
-    --border-secondary: oklch(78% 0.05 70);
-    --border-focus: oklch(55% 0.12 35);
-
-    --accent-primary: oklch(55% 0.18 30);
-    --accent-secondary: oklch(60% 0.2 32);
-
-    --shadow-sm: 0 1px 2px oklch(0% 0 0 / 0.1);
-    --shadow-md: 0 4px 6px oklch(0% 0 0 / 0.15);
-    --shadow-lg: 0 10px 15px oklch(0% 0 0 / 0.2);
-  }
+  /* 阴影 */
+  --shadow-sm: 0 1px 2px oklch(0% 0 0 / 0.08);
+  --shadow-md: 0 4px 6px oklch(0% 0 0 / 0.1);
+  --shadow-lg: 0 10px 15px oklch(0% 0 0 / 0.15);
 }
 
-/* ========================================
-   @layer template-dark - 暗色主题变量
-   @layer 声明顺序保证优先级高于 template
-   ======================================== */
-@layer template-dark {
-  /* ----------------------------------------
-     默认暗色 - 深色宣纸
-     ---------------------------------------- */
-  .dark {
-    --bg-primary: oklch(35% 0.02 55);
-    --bg-secondary: oklch(38% 0.025 58);
-    --bg-tertiary: oklch(42% 0.03 60);
-    --bg-elevated: oklch(48% 0.035 62);
+/* 2. 简约亮色 */
+[data-template='simple']:root {
+  --bg-primary: oklch(90% 0.01 85);
+  --bg-secondary: oklch(92% 0.008 88);
+  --bg-tertiary: oklch(91% 0.01 86);
+  --bg-elevated: oklch(94% 0.005 90);
+  --text-primary: oklch(15% 0.015 30);
+  --text-secondary: oklch(28% 0.025 35);
+  --text-tertiary: oklch(40% 0.03 38);
+  --border-primary: oklch(80% 0.02 80);
+  --border-secondary: oklch(75% 0.03 75);
+}
 
-    --text-primary: oklch(90% 0.01 80);
-    --text-secondary: oklch(80% 0.015 78);
-    --text-tertiary: oklch(70% 0.02 75);
-    --text-inverse: oklch(35% 0.02 55);
+/* 3. 古典亮色 */
+[data-template='classic']:root {
+  --bg-primary: oklch(96% 0.03 80);
+  --bg-secondary: oklch(97% 0.025 82);
+  --bg-tertiary: oklch(95% 0.02 78);
+  --bg-elevated: oklch(98% 0.02 85);
 
-    --border-primary: oklch(50% 0.04 60);
-    --border-secondary: oklch(55% 0.05 62);
-    --border-focus: oklch(65% 0.15 45);
+  --text-primary: oklch(18% 0.02 30);
+  --text-secondary: oklch(32% 0.03 35);
+  --text-tertiary: oklch(45% 0.04 40);
+  --text-inverse: oklch(95% 0.01 85);
 
-    --accent-primary: oklch(65% 0.18 35);
-    --accent-secondary: oklch(70% 0.2 38);
+  --text-primary-transparent: oklch(18% 0.02 30 / 0.1);
+  --text-primary-semi-transparent: oklch(18% 0.02 30 / 0.2);
+  --text-primary-overlay: oklch(18% 0.02 30 / 0.3);
 
-    --shadow-sm: 0 1px 2px oklch(0% 0 0 / 0.2);
-    --shadow-md: 0 4px 6px oklch(0% 0 0 / 0.3);
-    --shadow-lg: 0 10px 15px oklch(0% 0 0 / 0.4);
-  }
+  --border-primary: oklch(85% 0.04 75);
+  --border-secondary: oklch(78% 0.05 70);
+  --border-focus: oklch(55% 0.12 35);
 
-  /* ----------------------------------------
-     简约模板：暗色 - 克制灰蓝调
-     ---------------------------------------- */
-  [data-template='simple'].dark {
-    --bg-primary: oklch(28% 0.015 260);
-    --bg-secondary: oklch(32% 0.02 265);
-    --bg-tertiary: oklch(30% 0.018 262);
-    --bg-elevated: oklch(36% 0.025 268);
+  --accent-primary: oklch(55% 0.18 30);
+  --accent-secondary: oklch(60% 0.2 32);
 
-    --text-primary: oklch(85% 0.01 260);
-    --text-secondary: oklch(75% 0.015 258);
-    --text-tertiary: oklch(65% 0.02 255);
-    --text-inverse: oklch(28% 0.015 260);
+  --shadow-sm: 0 1px 2px oklch(0% 0 0 / 0.1);
+  --shadow-md: 0 4px 6px oklch(0% 0 0 / 0.15);
+  --shadow-lg: 0 10px 15px oklch(0% 0 0 / 0.2);
+}
 
-    --border-primary: oklch(40% 0.03 265);
-    --border-secondary: oklch(45% 0.035 268);
+/* 4. 默认暗色 */
+.dark {
+  --bg-primary: oklch(35% 0.02 55);
+  --bg-secondary: oklch(38% 0.025 58);
+  --bg-tertiary: oklch(42% 0.03 60);
+  --bg-elevated: oklch(48% 0.035 62);
 
-    --accent-primary: oklch(62% 0.16 32);
-    --accent-secondary: oklch(68% 0.18 35);
+  --text-primary: oklch(90% 0.01 80);
+  --text-secondary: oklch(80% 0.015 78);
+  --text-tertiary: oklch(70% 0.02 75);
+  --text-inverse: oklch(35% 0.02 55);
 
-    --shadow-sm: 0 1px 2px oklch(0% 0 0 / 0.3);
-    --shadow-md: 0 4px 6px oklch(0% 0 0 / 0.4);
-    --shadow-lg: 0 10px 15px oklch(0% 0 0 / 0.5);
-  }
+  --border-primary: oklch(50% 0.04 60);
+  --border-secondary: oklch(55% 0.05 62);
+  --border-focus: oklch(65% 0.15 45);
 
-  /* ----------------------------------------
-     古典模板：暗色 - 深色竹简
-     ---------------------------------------- */
-  [data-template='classic'].dark {
-    --bg-primary: oklch(42% 0.06 65);
-    --bg-secondary: oklch(45% 0.07 68);
-    --bg-tertiary: oklch(50% 0.08 70);
-    --bg-elevated: oklch(55% 0.08 72);
+  --accent-primary: oklch(65% 0.18 35);
+  --accent-secondary: oklch(70% 0.2 38);
 
-    --text-primary: oklch(92% 0.01 85);
-    --text-secondary: oklch(85% 0.015 82);
-    --text-tertiary: oklch(75% 0.02 80);
-    --text-inverse: oklch(42% 0.06 65);
+  --shadow-sm: 0 1px 2px oklch(0% 0 0 / 0.2);
+  --shadow-md: 0 4px 6px oklch(0% 0 0 / 0.3);
+  --shadow-lg: 0 10px 15px oklch(0% 0 0 / 0.4);
+}
 
-    --border-primary: oklch(58% 0.08 68);
-    --border-secondary: oklch(62% 0.09 70);
-    --border-focus: oklch(65% 0.15 45);
+/* 5. 简约暗色 */
+[data-template='simple'].dark {
+  --bg-primary: oklch(28% 0.015 260);
+  --bg-secondary: oklch(32% 0.02 265);
+  --bg-tertiary: oklch(30% 0.018 262);
+  --bg-elevated: oklch(36% 0.025 268);
 
-    --accent-primary: oklch(70% 0.2 38);
-    --accent-secondary: oklch(75% 0.22 40);
+  --text-primary: oklch(85% 0.01 260);
+  --text-secondary: oklch(75% 0.015 258);
+  --text-tertiary: oklch(65% 0.02 255);
+  --text-inverse: oklch(28% 0.015 260);
 
-    --shadow-sm: 0 1px 2px oklch(0% 0 0 / 0.3);
-    --shadow-md: 0 4px 6px oklch(0% 0 0 / 0.4);
-    --shadow-lg: 0 10px 15px oklch(0% 0 0 / 0.5);
-  }
+  --border-primary: oklch(40% 0.03 265);
+  --border-secondary: oklch(45% 0.035 268);
+
+  --accent-primary: oklch(62% 0.16 32);
+  --accent-secondary: oklch(68% 0.18 35);
+
+  --shadow-sm: 0 1px 2px oklch(0% 0 0 / 0.3);
+  --shadow-md: 0 4px 6px oklch(0% 0 0 / 0.4);
+  --shadow-lg: 0 10px 15px oklch(0% 0 0 / 0.5);
+}
+
+/* 6. 古典暗色 */
+[data-template='classic'].dark {
+  --bg-primary: oklch(42% 0.06 65);
+  --bg-secondary: oklch(45% 0.07 68);
+  --bg-tertiary: oklch(50% 0.08 70);
+  --bg-elevated: oklch(55% 0.08 72);
+
+  --text-primary: oklch(92% 0.01 85);
+  --text-secondary: oklch(85% 0.015 82);
+  --text-tertiary: oklch(75% 0.02 80);
+  --text-inverse: oklch(42% 0.06 65);
+
+  --border-primary: oklch(58% 0.08 68);
+  --border-secondary: oklch(62% 0.09 70);
+  --border-focus: oklch(65% 0.15 45);
+
+  --accent-primary: oklch(70% 0.2 38);
+  --accent-secondary: oklch(75% 0.22 40);
+
+  --shadow-sm: 0 1px 2px oklch(0% 0 0 / 0.3);
+  --shadow-md: 0 4px 6px oklch(0% 0 0 / 0.4);
+  --shadow-lg: 0 10px 15px oklch(0% 0 0 / 0.5);
 }
 
 /* ========================================
