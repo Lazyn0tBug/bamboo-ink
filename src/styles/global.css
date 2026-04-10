@@ -7,6 +7,13 @@
 @variant dark (&:is(.dark *));
 
 /* ========================================
+   模板系统契约 — 新增模板必须实现：
+     1. [data-template='xxx']:root     → 亮色主题
+     2. [data-template='xxx'].dark     → 暗色主题
+     缺一不可
+   ======================================== */
+
+/* ========================================
    @layer base - 全局基础样式
    ======================================== */
 @layer base {
@@ -200,7 +207,7 @@
   --radius-sm: calc(var(--radius) - 0.25rem);
   --radius-xl: calc(var(--radius) + 0.25rem);
 
-  --shadow-nav-glow: 0 0 10px rgba(0, 0, 0, 0.1);
+  --shadow-nav-glow: 0 0 10px oklch(0% 0 0 / 0.1);
 
   /* ========================================
      微型排版 Tokens
@@ -210,70 +217,185 @@
 
   --text-tiny: 0.6875rem;
   --text-tiny--line-height: 1rem;
+
+  /* ========================================
+     纹理辅助变量 - 固定颜色，透明度在使用时应用
+     ======================================== */
+  /* 洒金宣纸金点颜色 - 固定色值 */
+  --gold-fleck-small: oklch(70% 0.05 80);
+  --gold-fleck-medium: oklch(65% 0.06 75);
+  --gold-fleck-large: oklch(50% 0.1 70);
 }
 
 /* ========================================
-   CSS 变量 - 亮色主题 (默认)
+   @layer template - 亮色主题变量
    ======================================== */
-:root {
-  --radius: 0.75rem;
+@layer template {
+  /* ----------------------------------------
+     默认亮色 - 宣纸风格
+     ---------------------------------------- */
+  :root {
+    --radius: 0.75rem;
 
-  /* 背景色 */
-  --bg-primary: oklch(96% 0.015 85);
-  --bg-secondary: oklch(100% 0 0);
-  --bg-tertiary: oklch(98% 0.01 90);
-  --bg-elevated: oklch(100% 0 0);
+    /* 背景色 - 宣纸风格 (OKLCH) */
+    --bg-primary: oklch(94% 0.02 85);
+    --bg-secondary: oklch(96% 0.015 90);
+    --bg-tertiary: oklch(95% 0.018 88);
+    --bg-elevated: oklch(100% 0 0);
 
-  /* 文字色 */
-  --text-primary: oklch(10% 0.04 260);
-  --text-secondary: oklch(35% 0.03 260);
-  --text-tertiary: oklch(65% 0.025 260);
-  --text-inverse: oklch(100% 0 0);
+    /* 文字色 - 墨色 (OKLCH) */
+    --text-primary: oklch(18% 0.02 30);
+    --text-secondary: oklch(30% 0.03 35);
+    --text-tertiary: oklch(42% 0.04 40);
+    --text-inverse: oklch(100% 0 0);
 
-  /* 边框色 */
-  --border-primary: oklch(88% 0.025 75);
-  --border-secondary: oklch(80% 0.02 260);
-  --border-focus: oklch(48% 0.22 25);
+    /* 纹理辅助变量 - 竹简和宣纸 */
+    --text-primary-transparent: oklch(18% 0.02 30 / 0.1);
+    --text-primary-semi-transparent: oklch(18% 0.02 30 / 0.2);
+    --text-primary-overlay: oklch(18% 0.02 30 / 0.3);
 
-  /* 品牌色 */
-  --accent-primary: oklch(48% 0.22 25);
-  --accent-secondary: oklch(58% 0.18 25);
+    /* 边框色 - 绢帛/黛色 (OKLCH) */
+    --border-primary: oklch(88% 0.03 80);
+    --border-secondary: oklch(82% 0.04 75);
+    --border-focus: oklch(55% 0.12 35);
 
-  /* 阴影 */
-  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.05);
-  --shadow-md: 0 4px 6px rgba(0, 0, 0, 0.07);
-  --shadow-lg: 0 10px 15px rgba(0, 0, 0, 0.1);
+    /* 品牌色 - 朱砂 (OKLCH) */
+    --accent-primary: oklch(52% 0.18 28);
+    --accent-secondary: oklch(58% 0.2 30);
+
+    /* 阴影 */
+    --shadow-sm: 0 1px 2px oklch(0% 0 0 / 0.08);
+    --shadow-md: 0 4px 6px oklch(0% 0 0 / 0.1);
+    --shadow-lg: 0 10px 15px oklch(0% 0 0 / 0.15);
+  }
+
+  /* ----------------------------------------
+     简约模板：亮色 - 更深的宣纸灰
+     ---------------------------------------- */
+  [data-template='simple']:root {
+    --bg-primary: oklch(90% 0.01 85);
+    --bg-secondary: oklch(92% 0.008 88);
+    --bg-tertiary: oklch(91% 0.01 86);
+    --bg-elevated: oklch(94% 0.005 90);
+    --text-primary: oklch(15% 0.015 30);
+    --text-secondary: oklch(28% 0.025 35);
+    --text-tertiary: oklch(40% 0.03 38);
+    --border-primary: oklch(80% 0.02 80);
+    --border-secondary: oklch(75% 0.03 75);
+  }
+
+  /* ----------------------------------------
+     古典模板：亮色 - 竹简风格（浅色化）
+     ---------------------------------------- */
+  [data-template='classic']:root {
+    --bg-primary: oklch(96% 0.03 80);
+    --bg-secondary: oklch(97% 0.025 82);
+    --bg-tertiary: oklch(95% 0.02 78);
+    --bg-elevated: oklch(98% 0.02 85);
+
+    --text-primary: oklch(18% 0.02 30);
+    --text-secondary: oklch(32% 0.03 35);
+    --text-tertiary: oklch(45% 0.04 40);
+    --text-inverse: oklch(95% 0.01 85);
+
+    --text-primary-transparent: oklch(18% 0.02 30 / 0.1);
+    --text-primary-semi-transparent: oklch(18% 0.02 30 / 0.2);
+    --text-primary-overlay: oklch(18% 0.02 30 / 0.3);
+
+    --border-primary: oklch(85% 0.04 75);
+    --border-secondary: oklch(78% 0.05 70);
+    --border-focus: oklch(55% 0.12 35);
+
+    --accent-primary: oklch(55% 0.18 30);
+    --accent-secondary: oklch(60% 0.2 32);
+
+    --shadow-sm: 0 1px 2px oklch(0% 0 0 / 0.1);
+    --shadow-md: 0 4px 6px oklch(0% 0 0 / 0.15);
+    --shadow-lg: 0 10px 15px oklch(0% 0 0 / 0.2);
+  }
 }
 
 /* ========================================
-   CSS 变量 - 暗色主题
+   @layer template-dark - 暗色主题变量
+   @layer 声明顺序保证优先级高于 template
    ======================================== */
-.dark {
-  /* 背景色 */
-  --bg-primary: oklch(18% 0.02 260);
-  --bg-secondary: oklch(24% 0.025 260);
-  --bg-tertiary: oklch(26% 0.03 260);
-  --bg-elevated: oklch(28% 0.03 260);
+@layer template-dark {
+  /* ----------------------------------------
+     默认暗色 - 深色宣纸
+     ---------------------------------------- */
+  .dark {
+    --bg-primary: oklch(35% 0.02 55);
+    --bg-secondary: oklch(38% 0.025 58);
+    --bg-tertiary: oklch(42% 0.03 60);
+    --bg-elevated: oklch(48% 0.035 62);
 
-  /* 文字色 */
-  --text-primary: oklch(85% 0.02 260);
-  --text-secondary: oklch(70% 0.025 260);
-  --text-tertiary: oklch(55% 0.03 260);
-  --text-inverse: oklch(10% 0.04 260);
+    --text-primary: oklch(90% 0.01 80);
+    --text-secondary: oklch(80% 0.015 78);
+    --text-tertiary: oklch(70% 0.02 75);
+    --text-inverse: oklch(35% 0.02 55);
 
-  /* 边框色 */
-  --border-primary: oklch(35% 0.03 260);
-  --border-secondary: oklch(30% 0.025 260);
-  --border-focus: oklch(58% 0.18 25);
+    --border-primary: oklch(50% 0.04 60);
+    --border-secondary: oklch(55% 0.05 62);
+    --border-focus: oklch(65% 0.15 45);
 
-  /* 品牌色 */
-  --accent-primary: oklch(58% 0.18 25);
-  --accent-secondary: oklch(70% 0.12 25);
+    --accent-primary: oklch(65% 0.18 35);
+    --accent-secondary: oklch(70% 0.2 38);
 
-  /* 阴影 */
-  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.2);
-  --shadow-md: 0 4px 6px rgba(0, 0, 0, 0.3);
-  --shadow-lg: 0 10px 15px rgba(0, 0, 0, 0.4);
+    --shadow-sm: 0 1px 2px oklch(0% 0 0 / 0.2);
+    --shadow-md: 0 4px 6px oklch(0% 0 0 / 0.3);
+    --shadow-lg: 0 10px 15px oklch(0% 0 0 / 0.4);
+  }
+
+  /* ----------------------------------------
+     简约模板：暗色 - 克制灰蓝调
+     ---------------------------------------- */
+  [data-template='simple'].dark {
+    --bg-primary: oklch(28% 0.015 260);
+    --bg-secondary: oklch(32% 0.02 265);
+    --bg-tertiary: oklch(30% 0.018 262);
+    --bg-elevated: oklch(36% 0.025 268);
+
+    --text-primary: oklch(85% 0.01 260);
+    --text-secondary: oklch(75% 0.015 258);
+    --text-tertiary: oklch(65% 0.02 255);
+    --text-inverse: oklch(28% 0.015 260);
+
+    --border-primary: oklch(40% 0.03 265);
+    --border-secondary: oklch(45% 0.035 268);
+
+    --accent-primary: oklch(62% 0.16 32);
+    --accent-secondary: oklch(68% 0.18 35);
+
+    --shadow-sm: 0 1px 2px oklch(0% 0 0 / 0.3);
+    --shadow-md: 0 4px 6px oklch(0% 0 0 / 0.4);
+    --shadow-lg: 0 10px 15px oklch(0% 0 0 / 0.5);
+  }
+
+  /* ----------------------------------------
+     古典模板：暗色 - 深色竹简
+     ---------------------------------------- */
+  [data-template='classic'].dark {
+    --bg-primary: oklch(42% 0.06 65);
+    --bg-secondary: oklch(45% 0.07 68);
+    --bg-tertiary: oklch(50% 0.08 70);
+    --bg-elevated: oklch(55% 0.08 72);
+
+    --text-primary: oklch(92% 0.01 85);
+    --text-secondary: oklch(85% 0.015 82);
+    --text-tertiary: oklch(75% 0.02 80);
+    --text-inverse: oklch(42% 0.06 65);
+
+    --border-primary: oklch(58% 0.08 68);
+    --border-secondary: oklch(62% 0.09 70);
+    --border-focus: oklch(65% 0.15 45);
+
+    --accent-primary: oklch(70% 0.2 38);
+    --accent-secondary: oklch(75% 0.22 40);
+
+    --shadow-sm: 0 1px 2px oklch(0% 0 0 / 0.3);
+    --shadow-md: 0 4px 6px oklch(0% 0 0 / 0.4);
+    --shadow-lg: 0 10px 15px oklch(0% 0 0 / 0.5);
+  }
 }
 
 /* ========================================
@@ -366,215 +488,141 @@
   }
 
   /* ========================================
-     宣纸纹理效果
+     宣纸纹理效果 - 洒金宣纸
      ======================================== */
   .xuanzhi-texture {
-    background-image: url("data:image/svg+xml,%3Csvg width='100' height='100' viewBox='0 0 100 100' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100' height='100' filter='url(%23noise)' opacity='0.08'/%3E%3C/svg%3E");
+    background-color: var(--bg-primary);
+    background-image:
+      radial-gradient(circle, var(--gold-fleck-small) 1px, transparent 1px),
+      radial-gradient(circle, var(--gold-fleck-medium) 2px, transparent 2px),
+      radial-gradient(circle, var(--gold-fleck-large) 0.5px, transparent 0.5px),
+      url('data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAADIAAAAyCAMAAAAp4XiDAAAAUVBMVEWFhYWDg4N3d3dtbW17e3t1dXWBgYGHh4d5eXlzc3OLi4ubm5uVlZWPj4+NjY19fX2JiYl/f39ra2uRkZGZmZlpaWmXl5dvb29xcXGTk5NnZ2c4z1OMAAAACXBIWXMAAAsTAAALEwEAmpwYAAAAIklEQVR4nGNgGAWjgEaBiAE5lEAiEQKkEglEoVAOiwAANzwAC3wQvH4AAAAASUVORK5CYII=');
+    background-size:
+      180px 150px,
+      300px 250px,
+      100px 120px,
+      auto;
+    background-position:
+      0 0,
+      40px 60px,
+      80px 30px,
+      0 0;
+    background-repeat: repeat;
+  }
+
+  /* 宣纸边缘泛黄效果 */
+  .xuanzhi-texture::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background: linear-gradient(
+      135deg,
+      oklch(92% 0.02 85 / 0.15) 0%,
+      oklch(85% 0.03 80 / 0.08) 100%
+    );
+    pointer-events: none;
+    z-index: 1;
   }
 
   /* ========================================
-     浓墨文字效果
+     竹简纹理效果 - 古典模板专用
      ======================================== */
-  .mo-text {
-    color: var(--mo-600);
-    text-shadow: 0 0 1px rgba(0, 0, 0, 0.1);
-  }
-
-  /* ========================================
-     朱砂印章效果
-     ======================================== */
-  .zhusha-seal {
-    background-color: var(--zhusha-500);
-    color: white;
-    border: 2px solid var(--zhusha-600);
-    border-radius: 4px;
-    padding: 4px 8px;
-    font-family: var(--font-zhuan);
-    display: inline-block;
-  }
-
-  /* ========================================
-     绢帛边框效果
-     ======================================== */
-  .juanbo-border {
-    border: 3px double var(--juanbo-400);
-    background: linear-gradient(135deg, rgba(249, 248, 240, 0.5), rgba(240, 237, 216, 0.3));
-  }
-
-  /* ========================================
-     黛色边框
-     ======================================== */
-  .dai-border {
-    border: 2px solid var(--dai-400);
-  }
-
-  /* ========================================
-     赭色装饰
-     ======================================== */
-  .zhu-accent {
-    color: var(--zhu-500);
-  }
-
-  /* ========================================
-     :has() 智能交互状态
-     ======================================== */
-  .form-group:has(:invalid:not(:placeholder-shown)) .form-label {
-    color: oklch(var(--destructive));
-  }
-
-  .form-group:has(:required) .form-label::after {
-    content: ' *';
-    color: oklch(var(--destructive));
-  }
-
-  .card:has(img) {
-    overflow: hidden;
-  }
-
-  .nav-item:has(.active) {
-    background-color: oklch(var(--color-accent));
-    color: oklch(var(--color-accent-foreground));
-  }
-
-  .input-wrapper:has(:focus) {
-    border-color: oklch(var(--color-ring));
-    box-shadow: 0 0 0 0.125rem oklch(var(--color-ring) / 0.2);
-  }
-
-  .card:has(:focus-visible) {
-    outline: 0.125rem solid oklch(var(--color-ring));
-    outline-offset: 0.125rem;
-  }
-
-  /* ========================================
-     移动端横向滑动容器
-     ======================================== */
-  .mobile-swipe-row {
-    @apply flex md:grid gap-4 md:gap-6 overflow-x-auto md:overflow-visible snap-x snap-mandatory -mx-4 px-4 md:mx-0 md:px-0 pb-6 md:pb-0;
-    -webkit-overflow-scrolling: touch;
-    scrollbar-width: none;
-  }
-
-  .mobile-swipe-row::-webkit-scrollbar {
-    display: none;
-  }
-
-  .mobile-swipe-card {
-    @apply shrink-0 snap-center md:w-auto;
-  }
-
-  .mobile-grid-2 {
-    @apply grid grid-cols-2 md:grid-cols-2 lg:grid-cols-4 gap-3 md:gap-6;
-  }
-}
-
-/* ========================================
-   @layer utilities - 工具类
-   ======================================== */
-@layer utilities {
-  /* 宽高比 */
-  .aspect-video {
-    aspect-ratio: 16 / 9;
-  }
-
-  .aspect-square {
-    aspect-ratio: 1 / 1;
-  }
-
-  .aspect-card {
-    aspect-ratio: 3 / 2;
-  }
-
-  /* ========================================
-     模板特定样式 - 古典/简约/华丽
-     ======================================== */
-
-  /* ========== 古典模板 ========== */
-  [data-template='classic'] .layout-border {
-    border-color: var(--juanbo-300);
-    border-width: 2px;
-  }
-
-  [data-template='classic'] .template-nav {
-    background: linear-gradient(to bottom, var(--juanbo-50), var(--bg-primary));
-    border-bottom: 2px solid var(--juanbo-300);
-  }
-
-  [data-template='classic'] .card,
-  [data-template='classic'] article {
-    border: 1px solid var(--juanbo-200);
-    box-shadow: 2px 2px 8px rgba(0, 0, 0, 0.08);
-  }
-
-  [data-template='classic'] .layout-pattern {
-    display: block;
-    opacity: 0.08;
-  }
-
   [data-template='classic'] body {
     background-color: var(--bg-primary);
+    background-image:
+      linear-gradient(
+        90deg,
+        var(--text-primary-transparent) 0%,
+        var(--text-primary-semi-transparent) 50%,
+        var(--text-primary-transparent) 100%
+      ),
+      repeating-linear-gradient(
+        0deg,
+        transparent 0px,
+        transparent 2px,
+        var(--text-primary-transparent) 2px,
+        var(--text-primary-transparent) 3px
+      ),
+      url('data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAADIAAAAyCAMAAAAp4XiDAAAAUVBMVEWFhYWDg4N3d3dtbW17e3t1dXWBgYGHh4d5eXlzc3OLi4ubm5uVlZWPj4+NjY19fX2JiYl/f39ra2uRkZGZmZlpaWmXl5dvb29xcXGTk5NnZ2c4z1OMAAAACXBIWXMAAAsTAAALEwEAmpwYAAAAIklEQVR4nGNgGAWjgEaBiAE5lEAiEQKkEglEoVAOiwAANzwAC3wQvH4AAAAASUVORK5CYII=');
+    background-size:
+      100% 100%,
+      100% 5px,
+      auto;
   }
 
-  /* ========== 简约模板 ========== */
-  [data-template='simple'] .layout-border {
-    border-color: var(--mo-200);
-    border-width: 1px;
+  /* 古典模板：纵向竹条缝隙 */
+  [data-template='classic'] body::after {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background-image: repeating-linear-gradient(
+      to right,
+      var(--text-primary-overlay) 0px,
+      var(--text-primary-overlay) 78px,
+      transparent 78px,
+      transparent 80px
+    );
+    background-size: 80px 100%;
+    pointer-events: none;
+    z-index: -1;
   }
 
-  [data-template='simple'] .template-nav {
-    background: var(--bg-secondary);
-    border-bottom: 1px solid var(--mo-200);
+  /* 竹简绳索样式 */
+  .zhujian-rope {
+    position: fixed;
+    left: 0;
+    right: 0;
+    height: 10px;
+    background-color: var(--text-primary);
+    background-image: repeating-linear-gradient(
+      45deg,
+      oklch(0% 0 0 / 0.2) 0px,
+      oklch(0% 0 0 / 0.2) 2px,
+      transparent 2px,
+      transparent 4px
+    );
+    border-radius: 5px;
+    box-shadow: 0 2px 6px oklch(0% 0 0 / 0.4);
+    pointer-events: none;
+    z-index: 50;
   }
 
-  [data-template='simple'] .card,
-  [data-template='simple'] article {
-    border: 1px solid var(--mo-100);
-    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+  .zhujian-rope-top {
+    top: 100px;
   }
 
-  [data-template='simple'] .layout-pattern {
-    display: none;
-    opacity: 0;
+  .zhujian-rope-bottom {
+    bottom: 100px;
   }
 
+  /* 简约模板：洒金宣纸背景 */
   [data-template='simple'] body {
-    background-color: oklch(100% 0 0);
+    background-color: var(--bg-primary);
+    background-image:
+      radial-gradient(circle, var(--gold-fleck-small) 1px, transparent 1px),
+      radial-gradient(circle, var(--gold-fleck-medium) 2px, transparent 2px),
+      radial-gradient(circle, var(--gold-fleck-large) 0.5px, transparent 0.5px),
+      url('data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAADIAAAAyCAMAAAAp4XiDAAAAUVBMVEWFhYWDg4N3d3dtbW17e3t1dXWBgYGHh4d5eXlzc3OLi4ubm5uVlZWPj4+NjY19fX2JiYl/f39ra2uRkZGZmZlpaWmXl5dvb29xcXGTk5NnZ2c4z1OMAAAACXBIWXMAAAsTAAALEwEAmpwYAAAAIklEQVR4nGNgGAWjgEaBiAE5lEAiEQKkEglEoVAOiwAANzwAC3wQvH4AAAAASUVORK5CYII=');
+    background-size:
+      180px 150px,
+      300px 250px,
+      100px 120px,
+      auto;
+    background-position:
+      0 0,
+      40px 60px,
+      80px 30px,
+      0 0;
+    background-repeat: repeat;
   }
 
-  [data-template='simple'] .xuanzhi-texture {
-    display: none;
-  }
-
-  /* ========== 华丽模板 ========== */
-  [data-template='deluxe'] .layout-border {
-    border-color: var(--zhusha-300);
-    border-width: 3px;
-    border-style: double;
-  }
-
-  [data-template='deluxe'] .template-nav {
-    background: linear-gradient(135deg, var(--zhusha-50), var(--juanbo-50), var(--zhusha-50));
-    border-bottom: 3px double var(--zhusha-400);
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-  }
-
-  [data-template='deluxe'] .card,
-  [data-template='deluxe'] article {
-    border: 2px double var(--zhusha-300);
-    box-shadow: 4px 4px 16px rgba(0, 0, 0, 0.12);
-    background: linear-gradient(135deg, var(--bg-secondary), var(--xuanzhi-50));
-  }
-
-  [data-template='deluxe'] .layout-pattern {
+  /* 古典模板：显示竹简绳索 */
+  [data-template='classic'] .zhujian-rope {
     display: block;
-    opacity: 0.12;
   }
 
-  [data-template='deluxe'] body {
-    background: linear-gradient(180deg, var(--xuanzhi-50), var(--bg-primary), var(--xuanzhi-100));
-  }
-
-  [data-template='deluxe'] .xuanzhi-texture {
-    opacity: 0.15;
+  /* 简约模板：隐藏竹简绳索 */
+  [data-template='simple'] .zhujian-rope {
+    display: none;
   }
 }
