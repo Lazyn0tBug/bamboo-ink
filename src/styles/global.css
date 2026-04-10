@@ -200,7 +200,7 @@
   --radius-sm: calc(var(--radius) - 0.25rem);
   --radius-xl: calc(var(--radius) + 0.25rem);
 
-  --shadow-nav-glow: 0 0 10px oklch(0% 0 0 / 0.1);
+  --shadow-nav-glow: 0 0 0.625rem oklch(0% 0 0 / 0.1);
 
   /* ========================================
      微型排版 Tokens
@@ -222,9 +222,19 @@
 /* ========================================
    主题变量 - 按优先级排列
    新增模板必须同时添加 :root (亮) 和 .dark (暗)
+
+   手动调整指南：
+   - OKLCH L 值决定亮度：L 越大越亮（96%=白，28%=深灰）
+   - 背景调亮：+L 值，如 28%→35%；调暗：-L 值
+   - 文字与背景联动：背景变亮时文字 L 值也需微调
+   - --text-inverse 应与对应 --bg-primary 亮度相反
+   - 暗色模板之间 L 差值应保持 5-8%，确保可区分
+   - 亮色模板之间 L 差值应保持 3-5%，确保可区分
    ======================================== */
 
-/* 1. 默认亮色 */
+/* 1. 默认亮色 — 宣纸白 (bg-primary: 94%)
+ * 调整背景亮度：调浅 94%→96%；调深 94%→92%
+ */
 :root {
   --radius: 0.75rem;
 
@@ -255,12 +265,15 @@
   --accent-secondary: oklch(58% 0.2 30);
 
   /* 阴影 */
-  --shadow-sm: 0 1px 2px oklch(0% 0 0 / 0.08);
-  --shadow-md: 0 4px 6px oklch(0% 0 0 / 0.1);
-  --shadow-lg: 0 10px 15px oklch(0% 0 0 / 0.15);
+  --shadow-sm: 0 0.0625rem 0.125rem oklch(0% 0 0 / 0.08);
+  --shadow-md: 0 0.25rem 0.375rem oklch(0% 0 0 / 0.1);
+  --shadow-lg: 0 0.625rem 0.9375rem oklch(0% 0 0 / 0.15);
 }
 
-/* 2. 简约亮色 */
+/* 2. 简约亮色 — 宣纸灰 (bg-primary: 90%)
+ * 调整：调浅 90%→93%；调深 90%→87%
+ * 注：应比默认亮色(94%)明显深一层，但不要太暗
+ */
 [data-template='simple']:root {
   --bg-primary: oklch(90% 0.01 85);
   --bg-secondary: oklch(92% 0.008 88);
@@ -273,7 +286,10 @@
   --border-secondary: oklch(75% 0.03 75);
 }
 
-/* 3. 古典亮色 */
+/* 3. 古典亮色 — 竹简白 (bg-primary: 96%)
+ * 调整：调浅 96%→98%；调深 96%→93%
+ * 注：应比默认亮色(94%)更白，竹简纹理通过透明渐变实现
+ */
 [data-template='classic']:root {
   --bg-primary: oklch(96% 0.03 80);
   --bg-secondary: oklch(97% 0.025 82);
@@ -296,12 +312,14 @@
   --accent-primary: oklch(55% 0.18 30);
   --accent-secondary: oklch(60% 0.2 32);
 
-  --shadow-sm: 0 1px 2px oklch(0% 0 0 / 0.1);
-  --shadow-md: 0 4px 6px oklch(0% 0 0 / 0.15);
-  --shadow-lg: 0 10px 15px oklch(0% 0 0 / 0.2);
+  --shadow-sm: 0 0.0625rem 0.125rem oklch(0% 0 0 / 0.1);
+  --shadow-md: 0 0.25rem 0.375rem oklch(0% 0 0 / 0.15);
+  --shadow-lg: 0 0.625rem 0.9375rem oklch(0% 0 0 / 0.2);
 }
 
-/* 4. 默认暗色 */
+/* 4. 默认暗色 — 深宣纸 (bg-primary: 35%)
+ * 调整：调浅 35%→40%；调深 35%→30%
+ */
 .dark {
   --bg-primary: oklch(35% 0.02 55);
   --bg-secondary: oklch(38% 0.025 58);
@@ -320,12 +338,16 @@
   --accent-primary: oklch(65% 0.18 35);
   --accent-secondary: oklch(70% 0.2 38);
 
-  --shadow-sm: 0 1px 2px oklch(0% 0 0 / 0.2);
-  --shadow-md: 0 4px 6px oklch(0% 0 0 / 0.3);
-  --shadow-lg: 0 10px 15px oklch(0% 0 0 / 0.4);
+  --shadow-sm: 0 0.0625rem 0.125rem oklch(0% 0 0 / 0.2);
+  --shadow-md: 0 0.25rem 0.375rem oklch(0% 0 0 / 0.3);
+  --shadow-lg: 0 0.625rem 0.9375rem oklch(0% 0 0 / 0.4);
 }
 
-/* 5. 简约暗色 */
+/* 5. 简约暗色 — 克制灰蓝 (bg-primary: 28%, 比默认暗色更深)
+ * 调整：调浅 28%→33%；调深 28%→23%
+ * 注：调浅后 text-inverse 也要同步调整到相近亮度
+ * 联动：text-inverse 应与 bg-primary 亮度一致(如 bg=33%, inverse=33%)
+ */
 [data-template='simple'].dark {
   --bg-primary: oklch(28% 0.015 260);
   --bg-secondary: oklch(32% 0.02 265);
@@ -343,12 +365,15 @@
   --accent-primary: oklch(62% 0.16 32);
   --accent-secondary: oklch(68% 0.18 35);
 
-  --shadow-sm: 0 1px 2px oklch(0% 0 0 / 0.3);
-  --shadow-md: 0 4px 6px oklch(0% 0 0 / 0.4);
-  --shadow-lg: 0 10px 15px oklch(0% 0 0 / 0.5);
+  --shadow-sm: 0 0.0625rem 0.125rem oklch(0% 0 0 / 0.3);
+  --shadow-md: 0 0.25rem 0.375rem oklch(0% 0 0 / 0.4);
+  --shadow-lg: 0 0.625rem 0.9375rem oklch(0% 0 0 / 0.5);
 }
 
-/* 6. 古典暗色 */
+/* 6. 古典暗色 — 深竹简 (bg-primary: 42%, 比默认暗色更浅)
+ * 调整：调浅 42%→48%；调深 42%→37%
+ * 注：应保持比简约暗色(28%)浅 5-8%，形成对比
+ */
 [data-template='classic'].dark {
   --bg-primary: oklch(42% 0.06 65);
   --bg-secondary: oklch(45% 0.07 68);
@@ -367,9 +392,9 @@
   --accent-primary: oklch(70% 0.2 38);
   --accent-secondary: oklch(75% 0.22 40);
 
-  --shadow-sm: 0 1px 2px oklch(0% 0 0 / 0.3);
-  --shadow-md: 0 4px 6px oklch(0% 0 0 / 0.4);
-  --shadow-lg: 0 10px 15px oklch(0% 0 0 / 0.5);
+  --shadow-sm: 0 0.0625rem 0.125rem oklch(0% 0 0 / 0.3);
+  --shadow-md: 0 0.25rem 0.375rem oklch(0% 0 0 / 0.4);
+  --shadow-lg: 0 0.625rem 0.9375rem oklch(0% 0 0 / 0.5);
 }
 
 /* ========================================
@@ -412,7 +437,7 @@
      ======================================== */
   .guji-text {
     font-family: var(--font-kai);
-    font-size: 18px;
+    font-size: clamp(1.0625rem, 1.5cqi, 1.125rem);
     line-height: 2.2;
   }
 
@@ -546,7 +571,7 @@
     position: fixed;
     left: 0;
     right: 0;
-    height: 10px;
+    height: 0.625rem;
     background-color: var(--text-primary);
     background-image: repeating-linear-gradient(
       45deg,
@@ -555,18 +580,18 @@
       transparent 2px,
       transparent 4px
     );
-    border-radius: 5px;
-    box-shadow: 0 2px 6px oklch(0% 0 0 / 0.4);
+    border-radius: 0.3125rem;
+    box-shadow: 0 0.125rem 0.375rem oklch(0% 0 0 / 0.4);
     pointer-events: none;
     z-index: 50;
   }
 
   .zhujian-rope-top {
-    top: 100px;
+    top: 6rem;
   }
 
   .zhujian-rope-bottom {
-    bottom: 100px;
+    bottom: 6rem;
   }
 
   /* 简约模板：洒金宣纸背景 */
