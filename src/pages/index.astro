@@ -50,7 +50,7 @@ const recentUpdates = [
 const template = new URL(Astro.request.url).searchParams.get('template') || 'classic';
 ---
 
-<BaseLayout title="首页" template={template as 'classic' | 'simple' | 'deluxe'}>
+<BaseLayout title="首页" template={template as 'classic' | 'simple'}>
   <!-- 欢迎区域 -->
   <div class="text-center py-12 mb-8">
     <h2 class="text-4xl font-bold text-text mb-4">古籍图书馆</h2>

@@ -1,5 +1,34 @@
 {
   "permissions": {
-    "allow": ["Bash(git checkout:*)", "Bash(bun run:*)"]
+    "allow": [
+      "Bash(git checkout:*)",
+      "Bash(bun run:*)",
+      "WebSearch",
+      "Bash(echo \"lint: $?\")"
+    ]
+  },
+  "hooks": {
+    "SessionStart": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "cat .claude/SESSION.md 2>/dev/null | grep -v '^$' | grep -v '^#' | head -20",
+            "statusMessage": "Loading session state..."
+          }
+        ]
+      }
+    ],
+    "PreCompact": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "echo \"=== PRE-COMPACT STATE ===\" && git diff --name-only 2>/dev/null && echo \"---\" && cat .claude/SESSION.md 2>/dev/null",
+            "statusMessage": "Saving session state before compression..."
+          }
+        ]
+      }
+    ]
   }
 }

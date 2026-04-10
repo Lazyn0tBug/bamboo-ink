@@ -303,84 +303,85 @@ export default defineConfig({
 
 ## 可用的 Skills
 
-项目中已配置以下 skills，开发时可直接调用相关技能规范：
+项目中已配置来自 `/e/code/ai/.agents/skills/` 的 skills，开发时应根据场景调用：
 
 ### Astro 核心技能
 
-- `astro-best-practices` - Astro 最佳实践
-  - 使用 `<script is:inline>` 处理客户端交互
-  - 静态站点优先，必要时使用服务端渲染
-  - 图片使用 Astro 优化
-  - 参考：https://docs.astro.build
+**Skill: `astro`**
 
-### TypeScript 与 JavaScript
+- **用途**: Astro 框架开发指导
+- **使用场景**:
+  - 创建 Astro 组件和页面
+  - 配置 SSR 适配器
+  - 设置内容集合 (Content Collections)
+  - 静态站点部署
+  - CLI 命令使用
+- **参考**: [docs.astro.build](https://docs.astro.build)
+- **常用命令**:
+  ```bash
+  npx astro dev      # 开发服务器
+  npx astro build    # 构建静态站点
+  npx astro check    # 类型检查
+  npx astro add      # 添加集成
+  ```
 
-- `typescript-advanced-types` - TypeScript 高级类型
-  - 接口定义、泛型、条件类型
-  - 类型安全的组件 Props
-  - Zod 数据验证 (Astro 6 使用 `astro/zod`)
+### TypeScript 技能
 
-- `modern-javascript-patterns` - 现代 JavaScript 模式
-  - ES6+ 特性
-  - 异步模式：async/await
-  - 函数式编程
+**Skill: `typescript-advanced-types`**
 
-### 样式与 UI
+- **用途**: TypeScript 高级类型系统
+- **使用场景**:
+  - 实现复杂类型逻辑
+  - 创建可复用类型工具
+  - 构建类型安全的 API 客户端
+  - 表单验证系统
+  - 泛型组件开发
+- **核心概念**:
+  - 泛型 (Generics)
+  - 条件类型 (Conditional Types)
+  - 映射类型 (Mapped Types)
+  - 模板字面量类型 (Template Literal Types)
+  - 工具类型 (Utility Types)
 
-- `tailwindcss-v4` - Tailwind CSS v4
-  - CSS `@theme` 配置
-  - OKLCH 颜色空间
-  - 响应式工具类
+### JavaScript 技能
 
-- `traditional-chinese-colors` - 中国传统色
-  - 宣纸色系 (`xuanzhi-*`)
-  - 浓墨色系 (`mo-*`)
-  - 朱砂色系 (`zhusha-*`)
-  - 绢帛色系 (`juanbo-*`)
-  - 黛色色系 (`dai-*`)
-  - 赭色色系 (`zhu-*`)
+**Skill: `modern-javascript-patterns`**
 
-### 安全与性能
+- **用途**: 现代 JavaScript (ES6+) 模式
+- **使用场景**:
+  - 重构传统 JavaScript
+  - 实现函数式编程模式
+  - 优化异步操作
+  - 迁移回调到 Promise/async-await
+- **核心特性**:
+  - 箭头函数、解构、展开运算符
+  - Promise 和 async/await
+  - 数组方法 (map, filter, reduce)
+  - 高阶函数
+  - 组合和管道
 
-- `astro-csp` - Content Security Policy
-  - Astro 6 内置 CSP 支持
-  - 自动脚本哈希
-  - 安全头注入
+### Tailwind CSS 技能
 
-- `astro-rust-compiler` - Astro Rust 编译器
-  - 更快的构建速度
-  - 更好的错误诊断
+**Skill: `tailwindcss-advanced-layouts`**
 
-### 测试相关
+- **用途**: Tailwind CSS 高级布局技术
+- **使用场景**:
+  - CSS Grid 复杂布局
+  - Flexbox 模式
+  - 响应式设计
+  - 容器查询 (Container Queries)
+  - 滚动和溢出控制
+- **核心模式**:
+  - Grid: `grid-cols-*`, `auto-fill`, `auto-fit`
+  - Flex: `flex-1`, `justify-*`, `items-*`
+  - 响应式：Mobile First 断点
+  - 容器查询：`@container`
 
+### 其他技能
+
+- `agent-browser` - 浏览器自动化 (QA 测试、截图验证)
 - `vitest` - 单元测试框架
-  - 使用 `bun run test` 运行测试
-  - 测试文件位于 `tests/` 目录
-  - 使用 `bun run test:coverage` 生成覆盖率报告
-  - 使用 `bun run test:ui` 打开 Web UI
-
-- `astro-testing` - Astro 测试最佳实践
-  - 组件测试使用黑盒方式
-  - 测试行为而非实现
-
-### 工具链
-
-- `oxc-toolchain` - OXC 工具链 (可选)
-  - Oxlint 代码检查
-  - Oxfmt 代码格式化
-  - 高性能 Rust 实现
-
-- `agent-browser` - 浏览器自动化
-  - QA 测试
-  - 截图验证
-
-- `design-review` - 设计审查
-  - 视觉一致性检查
-  - UI/UX 优化
-
-- `qa` - 质量保证
-  - 系统性测试
-  - Bug 修复
+- `code-review-expert` - 代码审查和质量检查
 
 ## 开发流程
 

@@ -4,7 +4,7 @@ import { Font } from 'astro:assets';
 
 interface Props {
   title: string;
-  template?: 'classic' | 'simple' | 'deluxe';
+  template?: 'classic' | 'simple';
 }
 
 const { title, template = 'classic' } = Astro.props;
@@ -22,9 +22,10 @@ const { title, template = 'classic' } = Astro.props;
     <Font cssVariable="--font-ma-shan-zheng" preload />
     <title>{title} - 古籍图书馆</title>
   </head>
-  <body class="min-h-screen font-kai text-text bg-background transition-colors duration-300">
-    <!-- 宣纸纹理背景（仅 classic 和 deluxe 模板） -->
-    <div class="xuanzhi-texture fixed inset-0 pointer-events-none z-0 layout-pattern"></div>
+  <body class="min-h-screen font-kai text-text transition-colors duration-300">
+    <!-- 竹简绳索（仅古典模板显示） -->
+    <div class="zhujian-rope zhujian-rope-top"></div>
+    <div class="zhujian-rope zhujian-rope-bottom"></div>
 
     <!-- 顶部导航 -->
     <nav
@@ -70,11 +71,6 @@ const { title, template = 'classic' } = Astro.props;
               data-template="simple"
               class={`px-3 py-1.5 rounded text-sm ${template === 'simple' ? 'bg-accent text-white' : 'text-text-secondary hover:bg-surface/50'}`}
               >简约</button
-            >
-            <button
-              data-template="deluxe"
-              class={`px-3 py-1.5 rounded text-sm ${template === 'deluxe' ? 'bg-accent text-white' : 'text-text-secondary hover:bg-surface/50'}`}
-              >华丽</button
             >
           </div>
           <button

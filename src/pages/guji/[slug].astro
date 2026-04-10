@@ -101,7 +101,7 @@ if (!data) {
 const template = new URL(Astro.request.url).searchParams.get('template') || 'classic';
 ---
 
-<BaseLayout title={data.title} template={template as 'classic' | 'simple' | 'deluxe'}>
+<BaseLayout title={data.title} template={template as 'classic' | 'simple'}>
   <!-- 面包屑导航 -->
   <nav class="mb-6" aria-label="面包屑导航">
     <ol
