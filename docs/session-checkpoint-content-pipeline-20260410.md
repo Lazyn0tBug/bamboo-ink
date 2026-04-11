@@ -21,19 +21,20 @@
 
 ### 本次会话发现的 7 个问题（验证后）
 
-| # | 问题 | 影响 | 状态 |
-|---|------|------|------|
-| 1 | `content.config.ts` 已有 `author`、`dynasty`、`subcategory` 字段，文档说"需要添加" | 文档错误，实际只需添加 `chapters` 和 `slug` | 已修正 |
-| 2 | `docType` 枚举实际是 `['catalog', 'content']`，文档写的是 `['book', 'catalog', 'chapter']` | 文档错误 | 已修正 |
-| 3 | 转换脚本 `extractMetadata` 将 `经部` 映射为 `经`（单字），输出到 `content/经/`，但 schema 期望 `经部` | **转换脚本有 bug**，输出无法被 Content Collection 识别 | 待修 |
-| 4 | 经部所有已检查文件均为 UTF-8（无 BOM，meta 声明 `charset=utf-8`），无 GBK | 编码检测逻辑可能永远不走 GBK 分支 | 待验证全量 |
-| 5 | `论语.htm` 是单文件（74KB），非目录。多文件的是 `论语集注/`（12 个章节文件） | 文档中 "论语测试多文件拼接" 的前提错误 | 待修正 |
-| 6 | HTML 是 Microsoft FrontPage 4.0 产物：无语义化标签，标题用 `<FONT size=5>`，正文在 `<PRE>` 中 | **Turndown 将完全失败** — 它需要语义化 HTML，会把 `<PRE>` 内容转成代码块 | 关键阻塞 |
-| 7 | 藏目路径与磁盘路径不匹配（目录写 `经部/论语/index.htm`，实际是 `经部/论语.htm`） | 映射算法需要容错 | 算法已涵盖 |
+| #   | 问题                                                                                                  | 影响                                                                     | 状态       |
+| --- | ----------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------ | ---------- |
+| 1   | `content.config.ts` 已有 `author`、`dynasty`、`subcategory` 字段，文档说"需要添加"                    | 文档错误，实际只需添加 `chapters` 和 `slug`                              | 已修正     |
+| 2   | `docType` 枚举实际是 `['catalog', 'content']`，文档写的是 `['book', 'catalog', 'chapter']`            | 文档错误                                                                 | 已修正     |
+| 3   | 转换脚本 `extractMetadata` 将 `经部` 映射为 `经`（单字），输出到 `content/经/`，但 schema 期望 `经部` | **转换脚本有 bug**，输出无法被 Content Collection 识别                   | 待修       |
+| 4   | 经部所有已检查文件均为 UTF-8（无 BOM，meta 声明 `charset=utf-8`），无 GBK                             | 编码检测逻辑可能永远不走 GBK 分支                                        | 待验证全量 |
+| 5   | `论语.htm` 是单文件（74KB），非目录。多文件的是 `论语集注/`（12 个章节文件）                          | 文档中 "论语测试多文件拼接" 的前提错误                                   | 待修正     |
+| 6   | HTML 是 Microsoft FrontPage 4.0 产物：无语义化标签，标题用 `<FONT size=5>`，正文在 `<PRE>` 中         | **Turndown 将完全失败** — 它需要语义化 HTML，会把 `<PRE>` 内容转成代码块 | 关键阻塞   |
+| 7   | 藏目路径与磁盘路径不匹配（目录写 `经部/论语/index.htm`，实际是 `经部/论语.htm`）                      | 映射算法需要容错                                                         | 算法已涵盖 |
 
 ### HTML 结构分析（经部样本）
 
 **`论语.htm` 实际结构：**
+
 ```html
 <CENTER><B><FONT face=楷体_GB2312><FONT color=#ff6666><FONT size=5>论语</FONT></FONT></FONT></B></CENTER>
 <CENTER><HR width="85%"></CENTER>
@@ -47,6 +48,7 @@
 ```
 
 **关键发现：**
+
 - 无 `<h1>`-`<h6>` 标签 — 标题是 `<FONT size=N>` 和 `<FONT color=XXX>`
 - 正文全部在 `<PRE>` 标签内 — 不换行，无段落标记
 - 嵌套 `<FONT>` 标签 3-4 层
@@ -70,12 +72,14 @@ next1.gif, up.gif (导航图片)
 ### 问题：HTML 格式极度混乱，是否需要先规范化？
 
 **选项 A：先规范化 HTML，再转换**
+
 - 写一个脚本将 FrontPage HTML 转换为干净的语义化 HTML
 - 然后用 Turndown 或自定义脚本转换
 - 优点：规范化后的 HTML 可作为中间产物，便于调试
 - 缺点：额外增加一个步骤，且规范化脚本可能比直接转换更复杂
 
 **选项 B：跳过规范化，直接写 cheerio 提取器**
+
 - 分析 HTML 模式（标题=FONT size/color，正文=PRE 内的文本）
 - 用 cheerio 直接提取标题层级和正文段落
 - 输出干净的 Markdown
@@ -83,6 +87,7 @@ next1.gif, up.gif (导航图片)
 - 缺点：需要手动处理所有 HTML 变体
 
 **选项 C：先做 HTML 模式审计**
+
 - 抽样检查 10-20 个不同书籍的 HTML 文件
 - 识别所有不同的 HTML 模式/模板
 - 确认是否存在 2-3 种固定模板，还是每本书都不一样

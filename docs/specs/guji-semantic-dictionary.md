@@ -45,13 +45,13 @@ JSON 对象，包含四个顶级域：`dynasties`、`categories`、`authors`、`
 }
 ```
 
-| 字段 | 类型 | 必填 | 说明 |
-|------|------|------|------|
-| `canonical` | string | 是 | 标准朝代名，frontmatter 中统一使用 |
-| `aliases` | string[] | 是 | 所有别名，包含 canonical 本身 |
-| `period_start` | number | 否 | 公元起始年（CE，公元前为负） |
-| `period_end` | number | 否 | 公元结束年 |
-| `era_names` | string[] | 否 | 该朝代常见年号列表 |
+| 字段           | 类型     | 必填 | 说明                               |
+| -------------- | -------- | ---- | ---------------------------------- |
+| `canonical`    | string   | 是   | 标准朝代名，frontmatter 中统一使用 |
+| `aliases`      | string[] | 是   | 所有别名，包含 canonical 本身      |
+| `period_start` | number   | 否   | 公元起始年（CE，公元前为负）       |
+| `period_end`   | number   | 否   | 公元结束年                         |
+| `era_names`    | string[] | 否   | 该朝代常见年号列表                 |
 
 ### 3.2 分类域（categories）
 
@@ -75,12 +75,12 @@ JSON 对象，包含四个顶级域：`dynasties`、`categories`、`authors`、`
 }
 ```
 
-| 字段 | 类型 | 必填 | 说明 |
-|------|------|------|------|
-| `canonical` | string | 是 | 标准部类名 |
-| `subcategories` | object[] | 是 | 下属子类，按四部分类法 |
-| `subcategories[].canonical` | string | 是 | 子类标准名 |
-| `subcategories[].aliases` | string[] | 是 | 子类别名 |
+| 字段                        | 类型     | 必填 | 说明                   |
+| --------------------------- | -------- | ---- | ---------------------- |
+| `canonical`                 | string   | 是   | 标准部类名             |
+| `subcategories`             | object[] | 是   | 下属子类，按四部分类法 |
+| `subcategories[].canonical` | string   | 是   | 子类标准名             |
+| `subcategories[].aliases`   | string[] | 是   | 子类别名               |
 
 ### 3.3 作者域（authors）
 
@@ -100,15 +100,15 @@ JSON 对象，包含四个顶级域：`dynasties`、`categories`、`authors`、`
 }
 ```
 
-| 字段 | 类型 | 必填 | 说明 |
-|------|------|------|------|
-| `canonical` | string | 是 | 标准作者名 |
-| `aliases` | string[] | 是 | 所有别名（含本名、字、号、谥号） |
-| `dynasty` | string | 是 | 所属朝代（引用 dynasties.canonical） |
-| `birth_year` | number | 否 | 出生年 |
-| `death_year` | number | 否 | 卒年 |
-| `courtesy_name` | string | 否 | 字 |
-| `art_name` | string | 否 | 号 |
+| 字段            | 类型     | 必填 | 说明                                 |
+| --------------- | -------- | ---- | ------------------------------------ |
+| `canonical`     | string   | 是   | 标准作者名                           |
+| `aliases`       | string[] | 是   | 所有别名（含本名、字、号、谥号）     |
+| `dynasty`       | string   | 是   | 所属朝代（引用 dynasties.canonical） |
+| `birth_year`    | number   | 否   | 出生年                               |
+| `death_year`    | number   | 否   | 卒年                                 |
+| `courtesy_name` | string   | 否   | 字                                   |
+| `art_name`      | string   | 否   | 号                                   |
 
 ### 3.4 典籍域（books）
 
@@ -127,14 +127,14 @@ JSON 对象，包含四个顶级域：`dynasties`、`categories`、`authors`、`
 }
 ```
 
-| 字段 | 类型 | 必填 | 说明 |
-|------|------|------|------|
-| `canonical` | string | 是 | 典籍标准名 |
-| `aliases` | string[] | 是 | 所有别名（含简称、异名） |
-| `category` | string | 是 | 所属部（引用 categories.canonical） |
-| `subcategory` | string | 否 | 所属子类 |
-| `author` | string | 否 | 作者（引用 authors.canonical） |
-| `dynasty` | string | 否 | 成书朝代 |
+| 字段          | 类型     | 必填 | 说明                                |
+| ------------- | -------- | ---- | ----------------------------------- |
+| `canonical`   | string   | 是   | 典籍标准名                          |
+| `aliases`     | string[] | 是   | 所有别名（含简称、异名）            |
+| `category`    | string   | 是   | 所属部（引用 categories.canonical） |
+| `subcategory` | string   | 否   | 所属子类                            |
+| `author`      | string   | 否   | 作者（引用 authors.canonical）      |
+| `dynasty`     | string   | 否   | 成书朝代                            |
 
 ## 4. API 规范
 
@@ -145,43 +145,43 @@ JSON 对象，包含四个顶级域：`dynasties`、`categories`、`authors`、`
 将别名映射到 canonical 值。
 
 ```javascript
-normalize("dynasty", "南宋")     // → "宋"
-normalize("dynasty", "宋")       // → "宋"（已是 canonical）
-normalize("author", "吕居仁")    // → "吕本中"
-normalize("author", "未知作者")   // → "未知作者"（未知值返回原值 + warn）
+normalize('dynasty', '南宋'); // → "宋"
+normalize('dynasty', '宋'); // → "宋"（已是 canonical）
+normalize('author', '吕居仁'); // → "吕本中"
+normalize('author', '未知作者'); // → "未知作者"（未知值返回原值 + warn）
 ```
 
-| 参数 | 类型 | 说明 |
-|------|------|------|
-| `field` | `"dynasty" \| "author" \| "book" \| "category"` | 字段类型 |
-| `value` | string | 待归一化的值 |
-| 返回值 | string | canonical 值，或原始值（未匹配时） |
+| 参数    | 类型                                            | 说明                               |
+| ------- | ----------------------------------------------- | ---------------------------------- |
+| `field` | `"dynasty" \| "author" \| "book" \| "category"` | 字段类型                           |
+| `value` | string                                          | 待归一化的值                       |
+| 返回值  | string                                          | canonical 值，或原始值（未匹配时） |
 
 ### 4.2 validate(field, value)
 
 检查值是否在字典中。
 
 ```javascript
-validate("dynasty", "宋")        // → true
-validate("dynasty", "道部")      // → false（不是合法朝代）
-validate("category", "经部")     // → true
+validate('dynasty', '宋'); // → true
+validate('dynasty', '道部'); // → false（不是合法朝代）
+validate('category', '经部'); // → true
 ```
 
-| 参数 | 类型 | 说明 |
-|------|------|------|
-| `field` | `"dynasty" \| "author" \| "book" \| "category" \| "subcategory"` | 字段类型 |
-| `value` | string | 待校验的值 |
-| 返回值 | boolean | 是否在字典的 aliases 或 canonical 中 |
+| 参数    | 类型                                                             | 说明                                 |
+| ------- | ---------------------------------------------------------------- | ------------------------------------ |
+| `field` | `"dynasty" \| "author" \| "book" \| "category" \| "subcategory"` | 字段类型                             |
+| `value` | string                                                           | 待校验的值                           |
+| 返回值  | boolean                                                          | 是否在字典的 aliases 或 canonical 中 |
 
 ### 4.3 lookup(field, value)
 
 返回完整记录。
 
 ```javascript
-lookup("author", "吕本中")
+lookup('author', '吕本中');
 // → { canonical: "吕本中", aliases: [...], dynasty: "宋", ... }
 
-lookup("author", "吕居仁")
+lookup('author', '吕居仁');
 // → 同上（通过别名查找）
 ```
 
@@ -190,7 +190,7 @@ lookup("author", "吕居仁")
 返回某字段的所有 canonical 值列表。
 
 ```javascript
-getAll("dynasty")
+getAll('dynasty');
 // → ["夏", "商", "周", "秦", "汉", "唐", "宋", ...]
 ```
 
@@ -203,13 +203,13 @@ getAll("dynasty")
 const dict = loadDictionary();
 
 // 从 HTML title 提取到 "官箴(南宋·吕本中)"
-const raw = parseTitle("官箴(南宋·吕本中)");
+const raw = parseTitle('官箴(南宋·吕本中)');
 // raw = { book: "官箴", dynasty: "南宋", author: "吕本中" }
 
 const normalized = {
-  book: dict.normalize("book", raw.book),       // → "官箴"
-  dynasty: dict.normalize("dynasty", raw.dynasty), // → "宋"
-  author: dict.normalize("author", raw.author),    // → "吕本中"
+  book: dict.normalize('book', raw.book), // → "官箴"
+  dynasty: dict.normalize('dynasty', raw.dynasty), // → "宋"
+  author: dict.normalize('author', raw.author), // → "吕本中"
 };
 ```
 
@@ -217,10 +217,10 @@ const normalized = {
 
 ```typescript
 // src/content/config.ts
-import { dict } from "../../scripts/lib/dictionary-loader.mjs";
+import { dict } from '../../scripts/lib/dictionary-loader.mjs';
 
-const dynastyValues = dict.getAll("dynasty");
-const categoryValues = dict.getAll("category");
+const dynastyValues = dict.getAll('dynasty');
+const categoryValues = dict.getAll('category');
 
 export const gujiSchema = z.object({
   dynasty: z.enum(dynastyValues as [string, ...string[]]),
@@ -233,10 +233,10 @@ export const gujiSchema = z.object({
 
 ```javascript
 // 客户端加载 Markdown 后校验元数据
-const dict = await fetch("/dictionary.json").then(r => r.json());
+const dict = await fetch('/dictionary.json').then((r) => r.json());
 const meta = extractFrontmatter(markdown);
 
-if (!dict.dynasties.some(d => d.aliases.includes(meta.dynasty))) {
+if (!dict.dynasties.some((d) => d.aliases.includes(meta.dynasty))) {
   console.warn(`[guji] Unknown dynasty: "${meta.dynasty}" in ${meta.title}`);
 }
 ```
@@ -278,12 +278,12 @@ bun run scripts/validate-frontmatter.js
 
 首次交付时，字典应至少包含从已采样源 HTML 中提取的条目：
 
-| 域 | 最小范围 | 预估条目数 |
-|----|----------|-----------|
-| dynasties | 源 HTML 中出现的所有朝代 | ~30 |
-| categories | 四部 + 常见子类 | ~60 |
-| authors | 已采样文件中出现的作者 | ~50 |
-| books | 已采样文件中出现的典籍 | ~50 |
+| 域         | 最小范围                 | 预估条目数 |
+| ---------- | ------------------------ | ---------- |
+| dynasties  | 源 HTML 中出现的所有朝代 | ~30        |
+| categories | 四部 + 常见子类          | ~60        |
+| authors    | 已采样文件中出现的作者   | ~50        |
+| books      | 已采样文件中出现的典籍   | ~50        |
 
 后续随转换进度逐步扩充，目标覆盖全部 9000+ 文件中出现的元数据。
 

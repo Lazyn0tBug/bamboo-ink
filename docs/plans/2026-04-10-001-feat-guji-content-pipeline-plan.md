@@ -20,36 +20,36 @@ origin: docs/guji-modernization-plan.md
 
 源 HTML 文件由不同时期、不同人录入，来源混杂（华东师大网站、国学网等），格式极度不统一：
 
-| 特征 | 观察结果 |
-|------|----------|
-| **编码器** | Microsoft FrontPage 4.0、Netscape 4.05 |
-| **字符编码** | 大部分为 UTF-8，部分可能残留 GBK |
-| **HTML 版本** | 非标准 HTML 4，大量内联样式和过时标签 |
-| **嵌套深度** | 可达 10+ 层 table/blockquote/font 嵌套 |
-| **正文章节** | 有的用 `<pre>` 包裹纯文本，有的用 `<ol>` 列表结构 |
-| **注解** | 经部有「正文+注+疏」三层结构（如《唐律疏议》450KB+ 单文件） |
-| **编年** | 史部（如《资治通鉴》）用年号纪年作为段落前缀 |
-| **导航噪声** | 页眉页脚大量导航链接、图片、主题样式 — 需剥离 |
-| **缺字** | 部分用 `■` 标记 Unicode 缺字 |
+| 特征          | 观察结果                                                    |
+| ------------- | ----------------------------------------------------------- |
+| **编码器**    | Microsoft FrontPage 4.0、Netscape 4.05                      |
+| **字符编码**  | 大部分为 UTF-8，部分可能残留 GBK                            |
+| **HTML 版本** | 非标准 HTML 4，大量内联样式和过时标签                       |
+| **嵌套深度**  | 可达 10+ 层 table/blockquote/font 嵌套                      |
+| **正文章节**  | 有的用 `<pre>` 包裹纯文本，有的用 `<ol>` 列表结构           |
+| **注解**      | 经部有「正文+注+疏」三层结构（如《唐律疏议》450KB+ 单文件） |
+| **编年**      | 史部（如《资治通鉴》）用年号纪年作为段落前缀                |
+| **导航噪声**  | 页眉页脚大量导航链接、图片、主题样式 — 需剥离               |
+| **缺字**      | 部分用 `■` 标记 Unicode 缺字                                |
 
 ### 四类古籍结构差异
 
-| 部类 | 结构特征 | 复杂度 | 代表样本 |
-|------|----------|--------|----------|
-| **子部** | 哲学论著，多为纯文本分段落，偶有简单注 | ★★☆ | 《官箴》（14KB, `<pre>` 纯文本） |
-| **集部** | 诗文集合，每篇独立，有标题 | ★★☆ | 待采样 |
-| **史部-编年** | 按年号纪年分段落，每段内事件连续叙述 | ★★★ | 《资治通鉴》（卷 58: 年号→事件段落） |
-| **史部-纪传** | 每人一篇传记，有传主标题和"颂曰"结尾 | ★★★ | 《列女传》（每条有标题+正文+颂） |
-| **史部-校注** | 正文+校注并行，含目录索引页 | ★★★★ | 《华阳国志校补图注》（450KB+） |
-| **经部-注疏** | 正文+注+疏+校勘记四层嵌套 | ★★★★★ | 《唐律疏议》（大文件） |
+| 部类          | 结构特征                               | 复杂度 | 代表样本                             |
+| ------------- | -------------------------------------- | ------ | ------------------------------------ |
+| **子部**      | 哲学论著，多为纯文本分段落，偶有简单注 | ★★☆    | 《官箴》（14KB, `<pre>` 纯文本）     |
+| **集部**      | 诗文集合，每篇独立，有标题             | ★★☆    | 待采样                               |
+| **史部-编年** | 按年号纪年分段落，每段内事件连续叙述   | ★★★    | 《资治通鉴》（卷 58: 年号→事件段落） |
+| **史部-纪传** | 每人一篇传记，有传主标题和"颂曰"结尾   | ★★★    | 《列女传》（每条有标题+正文+颂）     |
+| **史部-校注** | 正文+校注并行，含目录索引页            | ★★★★   | 《华阳国志校补图注》（450KB+）       |
+| **经部-注疏** | 正文+注+疏+校勘记四层嵌套              | ★★★★★  | 《唐律疏议》（大文件）               |
 
 ### 业界参考
 
-| 项目 | 格式 | 借鉴点 |
-|------|------|--------|
-| CTEXT (ctext.org) | JSON API, URN 分层 | 轻量分层递归：work → subsection → fulltext |
-| CBETA | TEI P5 XML | 校勘记 apparatus、版本 witness、双行小注 encoding |
-| TEI Chinese | XML with `<seg>` | 正文/注/疏用 `@type` 区分，linked notes |
+| 项目              | 格式               | 借鉴点                                            |
+| ----------------- | ------------------ | ------------------------------------------------- |
+| CTEXT (ctext.org) | JSON API, URN 分层 | 轻量分层递归：work → subsection → fulltext        |
+| CBETA             | TEI P5 XML         | 校勘记 apparatus、版本 witness、双行小注 encoding |
+| TEI Chinese       | XML with `<seg>`   | 正文/注/疏用 `@type` 区分，linked notes           |
 
 **本项目选择**：Markdown + YAML frontmatter 作为存储格式，不追求 TEI XML 的学术级严谨，但要在 Markdown 中保留可识别的结构层次，为后续 AI 标注留出接口。
 
@@ -105,6 +105,7 @@ origin: docs/guji-modernization-plan.md
 ### D2. 按部类分阶段转换，不按统一模型
 
 **理由**: 四类古籍结构差异巨大。子部纯文本和经部注疏的转换复杂度差 10 倍。采用渐进策略：
+
 1. 纯文本类（子部/集部部分）→ 验证管道
 2. 编年/纪传类（史部）→ 处理结构化段落
 3. 校注类（史部含校补）→ 处理正文/注文分离
@@ -120,6 +121,7 @@ Stage 2: 结构化 JSON → Markdown + frontmatter
 ```
 
 **理由**: JSON 中间格式使得：
+
 - 可以独立调试「结构识别」和「Markdown 生成」两个环节
 - 中间结果可用于后续 AI 标注（JSON 比 Markdown 更易程序处理）
 - 便于增量转换（跳过已有 JSON 的文件）
@@ -158,7 +160,7 @@ frontmatter 字段设计参考中国古籍元数据规范，包含：title, auth
 
 ## High-Level Technical Design
 
-> *This illustrates the intended approach and is directional guidance for review, not implementation specification. The implementing agent should treat it as context, not code to reproduce.*
+> _This illustrates the intended approach and is directional guidance for review, not implementation specification. The implementing agent should treat it as context, not code to reproduce._
 
 ### 转换管道架构
 
@@ -200,6 +202,7 @@ frontmatter 字段设计参考中国古籍元数据规范，包含：title, auth
 ### 四类结构识别策略
 
 **子部（纯文本类）— ★★☆**
+
 ```
 HTML: <pre> 段落文本
 JSON: { type: "treatise", paragraphs: [...], annotations: [...] }
@@ -207,6 +210,7 @@ MD:  纯标题 + 段落，注解用块引用
 ```
 
 **史部-编年（资治通鉴类）— ★★★**
+
 ```
 HTML: <pre> 年号纪年 + 事件段落
 JSON: { type: "chronicle", entries: [{ era, year, events: [...] }] }
@@ -214,6 +218,7 @@ MD:  年号为 h3/h4，事件为段落
 ```
 
 **史部-纪传（列女传类）— ★★★**
+
 ```
 HTML: <pre> 传主标题(彩色粗体) + 正文 + 颂曰
 JSON: { type: "biography", entries: [{ name, content, ode }] }
@@ -221,6 +226,7 @@ MD:  传主为 h3，正文为段落，"颂曰"用块引用
 ```
 
 **经部-注疏 — ★★★★★**
+
 ```
 HTML: 嵌套 <ol> 或 <pre> 含注/疏标记
 JSON: { type: "annotated", sections: [{ text, commentaries: [{ author, content }] }] }
@@ -232,6 +238,7 @@ MD:  正文为段落，注/疏用嵌套块引用
 ### 执行策略
 
 每完成一个 Unit 后必须：
+
 1. 运行 `bun run lint && bun run test && bun run build`
 2. 人工审查样本输出
 3. 用户确认后方可进入下一 Unit
@@ -249,12 +256,14 @@ Unit 0 为语义字典，是所有后续工作的前置基础。Unit 1-3 为基�
 **Dependencies:** 无
 
 **Files:**
+
 - Create: `docs/specs/guji-semantic-dictionary.md`（规范文档）
 - Create: `scripts/lib/dictionary.json`（最小可用字典数据）
 - Create: `scripts/lib/dictionary-loader.js`（字典加载与校验工具）
 - Test: `scripts/tests/dictionary.test.js`
 
 **Approach:**
+
 - 规范文档定义字典的完整结构、字段含义、使用场景、维护方式
 - 字典数据采用 JSON 格式，包含四大域：
   - **dynasties** — 朝代名规范（含别名、公元纪年范围）
@@ -272,10 +281,12 @@ Unit 0 为语义字典，是所有后续工作的前置基础。Unit 1-3 为基�
 **Execution note:** 先完成规范文档，再填充最小字典数据（从已采样的源 HTML 中提取），最后写加载器。
 
 **Patterns to follow:**
+
 - 参考 CBDB 的人物命名规范
 - 参考 WH/T 70-2015 的朝代/分类受控词表
 
 **Test scenarios:**
+
 - Happy path: `normalize("dynasty", "南宋")` → `"宋"`
 - Happy path: `normalize("dynasty", "宋")` → `"宋"`（已是 canonical）
 - Happy path: `normalize("author", "吕居仁")` → `"吕本中"`
@@ -293,20 +304,24 @@ Unit 0 为语义字典，是所有后续工作的前置基础。Unit 1-3 为基�
 **Dependencies:** Unit 0（schema 的枚举值从字典加载）
 
 **Files:**
+
 - Create: `src/content/config.ts`
 - Modify: `astro.config.mjs`（如需集成 content 配置）
 
 **Approach:**
+
 - 定义 `guji` collection 的 Zod schema，包含 frontmatter 字段：title, author, dynasty, category, subcategory, edition, source, date, juan, language
 - category 为枚举：经部 | 史部 | 子部 | 集部
 - 不定义 body 的渲染规则（使用 Astro 默认 Markdown 渲染）
 - 保持 schema 宽松 — 后续按需增加字段
 
 **Patterns to follow:**
+
 - Astro 6 Content Collections 文档模式
 - 使用 `defineCollection` + `z.object`
 
 **Test scenarios:**
+
 - Happy path: schema 正确验证包含所有必填字段的 frontmatter
 - Edge case: schema 拒绝缺少必填字段的文档
 - Edge case: category 字段只接受四个合法值
@@ -321,12 +336,14 @@ Unit 0 为语义字典，是所有后续工作的前置基础。Unit 1-3 为基�
 **Dependencies:** Unit 0, Unit 1
 
 **Files:**
+
 - Modify: `scripts/convert-htm-to-md.js`
 - Create: `scripts/lib/html-parser.js`（结构识别模块）
 - Create: `scripts/lib/cleaner.js`（HTML 清洗模块）
 - Test: `scripts/tests/convert.test.js`（或集成到 vitest）
 
 **Approach:**
+
 - 将现有 monolithic 脚本拆分为模块化管道
 - **cleaner.js**: 移除 script/style/link/meta/nav/img（保留 alt）、剥离 theme 噪声、解嵌套 table/blockquote/font、编码检测与转换
 - **parser.js**: 识别文档类型（纯文本/编年/纪传/注疏）、提取章节标题、提取正文段落、提取注解/校勘/颂
@@ -337,10 +354,12 @@ Unit 0 为语义字典，是所有后续工作的前置基础。Unit 1-3 为基�
 **Execution note:** 先写测试再写实现。从最简单的子部纯文本样本（如《官箴》）开始。
 
 **Patterns to follow:**
+
 - cheerio 用于 DOM 操作
 - 使用管道模式：cleanHtml($) → identifyType($) → extractMetadata($) → extractStructure($) → toJSON()
 
 **Test scenarios:**
+
 - Happy path: 《官箴》HTML → 正确提取 title=官箴, author=吕本中, dynasty=南宋, category=子部, paragraphs=[各段落文本]
 - Happy path: 《列女传》007.htm → 正确识别多条传记，每条有 name/content/ode
 - Edge case: 处理 `<pre>` 中的全角空格（\u3000\u3000）作为段落分隔
@@ -357,11 +376,13 @@ Unit 0 为语义字典，是所有后续工作的前置基础。Unit 1-3 为基�
 **Dependencies:** Unit 2
 
 **Files:**
+
 - Create: `scripts/lib/markdown-generator.js`
 - Modify: `scripts/convert-htm-to-md.js`（集成 Stage 2）
 - Test: `scripts/tests/markdown-generator.test.js`
 
 **Approach:**
+
 - 按 JSON 的 type 字段（treatise/chronicle/biography/annotated）选择生成策略
 - frontmatter 使用 YAML 格式，字段对齐 Unit 1 的 schema
 - 正文段落直接输出 Markdown 段落
@@ -371,6 +392,7 @@ Unit 0 为语义字典，是所有后续工作的前置基础。Unit 1-3 为基�
 - 输出到 `content/{部}/{书名}/{篇}.md`
 
 **Test scenarios:**
+
 - Happy path: treatise 类型 JSON → 正确的 Markdown 文件带 frontmatter
 - Happy path: biography 类型 JSON → 传主为 h3，颂曰为块引用
 - Edge case: 处理正文中的特殊字符（Markdown 保留字符）
@@ -385,12 +407,14 @@ Unit 0 为语义字典，是所有后续工作的前置基础。Unit 1-3 为基�
 **Dependencies:** Unit 0, Unit 1, Unit 3（至少有一个样本 Markdown 存在）
 
 **Files:**
+
 - Modify: `src/pages/guji/[slug].astro`
 - Modify: `src/layouts/BaseLayout.astro`（如需要适配 collection 数据）
 - Modify: `src/pages/index.astro`（导航从 collection 生成）
 - Test: `tests/guji-page.test.ts`
 
 **Approach:**
+
 - 实现 `getStaticPaths` 从 `getCollection('guji')` 读取所有条目
 - 使用 `Astro.params.slug` 匹配 entry
 - 保留现有的模板切换功能
@@ -398,6 +422,7 @@ Unit 0 为语义字典，是所有后续工作的前置基础。Unit 1-3 为基�
 - 首页的「最近更新」从 collection 按 date 排序
 
 **Test scenarios:**
+
 - Happy path: 访问已有 slug 的阅读页，正确渲染内容
 - Happy path: 模板切换功能正常工作
 - Edge case: 访问不存在的 slug 返回 404
@@ -412,10 +437,12 @@ Unit 0 为语义字典，是所有后续工作的前置基础。Unit 1-3 为基�
 **Dependencies:** Unit 0, Unit 1-3
 
 **Files:**
+
 - Modify: `scripts/convert-htm-to-md.js`（批量模式）
 - Output: `content/子部/*.md`
 
 **Approach:**
+
 - 扫描 `~/data/古籍/子部*/` 目录
 - 批量执行 Stage 1 + Stage 2
 - 输出 Markdown 到 `content/子部/`
@@ -423,6 +450,7 @@ Unit 0 为语义字典，是所有后续工作的前置基础。Unit 1-3 为基�
 - 审查点：章节结构是否保留、元数据是否准确、噪声是否清除
 
 **Test scenarios:**
+
 - Integration: 批量转换全部子部文件，无报错
 - Edge case: 处理子部中嵌套较深的目录结构（如 `子部-魏晋以下/`）
 - Verification: 生成的 Markdown 文件数量 = 源 HTML 文件数量（减去索引页）
@@ -437,14 +465,17 @@ Unit 0 为语义字典，是所有后续工作的前置基础。Unit 1-3 为基�
 **Dependencies:** Unit 5（复用子部管道，可能需调整诗文处理策略）
 
 **Files:**
+
 - Output: `content/集部/*.md`
 
 **Approach:**
+
 - 同 Unit 5，针对集部（诗文集合）调整识别策略
 - 诗文标题作为 h3/h4，正文保留原格式
 - 审查后确认管道，进入史部
 
 **Test scenarios:**
+
 - Integration: 批量转换全部集部文件
 - Verification: 诗文格式保留正确
 
@@ -457,16 +488,19 @@ Unit 0 为语义字典，是所有后续工作的前置基础。Unit 1-3 为基�
 **Dependencies:** Unit 5
 
 **Files:**
+
 - Modify: `scripts/lib/html-parser.js`（增加编年识别策略）
 - Output: `content/史部/资治通鉴/*.md`
 
 **Approach:**
+
 - 识别年号纪年模式（如 `孝灵皇帝中光和四年（辛酉，公元一八一年）`）
 - 每个年号下事件作为独立段落
 - 年号作为 h3 小标题
 - 审查点：年号识别准确率、事件段落不丢失
 
 **Test scenarios:**
+
 - Happy path: 资治通鉴卷 58 → 每个年号为 h3，事件为段落
 - Edge case: 处理跨年号的长段落
 - Verification: 抽样检查年号纪年完整性
@@ -480,16 +514,19 @@ Unit 0 为语义字典，是所有后续工作的前置基础。Unit 1-3 为基�
 **Dependencies:** Unit 5
 
 **Files:**
+
 - Modify: `scripts/lib/html-parser.js`（增加纪传识别策略）
 - Output: `content/史部/列女传/*.md`
 
 **Approach:**
+
 - 识别传主标题（彩色粗体 `<B><FONT COLOR>` 包裹的人名）
 - 正文为段落
 - "颂曰"结尾为块引用
 - 审查点：每条传记独立、颂曰保留
 
 **Test scenarios:**
+
 - Happy path: 列女传 007.htm → 每条孽嬖传人物独立，有标题+正文+颂
 - Verification: 传记数量与源文件一致
 
@@ -502,17 +539,20 @@ Unit 0 为语义字典，是所有后续工作的前置基础。Unit 1-3 为基�
 **Dependencies:** Unit 7, Unit 8
 
 **Files:**
+
 - Modify: `scripts/lib/html-parser.js`（增加校注分离策略）
 - Modify: `scripts/lib/markdown-generator.js`（增加 annotated 类型生成）
 - Output: `content/史部/华阳国志/*.md`
 
 **Approach:**
+
 - 分离正文与校注内容
 - 校注用块引用标注来源（如 `> **任乃强校注：** ...`）
 - 大文件处理（450KB+ 文件的分块策略）
 - 审查点：正文不被注文污染、注文不丢失
 
 **Test scenarios:**
+
 - Happy path: 华阳国志卷一 → 正文与校注分离
 - Edge case: 处理 450KB+ 大文件
 - Verification: 正文完整性检查
@@ -526,16 +566,19 @@ Unit 0 为语义字典，是所有后续工作的前置基础。Unit 1-3 为基�
 **Dependencies:** Unit 9
 
 **Files:**
+
 - Modify: `scripts/lib/html-parser.js`（增加注疏嵌套识别）
 - Output: `content/经部/*.md`
 
 **Approach:**
+
 - 识别正文/注/疏三层结构
 - 使用嵌套块引用（`>` 一层为注，`>>` 为疏）
 - 先转换 1-2 个经部样本确认策略
 - 审查通过后批量转换
 
 **Test scenarios:**
+
 - Happy path: 经部注疏文件 → 正文/注/疏层次正确
 - Edge case: 处理嵌套深度超过 3 层的结构
 - Verification: 人工审查经部样本
@@ -551,14 +594,14 @@ Unit 0 为语义字典，是所有后续工作的前置基础。Unit 1-3 为基�
 
 ## Risks & Dependencies
 
-| Risk | Mitigation |
-|------|------------|
+| Risk                                          | Mitigation                                                 |
+| --------------------------------------------- | ---------------------------------------------------------- |
 | HTML 结构差异超出预期，解析器无法覆盖所有情况 | 每类先用样本调试，逐步补充边界情况处理；保留原始 HTML 备份 |
-| 大文件（450KB+）处理超时或内存溢出 | 分块处理策略；单文件超时监控 |
-| 元数据提取不准确（作者/朝代推断错误） | 人工审查阶段修正；frontmatter 允许后续手动编辑 |
-| 编码检测失败导致乱码 | 保留源文件备份；GBK 检测用 iconv 的严格模式 |
-| Markdown 输出不通过 Astro schema 验证 | 每类样本生成后立即运行 `bun run check` |
-| 转换过程中丢失特殊结构（如表格、诗词格式） | 保留源文件对照；特殊结构用 HTML-in-Markdown 保留 |
+| 大文件（450KB+）处理超时或内存溢出            | 分块处理策略；单文件超时监控                               |
+| 元数据提取不准确（作者/朝代推断错误）         | 人工审查阶段修正；frontmatter 允许后续手动编辑             |
+| 编码检测失败导致乱码                          | 保留源文件备份；GBK 检测用 iconv 的严格模式                |
+| Markdown 输出不通过 Astro schema 验证         | 每类样本生成后立即运行 `bun run check`                     |
+| 转换过程中丢失特殊结构（如表格、诗词格式）    | 保留源文件对照；特殊结构用 HTML-in-Markdown 保留           |
 
 ## Documentation / Operational Notes
 

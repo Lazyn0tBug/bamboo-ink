@@ -1,5 +1,5 @@
 ---
-title: "JSON IR 内容管道 — 替代模板正则方案"
+title: 'JSON IR 内容管道 — 替代模板正则方案'
 date: 2026-04-11
 status: draft
 origin: user brainstorm during Unit 4 implementation pause
@@ -47,16 +47,12 @@ origin: user brainstorm during Unit 4 implementation pause
         {
           "type": "main-text",
           "content": "大学之道，在明明德，在亲民，在止于至善。",
-          "annotations": [
-            { "text": "程子曰：亲，当作新。大学者，大人之学也。..." }
-          ]
+          "annotations": [{ "text": "程子曰：亲，当作新。大学者，大人之学也。..." }]
         },
         {
           "type": "main-text",
           "content": "知止而后有定，定而后能静，静而后能安。",
-          "annotations": [
-            { "text": "后，与后同。止者，所当止之地..." }
-          ]
+          "annotations": [{ "text": "后，与后同。止者，所当止之地..." }]
         },
         {
           "type": "section-summary",
@@ -91,55 +87,58 @@ origin: user brainstorm during Unit 4 implementation pause
 
 ### 内容类型总表
 
-| ID | 类型 | 识别标准（HTML 特征） | IR 处理 |
-|----|------|----------------------|--------|
-| `book-title` | 书名 | `<FONT SIZE=5|6>` 或 `COLOR="#FF6666"` 居中；或在 `<h1>`/`<h2>` 内 | `title` 字段 |
-| `metadata` | 元数据 | 书名后紧跟的作者/朝代文本（如"南宋·吕本中""汉·刘向"） | `author`, `dynasty` 字段 |
-| `chapter-title` | 章节标题 | `<CENTER><B><FONT COLOR="#CC33CC">`；或 `<h2>`/`<h3>`/`<h4>` 居中 | `chapters[].title` |
-| `main-text` | 正文 | 12pt 字号（`class=swy1` 或无字号约束）；无 `<FONT size=9pt>` 包裹 | `sections[].type: "main-text"` |
-| `inline-annotation` | 内嵌注疏 | `<FONT style="FONT-SIZE: 9pt">` 包裹；或颜色 `#551A8B` | `sections[].annotations[]` |
-| `section-summary` | 章节总结 | 以"右传之…章"、"右经…章"等开头的独立段落 | `sections[].type: "section-summary"` |
-| `colophon` | 文后跋/尾注 | 以"…终"（如"儀 禮 終""仪礼终"）结尾的段落后的所有内容 | `type: "colophon"` 章节 |
-| `nav-item` | 目录条目 | `<a href="...">章节名</a>` 在表格或列表中 | `navItems: [{href, label}]` |
-| `end-marker` | 结束标记 | 包含"…终"的段落（如"儀 禮 終"） | 丢弃，不进入 IR |
+| ID                  | 类型        | 识别标准（HTML 特征）                                             | IR 处理                                          |
+| ------------------- | ----------- | ----------------------------------------------------------------- | ------------------------------------------------ | ------------ |
+| `book-title`        | 书名        | `<FONT SIZE=5                                                     | 6>`或`COLOR="#FF6666"`居中；或在`<h1>`/`<h2>` 内 | `title` 字段 |
+| `metadata`          | 元数据      | 书名后紧跟的作者/朝代文本（如"南宋·吕本中""汉·刘向"）             | `author`, `dynasty` 字段                         |
+| `chapter-title`     | 章节标题    | `<CENTER><B><FONT COLOR="#CC33CC">`；或 `<h2>`/`<h3>`/`<h4>` 居中 | `chapters[].title`                               |
+| `main-text`         | 正文        | 12pt 字号（`class=swy1` 或无字号约束）；无 `<FONT size=9pt>` 包裹 | `sections[].type: "main-text"`                   |
+| `inline-annotation` | 内嵌注疏    | `<FONT style="FONT-SIZE: 9pt">` 包裹；或颜色 `#551A8B`            | `sections[].annotations[]`                       |
+| `section-summary`   | 章节总结    | 以"右传之…章"、"右经…章"等开头的独立段落                          | `sections[].type: "section-summary"`             |
+| `colophon`          | 文后跋/尾注 | 以"…终"（如"儀 禮 終""仪礼终"）结尾的段落后的所有内容             | `type: "colophon"` 章节                          |
+| `nav-item`          | 目录条目    | `<a href="...">章节名</a>` 在表格或列表中                         | `navItems: [{href, label}]`                      |
+| `end-marker`        | 结束标记    | 包含"…终"的段落（如"儀 禮 終"）                                   | 丢弃，不进入 IR                                  |
 
 ### 注疏子类型
 
-| 子类型 | 识别标准 | IR 结构 |
-|--------|---------|--------|
+| 子类型       | 识别标准                                                       | IR 结构                                          |
+| ------------ | -------------------------------------------------------------- | ------------------------------------------------ |
 | **内嵌注疏** | `<FONT style="FONT-SIZE: 9pt">` 包裹，与正文在同一行内交替出现 | `annotations[]` 数组，附属于 `main-text` section |
-| **段落注疏** | 独立成段，不以 `#551A8B` 颜色标记 | `type: "section-summary"` 独立 section |
-| **文后跋** | 全书末尾，在结束标记之前 | `type: "colophon"` 独立章节 |
+| **段落注疏** | 独立成段，不以 `#551A8B` 颜色标记                              | `type: "section-summary"` 独立 section           |
+| **文后跋**   | 全书末尾，在结束标记之前                                       | `type: "colophon"` 独立章节                      |
 
 ### 双输出映射表
 
 每个内容类型在 Markdown 和 HTML5 下的具体处理方式：
 
-| 类型 | Markdown 输出 | HTML5 输出 |
-|------|-------------|-----------|
-| `book-title` | `# 书名`（ATX H1） | `<h1 class="font-li text-2xl">书名</h1>` |
-| `metadata` | frontmatter 的 `author`, `dynasty` 字段 | 不在 HTML body 中显示，仅 frontmatter |
-| `chapter-title` | `## 章节名`（ATX H2） | `<h2 class="font-li text-xl text-dai-500">章节名</h2>` |
-| `main-text` | 普通段落文本，连续 | `<p class="font-kai leading-loose text-mo-600">正文</p>` |
-| `inline-annotation` | `[^注N]: 注疏文本` 脚注（自动编号） | `<aside class="text-xs text-dai-500">注疏</aside>` 或 `<span class="annotation">` 行内 |
-| `section-summary` | `*右传之X章。释XXX。*`（斜体段落） | `<p class="font-kai italic text-sm text-dai-400">右传之X章</p>` |
-| `colophon` | 正文末尾段落 | `<section class="colophon"><p class="font-kai text-sm">跋文</p></section>` |
-| `nav-item` | `* [章节名](001.htm)` 无序列表 | `<nav><ul><li><a href="001.htm">章节名</a></li></ul></nav>` |
-| `end-marker` | 不输出 | 不输出 |
+| 类型                | Markdown 输出                           | HTML5 输出                                                                             |
+| ------------------- | --------------------------------------- | -------------------------------------------------------------------------------------- |
+| `book-title`        | `# 书名`（ATX H1）                      | `<h1 class="font-li text-2xl">书名</h1>`                                               |
+| `metadata`          | frontmatter 的 `author`, `dynasty` 字段 | 不在 HTML body 中显示，仅 frontmatter                                                  |
+| `chapter-title`     | `## 章节名`（ATX H2）                   | `<h2 class="font-li text-xl text-dai-500">章节名</h2>`                                 |
+| `main-text`         | 普通段落文本，连续                      | `<p class="font-kai leading-loose text-mo-600">正文</p>`                               |
+| `inline-annotation` | `[^注N]: 注疏文本` 脚注（自动编号）     | `<aside class="text-xs text-dai-500">注疏</aside>` 或 `<span class="annotation">` 行内 |
+| `section-summary`   | `*右传之X章。释XXX。*`（斜体段落）      | `<p class="font-kai italic text-sm text-dai-400">右传之X章</p>`                        |
+| `colophon`          | 正文末尾段落                            | `<section class="colophon"><p class="font-kai text-sm">跋文</p></section>`             |
+| `nav-item`          | `* [章节名](001.htm)` 无序列表          | `<nav><ul><li><a href="001.htm">章节名</a></li></ul></nav>`                            |
+| `end-marker`        | 不输出                                  | 不输出                                                                                 |
 
 ### 注疏输出细节
 
 内嵌注疏在 Markdown 中使用脚注，在 HTML5 中使用行内标注：
 
 **Markdown 示例：**
+
 ```markdown
 大学之道，在明明德，在亲民，在止于至善。[^注1]知止而后有定，定而后能静[^注2]。
 
 [^注1]: 程子曰："亲，当作新。"大学者，大人之学也。...
+
 [^注2]: 后，与后同，后放此。止者，所当止之地...
 ```
 
 **HTML5 示例：**
+
 ```html
 <p class="font-kai leading-loose text-mo-600">
   大学之道，在明明德，在亲民，在止于至善。
@@ -231,6 +230,7 @@ Pass 1（结构上下文）→ Pass 2（属性规则）→ Pass 3（文本模式
 #### 2. 目录驱动的文件树（权威知识源）✅
 
 索引导览页（catalog）提供权威 metadata：
+
 - 4 个顶层目录页：`1经部藏目.htm`, `2史部藏目.htm`, `3子部藏目.htm`, `4集部藏目.htm`
 - 各部子目录页（如 `列女传/index.htm`）
 - 每个链接到的文件 → 确定性地继承 catalog 的 title/dynasty/author
@@ -243,23 +243,24 @@ Pass 1（结构上下文）→ Pass 2（属性规则）→ Pass 3（文本模式
 
 发现原始 HTML 制作者的权威设计规范 `text.css`（位于 `$HOME/data/古籍/text.css`），定义了完整的内容类型语义：
 
-| CSS Class | 字号 | 颜色 | 内容类型 | 优先级 |
-|-----------|------|------|---------|--------|
-| `.article` | 24pt | `#FF6666` | 书名 | **权威** |
-| `.chapter` | 18pt | `#551A8B` | 章标题 | **权威** |
-| `.section` | 14pt | `#336699` | 节标题 | **权威** |
-| `.jing` | large | `#551A8B` | 经文 | **权威** |
-| `.zhuan` | 12pt | `#000000` | 传文 | **权威** |
-| `.original` | 12pt | `#000000` | 正文 | **权威** |
-| `.annotation` | 10pt | `#551A8B` | 注释 | **权威** |
-| `.reference` | 10pt | `#000000` | 引文/参考 | **权威** |
-| `.menu` | 14pt | `#333333` | 菜单/导航 | **权威** |
-| `.poem` | 12pt | (继承) | 诗歌 | **权威** |
-| `.caption` | 18pt | `#551A8B` | 图注 | **权威** |
-| `.swy1` | 12pt/18pt | - | 正文容器 | 内联定义 |
-| `.swy2` | 9pt/12pt | - | 辅助信息 | 内联定义 |
+| CSS Class     | 字号      | 颜色      | 内容类型  | 优先级   |
+| ------------- | --------- | --------- | --------- | -------- |
+| `.article`    | 24pt      | `#FF6666` | 书名      | **权威** |
+| `.chapter`    | 18pt      | `#551A8B` | 章标题    | **权威** |
+| `.section`    | 14pt      | `#336699` | 节标题    | **权威** |
+| `.jing`       | large     | `#551A8B` | 经文      | **权威** |
+| `.zhuan`      | 12pt      | `#000000` | 传文      | **权威** |
+| `.original`   | 12pt      | `#000000` | 正文      | **权威** |
+| `.annotation` | 10pt      | `#551A8B` | 注释      | **权威** |
+| `.reference`  | 10pt      | `#000000` | 引文/参考 | **权威** |
+| `.menu`       | 14pt      | `#333333` | 菜单/导航 | **权威** |
+| `.poem`       | 12pt      | (继承)    | 诗歌      | **权威** |
+| `.caption`    | 18pt      | `#551A8B` | 图注      | **权威** |
+| `.swy1`       | 12pt/18pt | -         | 正文容器  | 内联定义 |
+| `.swy2`       | 9pt/12pt  | -         | 辅助信息  | 内联定义 |
 
 **颜色语义体系：**
+
 - `#FF6666` → 书名/标题（红色）
 - `#FF0000` → 书名标记（纯红）
 - `#CC33CC` → 章节标题（品红，实际 HTML 中替代 `.chapter` 的 `#551A8B`）
@@ -283,17 +284,18 @@ cheerio 的 `.contents()` 而非 `.children()` 是正确处理裸露文本节点
 
 ### 被证明无效/低效、应去除的方案
 
-| 方案 | 原因 | 替代方案 |
-|------|------|---------|
-| 模板检测器 (`template-detector.mjs`) | 7 个独立模板 ~800 行正则，维护成本高 | 多遍分类器统一处理 |
-| cheerio DOM 操作式拆解 (`.before()`, `.appendTo()`) | 丢失/合并文本节点 | 正则预处理 + `.contents()` 只读遍历 |
-| 正则提取 author/dynasty | 脏 HTML 上几乎不可能可靠 | 目录字典权威查询 |
-| 每文件重复检测模式 | 浪费计算 | 模式缓存（按书缓存） |
-| 独立 `.swy1` 解包逻辑 | cheerio 行为不可控 | 直接取 `body > div.swy1` 的 `.contents()` |
+| 方案                                                | 原因                                 | 替代方案                                  |
+| --------------------------------------------------- | ------------------------------------ | ----------------------------------------- |
+| 模板检测器 (`template-detector.mjs`)                | 7 个独立模板 ~800 行正则，维护成本高 | 多遍分类器统一处理                        |
+| cheerio DOM 操作式拆解 (`.before()`, `.appendTo()`) | 丢失/合并文本节点                    | 正则预处理 + `.contents()` 只读遍历       |
+| 正则提取 author/dynasty                             | 脏 HTML 上几乎不可能可靠             | 目录字典权威查询                          |
+| 每文件重复检测模式                                  | 浪费计算                             | 模式缓存（按书缓存）                      |
+| 独立 `.swy1` 解包逻辑                               | cheerio 行为不可控                   | 直接取 `body > div.swy1` 的 `.contents()` |
 
 ### 当前提取器的缺失（从 text.css 发现）
 
 Pass 2 (`classifyByAttributes`) 目前**缺少**以下规则：
+
 - `class=chapter` → `chapter-title`（text.css 权威定义）
 - `class=section` → sub-chapter heading
 - `class=annotation` 或 `class=reference` → `inline-annotation`

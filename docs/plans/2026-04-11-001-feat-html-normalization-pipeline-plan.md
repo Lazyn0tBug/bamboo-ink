@@ -1,5 +1,5 @@
 ---
-title: "feat: HTML 规范化 + Markdown 双管道"
+title: 'feat: HTML 规范化 + Markdown 双管道'
 type: feat
 status: active
 date: 2026-04-11
@@ -23,16 +23,16 @@ origin: docs/plans/2026-04-10-001-feat-html-normalization-pipeline-plan.md
 
 经 9,032 文件全量扫描（经史子集四部），发现 **7 种内容模板** 覆盖 ~89% 文件（另有 ~11% 为异常值需跳过）：
 
-| 模板 | 特征 | 样本文件 | 占比 |
-|------|------|---------|------|
-| A: `<pre>` 纯文本 | 标题 `<font>`，正文 `<pre>` 内纯文本 + `<CENTER><FONT color=#cc33cc>` 章节标题 | 论语.htm, 官箴.htm | ~22% (1,962) |
+| 模板                  | 特征                                                                                                                | 样本文件                           | 占比         |
+| --------------------- | ------------------------------------------------------------------------------------------------------------------- | ---------------------------------- | ------------ |
+| A: `<pre>` 纯文本     | 标题 `<font>`，正文 `<pre>` 内纯文本 + `<CENTER><FONT color=#cc33cc>` 章节标题                                      | 论语.htm, 官箴.htm                 | ~22% (1,962) |
 | F: `<table>` 包裹内容 | `<table><td class=swy1>` 包裹 + `<CENTER><FONT COLOR="#FF6666">` 标题 + `<FONT COLOR="#CC33CC">` 章节 + `<br>` 分段 | 大学章句集注.htm, 中庸章句集注.htm | ~33% (3,000) |
-| G: `<H2>` + 裸文本 | `<H2>` 或 `<center><FONT>` 标题 + 裸正文 + `<BR>` 分段 + 可选 `<OL>` 嵌套 | 儀禮.htm, 釋名.htm, 九州春秋.htm | ~22% (2,000) |
-| B: `<P>` 段落 | `<P align=justify>` 段落 + `<FONT>` 包裹 | 史部-其他 部分文件 | ~3% (300) |
-| D: 目录页 | `<table>` 表格 + `<a href>` 章节链接，正文短（<3000 字符） | 各 category index.htm | ~7% (603) |
-| E: Word MsoNormal | `<p class=MsoNormal>` + `<O:P>` 标签 + `<span style=...>` 内联 CSS + `<table>` 布局 | 东坡易传/01.htm | ~2% (143) |
-| C: Word 单文件 | `<H1>` 书 + `<H2>` 章 + `（全书终）` 标记 | 极少 | <1% (7) |
-| SKIP: 异常值 | 外链 .txt、Netscape 生成、空文件、纯图片 | — | ~11% (1,000) |
+| G: `<H2>` + 裸文本    | `<H2>` 或 `<center><FONT>` 标题 + 裸正文 + `<BR>` 分段 + 可选 `<OL>` 嵌套                                           | 儀禮.htm, 釋名.htm, 九州春秋.htm   | ~22% (2,000) |
+| B: `<P>` 段落         | `<P align=justify>` 段落 + `<FONT>` 包裹                                                                            | 史部-其他 部分文件                 | ~3% (300)    |
+| D: 目录页             | `<table>` 表格 + `<a href>` 章节链接，正文短（<3000 字符）                                                          | 各 category index.htm              | ~7% (603)    |
+| E: Word MsoNormal     | `<p class=MsoNormal>` + `<O:P>` 标签 + `<span style=...>` 内联 CSS + `<table>` 布局                                 | 东坡易传/01.htm                    | ~2% (143)    |
+| C: Word 单文件        | `<H1>` 书 + `<H2>` 章 + `（全书终）` 标记                                                                           | 极少                               | <1% (7)      |
+| SKIP: 异常值          | 外链 .txt、Netscape 生成、空文件、纯图片                                                                            | —                                  | ~11% (1,000) |
 
 > **与原计划的差异**：原计划基于 21 个文件审计，假设 4 种模板覆盖 95%+。全量扫描后发现 Template F（`<table>` 包裹）和 G（裸文本）是最大两块，合计 ~55% 文件。原 Template F "异常值" 已重新分类为 SKIP。
 
@@ -71,13 +71,13 @@ origin: docs/plans/2026-04-10-001-feat-html-normalization-pipeline-plan.md
 
 模板分类基于 9,032 文件全量扫描（覆盖经部、史部-其他、史部-廿五史、子部-先秦两汉、子部-魏晋以下、集部），关键样本文件：
 
-| 模板 | 样本文件 | 来源 |
-|------|---------|------|
-| A | 论语.htm, 官箴.htm | 经部, 史部 |
-| F | 大学章句集注.htm, 中庸章句集注.htm | 经部 |
-| G | 儀禮.htm, 釋名.htm, 九州春秋.htm | 经部, 史部 |
-| E | 东坡易传/01.htm | 经部 |
-| D | 各 category index.htm | 全部分类 |
+| 模板 | 样本文件                           | 来源       |
+| ---- | ---------------------------------- | ---------- |
+| A    | 论语.htm, 官箴.htm                 | 经部, 史部 |
+| F    | 大学章句集注.htm, 中庸章句集注.htm | 经部       |
+| G    | 儀禮.htm, 釋名.htm, 九州春秋.htm   | 经部, 史部 |
+| E    | 东坡易传/01.htm                    | 经部       |
+| D    | 各 category index.htm              | 全部分类   |
 
 ### Key Technical Decisions
 
@@ -122,7 +122,7 @@ origin: docs/plans/2026-04-10-001-feat-html-normalization-pipeline-plan.md
 
 ## High-Level Technical Design
 
-> *This illustrates the intended approach and is directional guidance for review, not implementation specification.*
+> _This illustrates the intended approach and is directional guidance for review, not implementation specification._
 
 ```
 ┌─────────────────────────┐
@@ -172,6 +172,7 @@ origin: docs/plans/2026-04-10-001-feat-html-normalization-pipeline-plan.md
 **Dependencies:** 无（模板检测器需扩展 F 识别）
 
 **Files:**
+
 - Modify: `scripts/lib/template-detector.mjs` — 添加 Template F 检测规则（`<table><td class=swy1>` 包裹 + `<CENTER><FONT COLOR="#FF6666">` 标题 + `<br>` 分段）
 - Modify: `scripts/normalize-html.mjs` — 实现 `normalizeTemplateF()` 处理器
 - Create: `src/normalized-html/styles/normalized.css` — 统一外部样式表
@@ -180,6 +181,7 @@ origin: docs/plans/2026-04-10-001-feat-html-normalization-pipeline-plan.md
 - Test: `tests/html-normalization.test.ts`
 
 **Approach:**
+
 1. 扩展模板检测器识别 `<table><td>` 包裹的内容模式（与 A 语义等价但结构不同）
 2. `normalizeTemplateF()`: 从 `<td>` 提取内容 → 提取标题 `<CENTER><FONT COLOR="#FF6666">` → 提取章节 `<FONT COLOR="#CC33CC">` → 按 `<br>` 分割段落 → 重建语义化 HTML5
 3. 创建外部样式表 `normalized.css`
@@ -187,12 +189,14 @@ origin: docs/plans/2026-04-10-001-feat-html-normalization-pipeline-plan.md
 5. 浏览器打开验证
 
 **Test scenarios:**
+
 - Happy path: 大学章句集注.htm → `<h1>` 标题 + `<h2>` 章节 + `<p>` 段落，无 `<table><td>` 遗留
 - Happy path: 规范化 HTML 引用外部样式表
 - Edge case: `<br>` 连续出现 → 正确处理为空行分段
 - Error path: 检测失败 → 标记 skipped
 
 **Verification:**
+
 - `src/normalized-html/经部/大学章句集注.htm` 可浏览器打开
 - `content/guji/经部/大学章句集注.md` 存在且 `bun run build` 成功
 - 规范化 HTML 中无 `<table class=swy1>`, `<FONT>`, `<CENTER>` 等遗留标签
@@ -206,12 +210,14 @@ origin: docs/plans/2026-04-10-001-feat-html-normalization-pipeline-plan.md
 **Dependencies:** Unit 1（共享样式表 + 基础设施）
 
 **Files:**
+
 - Modify: `scripts/normalize-html.mjs` — Template A normalizer（已部分实现，需验证完善）
 - Create: `src/normalized-html/经部/论语.htm` — 输出
 - Create: `content/guji/经部/论语.md` — 输出
 - Test: `tests/html-normalization.test.ts`（追加）
 
 **Approach:**
+
 1. 复用 Unit 1 创建的 `normalized.css` 样式表
 2. 规范化 HTML 的 `<head>` 中注入 `<link rel="stylesheet" href="../styles/normalized.css">` 替代当前的内联 `<style>` 块
 3. 运行 `bun run scripts/normalize-html.mjs --file ~/data/古籍/经部/论语.htm` 验证输出
@@ -219,15 +225,18 @@ origin: docs/plans/2026-04-10-001-feat-html-normalization-pipeline-plan.md
 5. 运行 `bun run build` 验证 Astro 能消费生成的 Markdown
 
 **Patterns to follow:**
+
 - 现有 `scripts/normalize-html.mjs` 的 cheerio + Turndown 架构
 - `src/styles/global.css` 的 OKLCH 色值定义和 `@theme` 结构
 
 **Test scenarios:**
+
 - Happy path: 输入论语.htm → 输出规范化 HTML 含 `<h1>`、`<article>`、`<section>` 和正确 Tailwind classes → 输出 Markdown 含 `# 论语` 和 frontmatter
 - Happy path: 规范化 HTML 的 `<head>` 引用 `../styles/normalized.css` 而非内联 `<style>`
 - Edge case: 输入文件不存在 → 抛出清晰错误
 
 **Verification:**
+
 - `src/normalized-html/经部/论语.htm` 可浏览器打开，显示正确排版和颜色
 - `content/guji/经部/论语.md` 存在且 `bun run build` 成功
 - 规范化 HTML 中无 `<FONT>`, `<CENTER>`, `<PRE>`, `<SPAN>` 等遗留标签
@@ -241,6 +250,7 @@ origin: docs/plans/2026-04-10-001-feat-html-normalization-pipeline-plan.md
 **Dependencies:** Unit 1
 
 **Files:**
+
 - Modify: `scripts/lib/template-detector.mjs` — 添加 Template G 检测（`<H2>` + 裸文本 + `<BR>` 分段，无 `<PRE>` 无 `<P justify>`）
 - Modify: `scripts/normalize-html.mjs` — 实现 `normalizeTemplateG()` 处理器
 - Create: `src/normalized-html/经部/儀禮.htm` — 输出
@@ -248,16 +258,19 @@ origin: docs/plans/2026-04-10-001-feat-html-normalization-pipeline-plan.md
 - Test: `tests/html-normalization.test.ts`（追加）
 
 **Approach:**
+
 1. 扩展检测器识别 `<H2>`/`<center>` 标题 + 裸正文 + `<BR>` 分段模式
 2. `normalizeTemplateG()`: 提取 `<H2>` → `<h1>`，裸正文按 `<BR>` 分割 → `<p>` 段落，处理嵌套 `<OL>`
 3. 选择 儀禮.htm（纯 BR 分段）和 釋名.htm（含 OL 嵌套）两个样本验证
 
 **Test scenarios:**
+
 - Happy path: 儀禮.htm → `<BR>` 正确分割为 `<p>` 段落
 - Happy path: 釋名.htm → 嵌套 `<OL>` 正确转换为语义化列表
 - Edge case: `<H2>` 既是标题又是章节标记 → 正确识别层级
 
 **Verification:**
+
 - 规范化 HTML 可浏览器打开，排版正确
 - `bun run build` 成功
 
@@ -270,6 +283,7 @@ origin: docs/plans/2026-04-10-001-feat-html-normalization-pipeline-plan.md
 **Dependencies:** Unit 1
 
 **Files:**
+
 - Modify: `scripts/normalize-html.mjs` — 添加 Template B 和 D 处理器
 - Create: `src/normalized-html/史部-其他/官箴.htm` — Template B 示例
 - Create: 目录页规范化 HTML 示例
@@ -277,6 +291,7 @@ origin: docs/plans/2026-04-10-001-feat-html-normalization-pipeline-plan.md
 - Test: `tests/html-normalization.test.ts`（追加）
 
 **Approach:**
+
 1. **Template B**（`<P align=justify>` 段落）：
    - 提取标题：居中 `<FONT>` → `<h1>`
    - 提取章节标题：居中 `<FONT>` 或 `<H2>` → `<h2>`
@@ -289,11 +304,13 @@ origin: docs/plans/2026-04-10-001-feat-html-normalization-pipeline-plan.md
    - 输出 `docType: catalog` 的 Markdown
 
 **Test scenarios:**
+
 - Happy path: 官箴.htm（Template B）→ 段落正确分割，无 `<FONT>` 遗留
 - Happy path: 目录页（Template D）→ `<nav>` 含所有章节链接
 - Happy path: 双列表格目录 → 正确转换为 `<ul>` 列表
 
 **Verification:**
+
 - 规范化 HTML 可浏览器打开，排版正确
 - Markdown frontmatter 含 `docType: "catalog"`
 
@@ -306,6 +323,7 @@ origin: docs/plans/2026-04-10-001-feat-html-normalization-pipeline-plan.md
 **Dependencies:** Unit 1
 
 **Files:**
+
 - Modify: `scripts/lib/template-detector.mjs` — 添加 Template E 检测（`MsoNormal` class + `<O:P>` 标签）
 - Modify: `scripts/normalize-html.mjs` — 实现 `normalizeTemplateE()` 和 `normalizeTemplateC()` 处理器
 - Create: `src/normalized-html/经部/东坡易传/01.htm` — Template E 示例
@@ -313,6 +331,7 @@ origin: docs/plans/2026-04-10-001-feat-html-normalization-pipeline-plan.md
 - Test: `tests/html-normalization.test.ts`（追加）
 
 **Approach:**
+
 1. **Template E**（Word MsoNormal）：
    - 剥离 `<p class=MsoNormal>` → `<p>`
    - 剥离 `<O:P>` 标签，保留内容
@@ -324,10 +343,12 @@ origin: docs/plans/2026-04-10-001-feat-html-normalization-pipeline-plan.md
    - 检测 `（全书终）` 时停止处理
 
 **Test scenarios:**
+
 - Happy path: 东坡易传/01.htm → 无 `<O:P>` 遗留，`<span style>` 转换为 Tailwind classes
 - Happy path: Template C → `<H1>`→`<h1>`, `<H2>`→`<h2>`, 全书终标记后内容丢弃
 
 **Verification:**
+
 - 规范化 HTML 可浏览器打开，排版正确
 - `bun run build` 成功
 
@@ -340,11 +361,13 @@ origin: docs/plans/2026-04-10-001-feat-html-normalization-pipeline-plan.md
 **Dependencies:** Unit 1, Unit 2, Unit 3, Unit 4, Unit 5
 
 **Files:**
+
 - Modify: `scripts/normalize-html.mjs` — 完善 CLI 参数解析
 - Modify: `package.json` — 添加 `normalize` 命令
 - Test: `tests/cli-normalization.test.ts`
 
 **Approach:**
+
 1. 实现完整参数解析：`--file`, `--book`, `--category`, `--all`, `--dry-run`
 2. `--category 经部` 执行流程：
    - 扫描目录 → 模板检测 → 规范化 → 输出统计
@@ -352,12 +375,14 @@ origin: docs/plans/2026-04-10-001-feat-html-normalization-pipeline-plan.md
 4. 更新 `package.json` scripts
 
 **Test scenarios:**
+
 - Happy path: `--book 论语` → 只转换论语相关文件
 - Happy path: `--category 经部` → 转换经部所有文件，输出统计
 - Happy path: `--dry-run` → 输出匹配文件列表，不写入
 - Edge case: 不存在的书/类别 → 清晰错误提示
 
 **Verification:**
+
 - `bun run normalize --category 经部` 成功
 - `bun run build` 成功
 
@@ -371,14 +396,14 @@ origin: docs/plans/2026-04-10-001-feat-html-normalization-pipeline-plan.md
 
 ## Risks & Dependencies
 
-| Risk | Likelihood | Impact | Mitigation |
-|------|-----------|--------|------------|
-| `<PRE>`/`<BR>` 内文本分割不准 | High | Med | 每个模板先观察 2-3 个样本文件确认分段规则；如无法分割，保留原始格式 |
-| 模板检测器误判（A vs F） | Med | Med | `--verbose` 输出检测依据；A/F 语义等价，误判不影响最终输出质量 |
-| Template G 裸文本分段歧义 | High | Med | `<BR>` 可能是段落内换行也可能是分段；通过连续 `<BR>` 数量判断 |
-| 样式表路径相对引用失效 | Low | Med | 规范化 HTML 和样式表在同一 `src/normalized-html/` 树下，相对路径 `../styles/normalized.css` 始终正确 |
-| 多章节文件目录结构混乱 | Low | High | 保留原结构，逐文件独立处理 |
-| Template E Word 标签兼容 | Med | Low | `<O:P>` 和 MsoNormal 类剥离逻辑需在多个样本上验证 |
+| Risk                          | Likelihood | Impact | Mitigation                                                                                           |
+| ----------------------------- | ---------- | ------ | ---------------------------------------------------------------------------------------------------- |
+| `<PRE>`/`<BR>` 内文本分割不准 | High       | Med    | 每个模板先观察 2-3 个样本文件确认分段规则；如无法分割，保留原始格式                                  |
+| 模板检测器误判（A vs F）      | Med        | Med    | `--verbose` 输出检测依据；A/F 语义等价，误判不影响最终输出质量                                       |
+| Template G 裸文本分段歧义     | High       | Med    | `<BR>` 可能是段落内换行也可能是分段；通过连续 `<BR>` 数量判断                                        |
+| 样式表路径相对引用失效        | Low        | Med    | 规范化 HTML 和样式表在同一 `src/normalized-html/` 树下，相对路径 `../styles/normalized.css` 始终正确 |
+| 多章节文件目录结构混乱        | Low        | High   | 保留原结构，逐文件独立处理                                                                           |
+| Template E Word 标签兼容      | Med        | Low    | `<O:P>` 和 MsoNormal 类剥离逻辑需在多个样本上验证                                                    |
 
 ## Documentation / Operational Notes
 
