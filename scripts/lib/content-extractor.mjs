@@ -206,14 +206,16 @@ function detectStructure($, node) {
     return 'link';
   }
 
-  // Check if node is inside a <CENTER> ancestor
+  // Check if node is inside a centered container (data-center="1" replaces <center>)
+  // or any element with align="center"
   let inCenter = false;
   $node.parents().each((_, p) => {
-    if ($(p).is('center') || $(p).css('text-align') === 'center') {
+    if ($(p).attr('data-center') === '1' || ($(p).attr('align') || '').toLowerCase() === 'center') {
       inCenter = true;
     }
   });
   if (
+    ($node.attr('data-center') || '') === '1' ||
     tag === 'center' ||
     ($node.attr('align') || '').toLowerCase() === 'center' ||
     ($node.css('text-align') || '').toLowerCase() === 'center'
@@ -270,6 +272,24 @@ function classifyByAttributes($, node, context) {
   // class=jing / class=zhuan → main-text subtypes (text.css: 经文/传文)
   if (className === 'jing' || className === 'zhuan') return TYPES.MAIN_TEXT;
 
+  // --- Strong color signals for chapter titles (works without centered context) ---
+  // COLOR="#CC33CC" is the canonical chapter title color across all templates.
+  // After <center> tag removal, centered context may be lost, but this color
+  // on a <FONT> child is a reliable chapter title signal.
+  // Guard: only match if the element's text is short (heading-length), to avoid
+  // misclassifying containers like div.swy1 that happen to contain chapter titles.
+  if ((tag === 'B' || tag === 'FONT' || tag === 'DIV' || tag === 'SPAN') && text.length < 80) {
+    let hasCC33CC = false;
+    $node.find('font').each((_, f) => {
+      if (($(f).attr('color') || '').toUpperCase() === '#CC33CC') {
+        hasCC33CC = true;
+      }
+    });
+    if (($(node).attr('color') || '').toUpperCase() === '#CC33CC' || hasCC33CC) {
+      return TYPES.CHAPTER_TITLE;
+    }
+  }
+
   // --- Centered context ---
   if (context === 'centered' || context === 'center') {
     // Check for CSS class in child fonts (text.css authoritative)
@@ -284,26 +304,32 @@ function classifyByAttributes($, node, context) {
     if (hasChapterClass) return TYPES.CHAPTER_TITLE;
 
     // Check for chapter title: COLOR="#CC33CC"
-    let hasCC33CC = false;
-    $node.find('font').each((_, f) => {
-      if (($(f).attr('color') || '').toUpperCase() === '#CC33CC') {
-        hasCC33CC = true;
+    // Guard: only match if text is short, to avoid matching containers that
+    // happen to contain chapter titles (e.g. div[align=center] wrapping swy1)
+    if (text.length < 80) {
+      let hasCC33CC = false;
+      $node.find('font').each((_, f) => {
+        if (($(f).attr('color') || '').toUpperCase() === '#CC33CC') {
+          hasCC33CC = true;
+        }
+      });
+      if (($(node).attr('color') || '').toUpperCase() === '#CC33CC' || hasCC33CC) {
+        return TYPES.CHAPTER_TITLE;
       }
-    });
-    if (($(node).attr('color') || '').toUpperCase() === '#CC33CC' || hasCC33CC) {
-      return TYPES.CHAPTER_TITLE;
     }
 
     // Check for book title: COLOR="#FF6666" + SIZE>=5, or COLOR="#FF0000" + SIZE>=5
-    let isBookTitle = false;
-    $node.find('font').each((_, f) => {
-      const color = ($(f).attr('color') || '').toUpperCase();
-      const size = parseInt($(f).attr('size') || '0', 10);
-      if ((color === '#FF6666' || color === '#FF0000') && size >= 5) {
-        isBookTitle = true;
-      }
-    });
-    if (isBookTitle) return TYPES.BOOK_TITLE;
+    if (text.length < 80) {
+      let isBookTitle = false;
+      $node.find('font').each((_, f) => {
+        const color = ($(f).attr('color') || '').toUpperCase();
+        const size = parseInt($(f).attr('size') || '0', 10);
+        if ((color === '#FF6666' || color === '#FF0000') && size >= 5) {
+          isBookTitle = true;
+        }
+      });
+      if (isBookTitle) return TYPES.BOOK_TITLE;
+    }
 
     if (['H2', 'H3', 'H4'].includes(tag)) {
       return TYPES.CHAPTER_TITLE;
@@ -387,6 +413,14 @@ function classifyByText(text) {
 export function extractContent(html, sourcePath, options = {}) {
   // Pre-process: flatten table-wrapped content (Template F pattern)
   html = flattenTables(html);
+
+  // Pre-process: replace <center> with <div data-center="1"> to prevent
+  // cheerio's inconsistent hoisting. Cheerio hoists some <center> elements
+  // to body level but not others, scattering chapter title markers across
+  // the DOM. Replacing with a generic div preserves the container structure
+  // and prevents hoisting while keeping centered context detectable via
+  // the data-center attribute.
+  html = html.replace(/<center\b/gi, '<div data-center="1"').replace(/<\/center>/gi, '</div>');
 
   const $raw = cheerio.load(html, { xmlMode: false, decodeEntities: true });
 
@@ -504,7 +538,7 @@ export function extractContent(html, sourcePath, options = {}) {
     // If this is a container element with mixed children (like a FONT that
     // absorbed annotations and chapter titles), process children first
     if (!type || type === TYPES.MAIN_TEXT) {
-      if (['FONT', 'DIV', 'P', 'B', 'SPAN'].includes(tag) && $node.contents().length > 0) {
+      if (['FONT', 'DIV', 'P', 'B', 'SPAN', 'CENTER'].includes(tag) && $node.contents().length > 0) {
         let hasMixedChildren = false;
         $node.contents().each((_, child) => {
           const childContext = detectStructure($raw, child);
@@ -516,6 +550,11 @@ export function extractContent(html, sourcePath, options = {}) {
             if (textType) childType = textType;
           }
           if (childType && childType !== TYPES.MAIN_TEXT && childType !== 'paragraph') {
+            hasMixedChildren = true;
+          }
+          // If child is or contains div.swy1, treat as mixed (swy1 always has mixed content)
+          const childTag = (child.tagName || '').toUpperCase();
+          if (childTag === 'DIV' && ($raw(child).hasClass('swy1') || $raw(child).find('div.swy1').length > 0)) {
             hasMixedChildren = true;
           }
         });
@@ -653,8 +692,13 @@ export function extractContent(html, sourcePath, options = {}) {
   }
 
   const bodyChildren = $raw('body').children();
-  const swy1 = $raw('body > div.swy1').first();
-  const elements = swy1.length > 0 && bodyChildren.length === 1 ? swy1.contents() : bodyChildren;
+  // Find div.swy1 anywhere in body (may be nested inside align="center" wrappers)
+  const swy1 = $raw('div.swy1').first();
+  // If swy1 is a direct body child and body has only one child, use swy1 contents
+  // If swy1 is nested inside another body child, we need to process body children
+  // but the mixed-children recursion should descend into swy1
+  const swy1Direct = $raw('body > div.swy1').first();
+  const elements = swy1Direct.length > 0 && bodyChildren.length === 1 ? swy1Direct.contents() : bodyChildren;
 
   // Walk content elements (with recursive descent into mixed containers)
   elements.each((_, node) => {
