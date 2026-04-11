@@ -35,7 +35,8 @@ const TYPES = {
 
 // Section summary patterns: "右传之X章" and "右经X章"
 // Includes "首章" (first chapter) in addition to numbered chapters
-const SECTION_SUMMARY_RE = /^右(?:传之(?:首|[一二三四五六七八九十]+)章|经(?:首|[一二三四五六七八九十]*)章)/;
+const SECTION_SUMMARY_RE =
+  /^右(?:传之(?:首|[一二三四五六七八九十]+)章|经(?:首|[一二三四五六七八九十]*)章)/;
 
 // End marker pattern: "儀 禮 終", "仪礼终", "周易終"
 const END_MARKER_RE = /[\u4e00-\u9fff]+[\s]*終\s*$/;
@@ -150,7 +151,7 @@ function extractTitle($) {
     const size = parseInt($(el).attr('size') || '0', 10);
 
     // Direct: this font has both color and size
-    if (((color === '#FF6666' || color === '#FF0000') && size >= 5)) {
+    if ((color === '#FF6666' || color === '#FF0000') && size >= 5) {
       const text = $(el).text().trim();
       if (text.length > 0 && text.length < 50) {
         found = text;
@@ -159,16 +160,18 @@ function extractTitle($) {
 
     // Nested: this font has color, check descendants for size>=5
     if ((color === '#FF6666' || color === '#FF0000') && !size) {
-      $(el).find('font').each((_, nested) => {
-        if (found) return;
-        const nestedSize = parseInt($(nested).attr('size') || '0', 10);
-        if (nestedSize >= 5) {
-          const text = $(nested).text().trim();
-          if (text.length > 0 && text.length < 50) {
-            found = text;
+      $(el)
+        .find('font')
+        .each((_, nested) => {
+          if (found) return;
+          const nestedSize = parseInt($(nested).attr('size') || '0', 10);
+          if (nestedSize >= 5) {
+            const text = $(nested).text().trim();
+            if (text.length > 0 && text.length < 50) {
+              found = text;
+            }
           }
-        }
-      });
+        });
     }
 
     // Nested: this font has size>=5, check ancestors for book color
@@ -242,8 +245,43 @@ function classifyByAttributes($, node, context) {
   // Skip empty nodes
   if (!text && tag !== 'BR' && tag !== 'HR') return null;
 
+  // ── text.css CSS class rules (highest priority — authoritative) ──
+  const className = ($node.attr('class') || '').trim();
+
+  // class=article → book-title (text.css: 24pt, #FF6666)
+  if (className === 'article') return TYPES.BOOK_TITLE;
+
+  // class=chapter → chapter-title (text.css: 18pt, #551A8B)
+  if (className === 'chapter') return TYPES.CHAPTER_TITLE;
+
+  // class=section → sub-chapter heading (text.css: 14pt, #336699)
+  if (className === 'section') return TYPES.CHAPTER_TITLE;
+
+  // class=annotation → inline-annotation (text.css: 10pt, #551A8B) — any tag
+  if (className === 'annotation') return TYPES.INLINE_ANNOTATION;
+
+  // class=reference → inline-annotation (text.css: 10pt, black) — any tag
+  if (className === 'reference') return TYPES.INLINE_ANNOTATION;
+
+  // class=menu → catalog/nav context (text.css: 14pt, #333333)
+  if (className === 'menu') return 'menu-context';
+
+  // class=jing / class=zhuan → main-text subtypes (text.css: 经文/传文)
+  if (className === 'jing' || className === 'zhuan') return TYPES.MAIN_TEXT;
+
   // --- Centered context ---
   if (context === 'centered' || context === 'center') {
+    // Check for CSS class in child fonts (text.css authoritative)
+    let hasChapterClass = false;
+    let hasArticleClass = false;
+    $node.find('font').each((_, f) => {
+      const childClass = ($(f).attr('class') || '').trim();
+      if (childClass === 'chapter') hasChapterClass = true;
+      if (childClass === 'article') hasArticleClass = true;
+    });
+    if (hasArticleClass) return TYPES.BOOK_TITLE;
+    if (hasChapterClass) return TYPES.CHAPTER_TITLE;
+
     // Check for chapter title: COLOR="#CC33CC"
     let hasCC33CC = false;
     $node.find('font').each((_, f) => {
@@ -276,9 +314,18 @@ function classifyByAttributes($, node, context) {
   if (tag === 'FONT') {
     const style = $node.attr('style') || '';
     if (/FONT-SIZE:\s*9pt/i.test(style)) return TYPES.INLINE_ANNOTATION;
+    // text.css .annotation: 10pt + color=#551A8B (check both color attr and style)
+    if (
+      /FONT-SIZE:\s*10pt/i.test(style) &&
+      /551A8B/i.test(($node.attr('color') || '') + ' ' + style)
+    )
+      return TYPES.INLINE_ANNOTATION;
   }
   // Also check for class-based annotation on the node itself
-  if ((tag === 'FONT' || tag === 'SPAN') && /annotation|reference|notes/i.test($node.attr('class') || '')) {
+  if (
+    (tag === 'FONT' || tag === 'SPAN') &&
+    /annotation|reference|notes/i.test($node.attr('class') || '')
+  ) {
     return TYPES.INLINE_ANNOTATION;
   }
 
@@ -291,8 +338,7 @@ function classifyByAttributes($, node, context) {
   // --- <P align=justify> or <p class=MsoNormal> → main text ---
   if (
     tag === 'P' &&
-    (($node.attr('align') || '').toLowerCase() === 'justify' ||
-      $node.hasClass('MsoNormal'))
+    (($node.attr('align') || '').toLowerCase() === 'justify' || $node.hasClass('MsoNormal'))
   ) {
     return TYPES.MAIN_TEXT;
   }
@@ -311,7 +357,10 @@ function classifyByAttributes($, node, context) {
 // ── Text Pattern Classification (Pass 3) ─────────────────────────
 
 function classifyByText(text) {
-  const trimmed = text.trim().replace(/<[^>]+>/g, '').trim();
+  const trimmed = text
+    .trim()
+    .replace(/<[^>]+>/g, '')
+    .trim();
   if (!trimmed) return null;
 
   // End marker
@@ -374,7 +423,7 @@ export function extractContent(html, sourcePath, options = {}) {
   }
 
   // ── Check if this is a catalog page ──
-  const linkCount = ($raw('a[href]').length);
+  const linkCount = $raw('a[href]').length;
   const bodyText = $raw('body').text().replace(/\s+/g, '').length;
 
   // Catalog: many links, short body text
@@ -567,6 +616,18 @@ export function extractContent(html, sourcePath, options = {}) {
         break;
       }
 
+      case 'menu-context': {
+        $node.find('a').each((_, child) => {
+          const $child = $raw(child);
+          const href = $child.attr('href') || '';
+          const label = $child.text().trim();
+          if (href && label) {
+            ir.navItems.push({ href, label });
+          }
+        });
+        break;
+      }
+
       default: {
         // MAIN_TEXT or general content
         if (pastEndMarker) {
@@ -596,10 +657,12 @@ export function extractContent(html, sourcePath, options = {}) {
   }
 
   // Process content from the appropriate container
-  const contentContainer = $raw('body > div.swy1').first();
-  const elements = contentContainer.length > 0
-    ? contentContainer.contents()
-    : $raw('body').children();
+  // If div.swy1 exists AND is the only child of body, use its contents.
+  // Otherwise, use body children directly (handles cases where CENTER/heading
+  // elements are siblings of div.swy1, not nested inside it).
+  const bodyChildren = $raw('body').children();
+  const swy1 = $raw('body > div.swy1').first();
+  const elements = swy1.length > 0 && bodyChildren.length === 1 ? swy1.contents() : bodyChildren;
 
   // Walk content elements (with recursive descent into mixed containers)
   elements.each((_, node) => {

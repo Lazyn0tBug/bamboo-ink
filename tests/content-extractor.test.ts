@@ -1,5 +1,12 @@
 import { describe, it, expect } from 'vitest';
-import { extractContent, renderHtml5, renderMarkdown, decodeHtml, buildCatalogDict, lookupCatalogMeta } from '../scripts/lib/content-extractor.mjs';
+import {
+  extractContent,
+  renderHtml5,
+  renderMarkdown,
+  decodeHtml,
+  buildCatalogDict,
+  lookupCatalogMeta,
+} from '../scripts/lib/content-extractor.mjs';
 
 // ── Test Fixtures ────────────────────────────────────────────────
 
@@ -302,5 +309,268 @@ describe('extractContent with catalogDict', () => {
     expect(ir.author).toBe('刘向');
     expect(ir.dynasty).toBe('汉');
     expect(ir.title).toBe('母仪传');
+  });
+});
+
+// ── CSS Class Classification (text.css) Tests ────────────────────
+
+// class=article → book-title (text.css: 24pt, #FF6666, centered)
+const articleClassHtml = `<html><head><title>论语</title></head><body>
+<CENTER><B><FONT class=article>论语</FONT></B></CENTER>
+<DIV class=swy1>学而时习之。</DIV>
+</body></html>`;
+
+// class=chapter → chapter-title (text.css: 18pt, #551A8B)
+const chapterClassHtml = `<html><head><title>论语</title></head><body>
+<CENTER><B><FONT class=article>论语</FONT></B></CENTER>
+<CENTER><B><FONT class=chapter>学而第一</FONT></B></CENTER>
+<DIV class=swy1>子曰：学而时习之。</DIV>
+</body></html>`;
+
+// class=annotation → inline-annotation (text.css: 10pt, #551A8B)
+const annotationClassHtml = `<html><head><title>论语</title></head><body>
+<CENTER><B><FONT class=article>论语</FONT></B></CENTER>
+<DIV class=swy1>子曰：学而时习之。<FONT class=annotation>时习者，时时温习也。</FONT></DIV>
+</body></html>`;
+
+// class=reference → inline-annotation (text.css: 10pt, black)
+const referenceClassHtml = `<html><head><title>论语</title></head><body>
+<CENTER><B><FONT class=article>论语</FONT></B></CENTER>
+<DIV class=swy1>子曰：学而时习之。<SPAN class=reference>参见《礼记·学记》。</SPAN></DIV>
+</body></html>`;
+
+// class=menu → catalog/nav context (text.css: 14pt, #333333)
+const menuClassHtml = `<html><head><title>目录</title></head><body>
+<DIV class=menu><A HREF="001.htm">学而第一</A><BR>
+<A HREF="002.htm">为政第二</A></DIV>
+</body></html>`;
+
+// color=#551A8B + 10pt → inline-annotation (text.css .annotation fallback)
+const colorAnnotationHtml = `<html><head><title>论语</title></head><body>
+<CENTER><B><FONT class=article>论语</FONT></B></CENTER>
+<DIV class=swy1>子曰：学而时习之。<FONT style="FONT-SIZE: 10pt; COLOR: #551A8B">程子曰：此乃学习之道。</FONT></DIV>
+</body></html>`;
+
+describe('CSS class classification (text.css)', () => {
+  it('should identify class=article as book-title', () => {
+    const ir = extractContent(articleClassHtml, '经部/论语.htm');
+    expect(ir.title).toBe('论语');
+    // The article class element should be recognized as book-title (consumed into title, not a chapter)
+    expect(ir.chapters.length).toBeGreaterThan(0);
+    // Article class text should not appear as chapter title
+    const chapterTitles = ir.chapters.map((ch) => ch.title);
+    expect(chapterTitles).not.toContain('论语');
+  });
+
+  it('should identify class=chapter as chapter-title', () => {
+    const ir = extractContent(chapterClassHtml, '经部/论语.htm');
+    expect(ir.title).toBe('论语');
+    expect(ir.chapters.some((ch) => ch.title === '学而第一')).toBe(true);
+  });
+
+  it('should identify class=annotation as inline-annotation', () => {
+    const ir = extractContent(annotationClassHtml, '经部/论语.htm');
+    const sectionsWithAnnotations = ir.chapters
+      .flatMap((ch) => ch.sections)
+      .filter((s) => s.annotations && s.annotations.length > 0);
+    expect(sectionsWithAnnotations.length).toBeGreaterThan(0);
+    expect(sectionsWithAnnotations[0].annotations[0].text).toContain('时时温习');
+  });
+
+  it('should identify class=reference as inline-annotation', () => {
+    const ir = extractContent(referenceClassHtml, '经部/论语.htm');
+    const sectionsWithAnnotations = ir.chapters
+      .flatMap((ch) => ch.sections)
+      .filter((s) => s.annotations && s.annotations.length > 0);
+    expect(sectionsWithAnnotations.length).toBeGreaterThan(0);
+    expect(sectionsWithAnnotations[0].annotations[0].text).toContain('礼记');
+  });
+
+  it('should identify class=menu as nav context', () => {
+    const ir = extractContent(menuClassHtml, '经部/目录.htm');
+    expect(ir.navItems.length).toBe(2);
+    expect(ir.navItems[0].href).toBe('001.htm');
+    expect(ir.navItems[0].label).toBe('学而第一');
+    expect(ir.navItems[1].href).toBe('002.htm');
+    expect(ir.navItems[1].label).toBe('为政第二');
+  });
+
+  it('should identify color=#551A8B + 10pt as inline-annotation', () => {
+    const ir = extractContent(colorAnnotationHtml, '经部/论语.htm');
+    const sectionsWithAnnotations = ir.chapters
+      .flatMap((ch) => ch.sections)
+      .filter((s) => s.annotations && s.annotations.length > 0);
+    expect(sectionsWithAnnotations.length).toBeGreaterThan(0);
+    expect(sectionsWithAnnotations[0].annotations[0].text).toContain('学习之道');
+  });
+
+  it('should classify class=annotation consistently with FONT size=9pt', () => {
+    // Both annotation class and FONT size=9pt should produce inline-annotation
+    const bothHtml = `<html><head><title>论语</title></head><body>
+<CENTER><B><FONT class=article>论语</FONT></B></CENTER>
+<DIV class=swy1>正文。<FONT class=annotation style="FONT-SIZE: 9pt">注疏一。</FONT><FONT style="FONT-SIZE: 9pt">注疏二。</FONT></DIV>
+</body></html>`;
+    const ir = extractContent(bothHtml, '经部/论语.htm');
+    const annotations = ir.chapters
+      .flatMap((ch) => ch.sections)
+      .flatMap((s) => s.annotations || []);
+    expect(annotations.length).toBe(2);
+    expect(annotations[0].text).toContain('注疏一');
+    expect(annotations[1].text).toContain('注疏二');
+  });
+});
+
+// ── renderHtml5 Edge Cases ───────────────────────────────────────
+
+describe('renderHtml5 edge cases', () => {
+  it('should render empty IR with minimal HTML', () => {
+    const ir = {
+      title: 'Empty Book',
+      source: '经部/empty.htm',
+      docType: 'content' as const,
+      chapters: [],
+      navItems: [],
+    };
+    const html = renderHtml5(ir);
+    expect(html).toContain('<!DOCTYPE html>');
+    expect(html).toContain('<title>Empty Book</title>');
+    expect(html).toContain('<article>');
+    expect(html).toContain('<h1>Empty Book</h1>');
+    expect(html).not.toContain('<h2');
+    expect(html).not.toContain('<section');
+  });
+
+  it('should render colophon as separate section', () => {
+    const ir = {
+      title: '仪礼',
+      source: '经部/仪礼.htm',
+      docType: 'content' as const,
+      chapters: [
+        {
+          title: '士冠礼',
+          sections: [
+            {
+              type: 'main-text' as const,
+              content: '士冠礼。筮于庙门。',
+            },
+            {
+              type: 'colophon' as const,
+              content: '仪礼终',
+            },
+          ],
+        },
+      ],
+      navItems: [],
+    };
+    const html = renderHtml5(ir);
+    expect(html).toContain('<section class="colophon">');
+    expect(html).toContain('仪礼终');
+    // Colophon should not be inside the main-text section
+    expect(html).toContain('</section>');
+  });
+
+  it('should render section-summary with italic styling', () => {
+    const ir = {
+      title: '大学章句集注',
+      source: '经部/大学章句集注.htm',
+      docType: 'content' as const,
+      chapters: [
+        {
+          title: '大学章句',
+          sections: [
+            {
+              type: 'main-text' as const,
+              content: '大学之道，在明明德。',
+            },
+            {
+              type: 'section-summary' as const,
+              content: '右传之首章。释明明德。',
+            },
+          ],
+        },
+      ],
+      navItems: [],
+    };
+    const html = renderHtml5(ir);
+    expect(html).toContain('italic');
+    expect(html).toContain('右传之首章');
+    expect(html).toContain('text-sm');
+    expect(html).toContain('text-dai-400');
+  });
+});
+
+// ── renderMarkdown Edge Cases ────────────────────────────────────
+
+describe('renderMarkdown edge cases', () => {
+  it('should escape Markdown special characters in content', () => {
+    const ir = {
+      title: '论语',
+      source: '经部/论语.htm',
+      docType: 'content' as const,
+      chapters: [
+        {
+          title: '学而',
+          sections: [
+            {
+              type: 'main-text' as const,
+              content: '子曰：#标题*斜体_下划线[链接]#测试',
+            },
+          ],
+        },
+      ],
+      navItems: [],
+    };
+    const md = renderMarkdown(ir);
+    // All special chars should be escaped
+    expect(md).toContain('\\#标题');
+    expect(md).toContain('\\*斜体');
+    expect(md).toContain('\\_下划线');
+    expect(md).toContain('\\[链接\\]');
+  });
+
+  it('should render long annotation text as footnote', () => {
+    const longAnnotation =
+      '程子曰：「此孔氏遗书，初学入德之门也。于今可见古人为学次第者，独赖此篇之存，而论、孟次之。学者必由是而学焉，则庶乎其不差矣。」';
+    const ir = {
+      title: '大学章句集注',
+      source: '经部/大学章句集注.htm',
+      docType: 'content' as const,
+      chapters: [
+        {
+          title: '大学章句',
+          sections: [
+            {
+              type: 'main-text' as const,
+              content: '大学之道。',
+              annotations: [{ text: longAnnotation }],
+            },
+          ],
+        },
+      ],
+      navItems: [],
+    };
+    const md = renderMarkdown(ir);
+    expect(md).toContain('[^注1]');
+    expect(md).toContain('[^注1]:');
+    expect(md).toContain('程子曰');
+    expect(md).toContain('初学入德之门也');
+  });
+
+  it('should render empty IR with frontmatter only', () => {
+    const ir = {
+      title: 'Empty Book',
+      source: '经部/empty.htm',
+      docType: 'content' as const,
+      chapters: [],
+      navItems: [],
+    };
+    const md = renderMarkdown(ir);
+    expect(md).toContain('---');
+    expect(md).toContain('title: "Empty Book"');
+    expect(md).toContain('docType: "content"');
+    expect(md).toContain('source: "经部/empty.htm"');
+    // No body content beyond frontmatter
+    const afterFrontmatter = md.split('---')[2] || '';
+    expect(afterFrontmatter.trim()).toBe('');
   });
 });

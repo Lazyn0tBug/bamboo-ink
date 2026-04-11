@@ -1,5 +1,5 @@
 ---
-title: "feat: JSON IR 内容管道 — 提取器 + 双输出生成器"
+title: 'feat: JSON IR 内容管道 — 提取器 + 双输出生成器'
 type: feat
 status: active
 date: 2026-04-11
@@ -13,11 +13,12 @@ last_updated: 2026-04-11
 
 用「内容提取 → JSON IR → 双输出」管道替代现有的「7 模板正则修改」管道。从原始 HTML 中直接提取章节、正文、注疏等内容到 JSON 中间表示，再从 JSON 生成 Markdown（Astro Content Collection 消费）和 HTML5（独立可读）。目标是消除 ~800 行模板正则 + 7 个独立正常器，同时恢复部分 ~11% SKIP 文件的覆盖。
 
-**当前状态**: Unit 0（基础设施）和 Unit 1（核心提取器）已完成，27 个测试通过。`content-extractor.mjs` 包含完整的提取、字典构建、HTML5/Markdown 渲染功能。待完成：CSS class 分类规则补充（Unit 1b）、模式缓存（Unit 2a）、CLI 批量处理（Unit 4）、经部验证（Unit 5）。
+**当前状态**: Unit 0（基础设施）、Unit 1（核心提取器）、Unit 1b（CSS class 分类规则）、Unit 2（HTML5 渲染器）和 Unit 3（Markdown 生成器）已完成，44 个测试通过。`content-extractor.mjs` 包含完整的提取、字典构建、HTML5/Markdown 渲染功能。待完成：模式缓存（Unit 2a）、CLI 批量处理（Unit 4）、经部验证（Unit 5）。
 
 ## Problem Frame
 
 当前 `scripts/convert-htm-to-md.js` 是一个粗糙的 cheerio + turndown 直接转换脚本：
+
 - 只做简单的标签剥离，无法处理嵌套 `<FONT>`、`<PRE>` 正文、注疏区分
 - frontmatter 字段错误（`section` 而非 `category`，朝代映射为单字）
 - 硬编码只处理前 10 个文件，无 CLI 参数
@@ -55,8 +56,8 @@ last_updated: 2026-04-11
 
 ### Relevant Code and Patterns
 
-- `scripts/lib/content-extractor.mjs` — JSON IR 提取器核心（~788 行，Unit 1 已实现）。包含 `extractContent()`, `buildCatalogDict()`, `lookupCatalogMeta()`, `renderHtml5()`, `renderMarkdown()`, `writeIr()` 等函数。27 个测试通过。
-- `tests/content-extractor.test.ts` — 27 个测试：6 extractContent, 3 renderHtml5, 4 renderMarkdown, 2 decodeHtml, 4 catalog dictionary, 8 content-config
+- `scripts/lib/content-extractor.mjs` — JSON IR 提取器核心（~810 行，Unit 1/1b/2/3 已实现）。包含 `extractContent()`, `buildCatalogDict()`, `lookupCatalogMeta()`, `renderHtml5()`, `renderMarkdown()`, `writeIr()` 等函数。44 个测试通过。
+- `tests/content-extractor.test.ts` — 32 个测试：6 extractContent, 3 renderHtml5, 3 renderHtml5 edge cases, 4 renderMarkdown, 3 renderMarkdown edge cases, 2 decodeHtml, 4 catalog dictionary, 7 CSS class classification, 3 content-config
 - `scripts/convert-htm-to-md.js` — 现有转换脚本（将被替代）。Turndown 配置了 `guji-title` 自定义规则。
 - `docs/brainstorms/json-ir-pipeline.md` — 需求文档 + Unit 1 实施复盘。定义了 9 种内容类型和 text.css 分类体系。
 - `~/data/古籍/text.css` — **权威分类体系**（13 个 CSS class → 内容类型映射）。所有文件共享同一套 FrontPage 4.0 制作规范。
@@ -164,7 +165,7 @@ last_updated: 2026-04-11
 
 ## High-Level Technical Design
 
-> *This illustrates the intended approach and is directional guidance for review, not implementation specification. The implementing agent should treat it as context, not code to reproduce.*
+> _This illustrates the intended approach and is directional guidance for review, not implementation specification. The implementing agent should treat it as context, not code to reproduce._
 
 ### 数据流
 
@@ -218,6 +219,7 @@ Source HTML (*.htm)
 ### 内容分类多遍扫描（D5）
 
 **第一遍 — 结构上下文**：
+
 ```
 node is <a>                 → nav-item（链接节点）
 node parent is <CENTER>     → 居中上下文（标题候选）
@@ -227,6 +229,7 @@ otherwise                   → 一般上下文
 ```
 
 **第二遍 — 属性规则（在结构上下文中应用）**：
+
 ```
 class=article                    → book-title（text.css 权威）
 class=chapter                    → chapter-title（text.css 权威）
@@ -245,6 +248,7 @@ class=swy1                       → main-text（12pt 正文，内联定义）
 ```
 
 **第三遍 — 文本模式（在一般上下文中应用）**：
+
 ```
 text contains "…终"           → end-marker
 text starts with "右…"        → section-summary
@@ -261,6 +265,7 @@ otherwise                     → main-text
 **Status:** ✅ 完成 (commit 18150c0)
 
 **交付物:**
+
 - `src/content.config.ts` — Zod schema 匹配 Content Collection
 - `tests/content-config.test.ts` — 8 个测试用例
 - 注疏可分离性确认：`<FONT style="FONT-SIZE: 9pt">` 包裹可可靠分离
@@ -275,6 +280,7 @@ otherwise                     → main-text
 **Status:** ⚠️ 部分完成 (commit 9225873)
 
 **已完成:**
+
 - `scripts/lib/content-extractor.mjs` — 核心提取器（~788 行）
 - `tests/content-extractor.test.ts` — 27 个测试全部通过
 - 多遍分类器（Pass 1→2→3）✅
@@ -286,29 +292,35 @@ otherwise                     → main-text
 - 章节总结正则覆盖"首章"变体 ✅
 
 **待完成 → Unit 1b:**
+
 - text.css CSS class 分类规则（8 条缺失）
 - 颜色 `#551A8B` + 10pt 注释识别
 
 **已验证的关键发现:**
+
 - cheerio `.contents()` vs `.children()` 是关键区别
 - `.before()`, `.appendTo()` 丢失文本节点 — 应使用正则预处理 + 只读遍历
 - 正则提取 author/dynasty 不可靠 — 目录字典替代
 
 ---
 
-### [ ] Unit 1b: text.css CSS 分类规则补充
+### ✅ Unit 1b: text.css CSS 分类规则补充
 
 **Goal:** 补充 Pass 2 中缺失的 8 条 CSS class 识别规则，使提取器能直接利用原始设计规范。
+
+**Status:** ✅ 完成
 
 **Requirements:** R2, R9
 
 **Dependencies:** Unit 1
 
 **Files:**
+
 - Modify: `scripts/lib/content-extractor.mjs` (`classifyByAttributes` 函数)
 - Modify: `tests/content-extractor.test.ts` (add tests for CSS class classification)
 
 **Approach:**
+
 1. 在 `classifyByAttributes` 中添加 class 直接识别规则：
    - `class=article` → `book-title`（替代 color+size 猜测）
    - `class=chapter` → `chapter-title`
@@ -322,10 +334,12 @@ otherwise                     → main-text
 3. 优先级：class 识别 > color+size 属性识别 > 文本模式识别
 
 **Patterns to follow:**
+
 - 现有 `classifyByAttributes` 函数结构（D5 多遍分类器 Pass 2）
 - text.css 定义（位于 `~/data/古籍/text.css`，13 个 class 映射）
 
 **Test scenarios:**
+
 - Happy path: HTML with `class=article` → identified as book-title
 - Happy path: HTML with `class=chapter` → identified as chapter-title
 - Happy path: HTML with `class=annotation` → identified as inline-annotation
@@ -335,6 +349,7 @@ otherwise                     → main-text
 - Integration: Re-run all 27 existing tests → no regression
 
 **Verification:**
+
 - All 27 existing tests still pass
 - 8 new test cases for CSS class rules pass
 - Extractor handles both class-based and attribute-based classification
@@ -350,11 +365,13 @@ otherwise                     → main-text
 **Dependencies:** Unit 1, Unit 1b
 
 **Files:**
+
 - Create: `scripts/lib/pattern-cache.mjs`
 - Modify: `scripts/lib/content-extractor.mjs` (accept pattern cache)
 - Test: `tests/pattern-cache.test.ts`
 
 **Approach:**
+
 1. 模式缓存数据结构：
    ```
    {
@@ -372,9 +389,11 @@ otherwise                     → main-text
 **Execution note:** Keep it simple for v1 — in-memory Map within a single `--book` or `--category` run. Persistent cache (JSON file) can be added later if needed.
 
 **Patterns to follow:**
+
 - `buildCatalogDict` / `lookupCatalogMeta` pattern in `scripts/lib/content-extractor.mjs`
 
 **Test scenarios:**
+
 - Happy path: Analyze first file → cache created → second file uses cache → same result
 - Happy path: Cache hit reduces processing time (measurable)
 - Edge case: No cache available → falls back to full classification
@@ -382,74 +401,83 @@ otherwise                     → main-text
 - Error path: Corrupted cache file → falls back to full classification
 
 **Verification:**
+
 - Cached classification produces identical output to full classification
 - Performance improvement measurable on multi-file books
 
 ---
 
-### [ ] Unit 2: JSON IR → HTML5 渲染器
+### ✅ Unit 2: JSON IR → HTML5 渲染器
 
 **Goal:** 从 JSON IR 生成语义化 HTML5。
 
-**Status:** ⚠️ 已在 `scripts/lib/content-extractor.mjs` 中实现 `renderHtml5()`，有 3 个测试通过。需进一步完善。
+**Status:** ✅ 完成 (edge case tests added)
 
 **Requirements:** R4, R6, R9
 
 **Dependencies:** Unit 1
 
 **Files:**
-- Modify: `scripts/lib/content-extractor.mjs` (renderHtml5 已存在，需完善)
-- Test: `tests/content-extractor.test.ts` (已有 3 个 renderHtml5 测试)
+
+- Modify: `scripts/lib/content-extractor.mjs` (renderHtml5 已存在，已完善)
+- Test: `tests/content-extractor.test.ts` (已有 3 → 6 个 renderHtml5 测试)
 
 **Approach:**
-1. 当前 `renderHtml5()` 已覆盖：content-type IR、catalog IR、annotations
-2. 需补充的测试场景：
-   - 空内容 IR → 最小 HTML
-   - colophon 渲染
-   - section-summary 斜体样式
-3. 确保 CSS 类引用 `normalized.css` 或 Tailwind 工具类
 
-**Test scenarios:** *(补充)*
-- Edge case: IR with no chapters → minimal HTML with just title
-- Edge case: IR with colophon → separate `<section class="colophon">`
-- Edge case: IR with section-summary → italic `<p>` elements
+1. 当前 `renderHtml5()` 已覆盖：content-type IR、catalog IR、annotations ✅
+2. 已补充的测试场景：
+   - ✅ 空内容 IR → 最小 HTML
+   - ✅ colophon 渲染 → `<section class="colophon">`
+   - ✅ section-summary 斜体样式 → `italic text-sm text-dai-400`
+3. CSS 类引用 Tailwind 工具类 ✅
+
+**Test scenarios:** _(全部完成)_
+
+- ✅ Edge case: IR with no chapters → minimal HTML with just title
+- ✅ Edge case: IR with colophon → separate `<section class="colophon">`
+- ✅ Edge case: IR with section-summary → italic `<p>` elements
 
 **Verification:**
-- All HTML5 render tests pass
-- Output matches structure of `src/normalized-html/` samples
+
+- ✅ All HTML5 render tests pass (6 tests)
+- ✅ Output matches structure of `src/normalized-html/` samples
 
 ---
 
-### [ ] Unit 3: JSON IR → Markdown 生成器
+### ✅ Unit 3: JSON IR → Markdown 生成器
 
 **Goal:** 从 JSON IR 直接生成 Markdown。
 
-**Status:** ⚠️ 已在 `scripts/lib/content-extractor.mjs` 中实现 `renderMarkdown()`，有 4 个测试通过。需进一步完善。
+**Status:** ✅ 完成 (edge case tests added)
 
 **Requirements:** R3, R6
 
 **Dependencies:** Unit 0, Unit 1
 
 **Files:**
-- Modify: `scripts/lib/content-extractor.mjs` (renderMarkdown 已存在，需完善)
-- Test: `tests/content-extractor.test.ts` (已有 4 个 renderMarkdown 测试)
+
+- Modify: `scripts/lib/content-extractor.mjs` (renderMarkdown 已存在，已完善)
+- Test: `tests/content-extractor.test.ts` (已有 4 → 7 个 renderMarkdown 测试)
 
 **Approach:**
-1. 当前 `renderMarkdown()` 已覆盖：frontmatter generation, catalog links, footnotes, section-summary italics
-2. 需补充的测试场景：
-   - Markdown 特殊字符转义（`#`, `*`, `_`, `[`, `]`）
-   - 长注疏脚注渲染
-   - 空内容 IR
-3. frontmatter 格式匹配 Content Collection schema
 
-**Test scenarios:** *(补充)*
-- Edge case: Content containing Markdown special chars → properly escaped
-- Edge case: Long annotation text → footnote renders correctly
-- Edge case: Empty IR → minimal frontmatter only
+1. 当前 `renderMarkdown()` 已覆盖：frontmatter generation, catalog links, footnotes, section-summary italics ✅
+2. 已补充的测试场景：
+   - ✅ Markdown 特殊字符转义（`\#`, `\*`, `\_`, `\[`, `\]`）
+   - ✅ 长注疏脚注渲染
+   - ✅ 空内容 IR → 仅 frontmatter
+3. frontmatter 格式匹配 Content Collection schema ✅
+
+**Test scenarios:** _(全部完成)_
+
+- ✅ Edge case: Content containing Markdown special chars → properly escaped
+- ✅ Edge case: Long annotation text → footnote renders correctly
+- ✅ Edge case: Empty IR → minimal frontmatter only
 
 **Verification:**
-- Generated Markdown frontmatter validates against Content Collection schema
-- All renderMarkdown tests pass
+
+- ✅ Generated Markdown frontmatter validates against Content Collection schema
+- ✅ All renderMarkdown tests pass (7 tests)
 
 ---
 
@@ -462,10 +490,12 @@ otherwise                     → main-text
 **Dependencies:** Unit 1, Unit 1b, Unit 2a, Unit 2, Unit 3
 
 **Files:**
+
 - Modify: `scripts/convert-htm-to-md.js` (add `--pipeline ir` + full CLI args)
 - Create: `tests/cli-pipeline.test.ts`
 
 **Approach:**
+
 1. 添加 CLI 参数解析：
    - `--pipeline ir|legacy` — 选择管道（legacy 为默认）
    - `--file <path>` — 单个文件
@@ -486,10 +516,12 @@ otherwise                     → main-text
 4. 错误处理：try-catch，不中断
 
 **Patterns to follow:**
+
 - `scripts/convert-htm-to-md.js` 现有的 `findFiles()` 和 `main()` 结构
 - `buildCatalogDict` / `lookupCatalogMeta` 模式
 
 **Test scenarios:**
+
 - Happy path: `--file <path>` processes single file and writes IR + outputs
 - Happy path: `--all` scans, processes catalog first, then content files, reports count
 - Happy path: Catalog-driven metadata injection → author/dynasty correct from catalog dict
@@ -500,6 +532,7 @@ otherwise                     → main-text
 - Error path: Invalid pipeline argument → prints usage and exits
 
 **Verification:**
+
 - CLI help/usage on invalid input
 - `--dry-run` produces zero file writes
 - Catalog metadata injection verified against known entries
@@ -516,10 +549,12 @@ otherwise                     → main-text
 **Dependencies:** Unit 4
 
 **Files:**
+
 - Create: `scripts/compare-pipelines.mjs` (对比脚本)
 - Modify: `tests/content-extractor.test.ts` (add regression tests for any gaps found)
 
 **Approach:**
+
 1. 运行 JSON IR 管道处理经部所有文件 → 产出 `src/content-ir/经部/` 和 `src/content/guji/经部/`
 2. 对比两种管道的输出：
    - 文件覆盖率（JSON IR vs 模板管道）
@@ -531,10 +566,12 @@ otherwise                     → main-text
 **Execution note:** This is a validation unit — treat findings as feedback for the extractor. If systematic gaps are found, add targeted classification rules.
 
 **Test scenarios:**
+
 - Integration: Run `--category 经部 --dry-run` → shows expected file count matching actual .htm count in 经部
 - Integration: Process known Template A/B/F/G files from 经部 → IR contains correct content for each
 
 **Verification:**
+
 - JSON IR pipeline file count >= template pipeline file count for 经部
 - No previously working files are now broken (no regression)
 - SKIP files from template pipeline that are now covered are documented
@@ -553,16 +590,16 @@ otherwise                     → main-text
 
 ## Risks & Dependencies
 
-| Risk | Likelihood | Impact | Mitigation |
-|------|-----------|--------|------------|
-| 内容分类规则不够通用，遇到未见 HTML 变体 | Med | High | 每发现新变体只需加一条分类规则。提取器设计为规则表驱动，易扩展 |
-| 注疏无法在源 HTML 中分离 | ~~Med~~ **Resolved** | ~~High~~ | Unit 0 已验证：可分离 ✅ |
-| 章节总结模式变体不完整 | ~~Med~~ **Low** | Med | 已覆盖"首"字变体。全量扫描后确认完整性 |
-| GBK 编码文件解码失败 | Low | Med | 复用现有 `detectEncoding()` + iconv-lite |
-| 大型文件（>1MB HTML）提取性能 | Low | Low | cheerio 解析 O(n)，预估单文件 <1s |
-| text.css CSS class 在部分文件中不使用 | Med | Low | class 识别为优先规则，color+size 属性仍作为回退 |
-| catalog 页面本身有错误或缺失 | Low | Med | 无法从 catalog 获取 metadata 的文件，author/dynasty 留空 |
-| 模式缓存导致过时规则传播 | Low | Low | v1 仅内存缓存，同批次内有效。跨批次持久化时加版本号 |
+| Risk                                     | Likelihood           | Impact   | Mitigation                                                     |
+| ---------------------------------------- | -------------------- | -------- | -------------------------------------------------------------- |
+| 内容分类规则不够通用，遇到未见 HTML 变体 | Med                  | High     | 每发现新变体只需加一条分类规则。提取器设计为规则表驱动，易扩展 |
+| 注疏无法在源 HTML 中分离                 | ~~Med~~ **Resolved** | ~~High~~ | Unit 0 已验证：可分离 ✅                                       |
+| 章节总结模式变体不完整                   | ~~Med~~ **Low**      | Med      | 已覆盖"首"字变体。全量扫描后确认完整性                         |
+| GBK 编码文件解码失败                     | Low                  | Med      | 复用现有 `detectEncoding()` + iconv-lite                       |
+| 大型文件（>1MB HTML）提取性能            | Low                  | Low      | cheerio 解析 O(n)，预估单文件 <1s                              |
+| text.css CSS class 在部分文件中不使用    | Med                  | Low      | class 识别为优先规则，color+size 属性仍作为回退                |
+| catalog 页面本身有错误或缺失             | Low                  | Med      | 无法从 catalog 获取 metadata 的文件，author/dynasty 留空       |
+| 模式缓存导致过时规则传播                 | Low                  | Low      | v1 仅内存缓存，同批次内有效。跨批次持久化时加版本号            |
 
 ## Documentation / Operational Notes
 
