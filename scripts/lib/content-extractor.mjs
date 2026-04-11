@@ -18,6 +18,7 @@ import * as cheerio from 'cheerio';
 import iconv from 'iconv-lite';
 import fs from 'fs/promises';
 import path from 'path';
+import { analyzeAndCache, hasCachedPatterns, flattenTables } from './pattern-cache.mjs';
 
 // ── Content Type Constants ────────────────────────────────────────
 
@@ -38,8 +39,8 @@ const TYPES = {
 const SECTION_SUMMARY_RE =
   /^右(?:传之(?:首|[一二三四五六七八九十]+)章|经(?:首|[一二三四五六七八九十]*)章)/;
 
-// End marker pattern: "儀 禮 終", "仪礼终", "周易終"
-const END_MARKER_RE = /[\u4e00-\u9fff]+[\s]*終\s*$/;
+// End marker pattern: "儀 禮 終", "仪礼终", "周易終" (both traditional 終 and simplified 终)
+const END_MARKER_RE = /[\u4e00-\u9fff]+[\s]*[終终]\s*$/;
 
 // Metadata pattern: "(朝代·作者)" — only used for catalog page body text
 // as fallback; primary metadata comes from catalog dictionary
@@ -309,10 +310,9 @@ function classifyByAttributes($, node, context) {
     }
   }
 
-  // --- Font size 9pt → inline annotation ---
-  // Only check the node's own style, not nested fonts
-  if (tag === 'FONT') {
-    const style = $node.attr('style') || '';
+  // --- Font size / color annotations (check any element with inline style) ---
+  const style = $node.attr('style') || '';
+  if (style) {
     if (/FONT-SIZE:\s*9pt/i.test(style)) return TYPES.INLINE_ANNOTATION;
     // text.css .annotation: 10pt + color=#551A8B (check both color attr and style)
     if (
@@ -322,12 +322,7 @@ function classifyByAttributes($, node, context) {
       return TYPES.INLINE_ANNOTATION;
   }
   // Also check for class-based annotation on the node itself
-  if (
-    (tag === 'FONT' || tag === 'SPAN') &&
-    /annotation|reference|notes/i.test($node.attr('class') || '')
-  ) {
-    return TYPES.INLINE_ANNOTATION;
-  }
+  if (className === 'notes') return TYPES.INLINE_ANNOTATION;
 
   // --- class="swy1" → main text (12pt) ---
   if ($node.hasClass('swy1')) return TYPES.MAIN_TEXT;
@@ -374,8 +369,6 @@ function classifyByText(text) {
 
 // ── Main Extraction ──────────────────────────────────────────────
 
-import { analyzeAndCache, hasCachedPatterns } from './pattern-cache.mjs';
-
 /**
  * @typedef {Object} ExtractOptions
  * @property {Map<string, CatalogEntry>} [catalogDict] - Catalog dictionary for metadata lookup
@@ -393,15 +386,7 @@ import { analyzeAndCache, hasCachedPatterns } from './pattern-cache.mjs';
  */
 export function extractContent(html, sourcePath, options = {}) {
   // Pre-process: flatten table-wrapped content (Template F pattern)
-  // Strip <table>, </table>, <tr>, </tr>, <td>, </td> tags but preserve class
-  // on the first child element inside the cell by adding it as a wrapper div
-  html = html
-    .replace(/<\/table>/gi, '')
-    .replace(/<\/tr>/gi, '')
-    .replace(/<tr[^>]*>/gi, '')
-    .replace(/<table[^>]*>/gi, '')
-    .replace(/<td\b([^>]*)>/gi, '<div$1>')
-    .replace(/<\/td>/gi, '</div>');
+  html = flattenTables(html);
 
   const $raw = cheerio.load(html, { xmlMode: false, decodeEntities: true });
 

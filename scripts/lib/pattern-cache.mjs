@@ -13,6 +13,26 @@
 import * as cheerio from 'cheerio';
 
 /**
+ * Flatten table-wrapped content to div-based structure.
+ *
+ * Converts <table>/<tr>/<td> chains into <div> elements so that
+ * cheerio can traverse content uniformly regardless of table wrapping.
+ * Preserves class and other attributes on <td> by mapping to <div>.
+ *
+ * @param {string} html - Raw HTML string
+ * @returns {string} HTML with table structure flattened to divs
+ */
+export function flattenTables(html) {
+  return html
+    .replace(/<\/table>/gi, '')
+    .replace(/<\/tr>/gi, '')
+    .replace(/<tr[^>]*>/gi, '')
+    .replace(/<table[^>]*>/gi, '')
+    .replace(/<td\b([^>]*)>/gi, '<div$1>')
+    .replace(/<\/td>/gi, '</div>');
+}
+
+/**
  * Create an empty pattern cache.
  *
  * @returns {Map<string, object>} Cache keyed by book title
@@ -35,14 +55,7 @@ export function createPatternCache() {
  * @returns {object} Pattern object
  */
 export function analyzePatterns(html, bookTitle) {
-  // Apply same table-flattening as the extractor
-  html = html
-    .replace(/<\/table>/gi, '')
-    .replace(/<\/tr>/gi, '')
-    .replace(/<tr[^>]*>/gi, '')
-    .replace(/<table[^>]*>/gi, '')
-    .replace(/<td\b([^>]*)>/gi, '<div$1>')
-    .replace(/<\/td>/gi, '</div>');
+  html = flattenTables(html);
 
   const $ = cheerio.load(html, { xmlMode: false, decodeEntities: true });
 
@@ -145,19 +158,4 @@ export function analyzeAndCache(cache, html, bookTitle) {
   const patterns = analyzePatterns(html, bookTitle);
   cachePatterns(cache, patterns);
   return patterns;
-}
-
-/**
- * Get container selector from cache, with fallback detection.
- *
- * @param {object|null} cachedPatterns - Cached patterns (may be null)
- * @param {object} $raw - Cheerio instance
- * @returns {Cheerio} jQuery-like container element(s)
- */
-export function getContainer(cachedPatterns, $raw) {
-  if (cachedPatterns?.contentContainerSelector === 'body > div.swy1') {
-    const swy1 = $raw('body > div.swy1').first();
-    if (swy1.length > 0) return swy1.contents();
-  }
-  return $raw('body').children();
 }

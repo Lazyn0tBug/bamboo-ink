@@ -91,6 +91,18 @@ describe('extractContent', () => {
     expect(allText).not.toContain('儀 禮 終');
   });
 
+  it('should detect end markers with simplified 终 character', () => {
+    const simplifiedEndHtml = `<html><head><title>周易</title></head><body>
+<CENTER><B><FONT COLOR="#FF6666"><FONT SIZE=5>周易</FONT></FONT></B></CENTER>
+<DIV class=swy1>乾。元亨利贞。<BR>
+周易终
+</DIV>
+</body></html>`;
+    const ir = extractContent(simplifiedEndHtml, '经部/周易.htm');
+    const allText = JSON.stringify(ir);
+    expect(allText).not.toContain('周易终');
+  });
+
   it('should extract catalog with navItems and metadata', () => {
     const ir = extractContent(catalogHtml, '史部-其他/列女传/index.htm');
     expect(ir.docType).toBe('catalog');
@@ -393,6 +405,19 @@ describe('CSS class classification (text.css)', () => {
     expect(ir.navItems[0].label).toBe('学而第一');
     expect(ir.navItems[1].href).toBe('002.htm');
     expect(ir.navItems[1].label).toBe('为政第二');
+  });
+
+  it('should identify color=#551A8B + 10pt as inline-annotation on SPAN elements', () => {
+    const spanAnnotationHtml = `<html><head><title>论语</title></head><body>
+<CENTER><B><FONT class=article>论语</FONT></B></CENTER>
+<DIV class=swy1>子曰：学而时习之。<SPAN style="FONT-SIZE: 10pt; COLOR: #551A8B">此乃学习之道。</SPAN></DIV>
+</body></html>`;
+    const ir = extractContent(spanAnnotationHtml, '经部/论语.htm');
+    const sectionsWithAnnotations = ir.chapters
+      .flatMap((ch) => ch.sections)
+      .filter((s) => s.annotations && s.annotations.length > 0);
+    expect(sectionsWithAnnotations.length).toBeGreaterThan(0);
+    expect(sectionsWithAnnotations[0].annotations[0].text).toContain('学习之道');
   });
 
   it('should identify color=#551A8B + 10pt as inline-annotation', () => {
