@@ -54,6 +54,12 @@ last_updated: 2026-04-11
 
 ## Context & Research
 
+### Source Data Directory
+
+**⚠️ 源数据目录固定路径: `$HOME/data/古籍`**（即 `/Users/gpdi/code/data/古籍`）
+
+脚本中 `__dirname` 位于 `scripts/` 目录下，相对路径 `../../data/古籍` 应解析到此位置。如果解析失败，检查 `__dirname` 是否被错误展开——不要用 `/Users/gpdi/code/ai/data/古籍`（多了一层 `ai`）。
+
 ### Relevant Code and Patterns
 
 - `scripts/lib/content-extractor.mjs` — JSON IR 提取器核心（~810 行，Unit 1/1b/2/3 已实现）。包含 `extractContent()`, `buildCatalogDict()`, `lookupCatalogMeta()`, `renderHtml5()`, `renderMarkdown()`, `writeIr()` 等函数。44 个测试通过。

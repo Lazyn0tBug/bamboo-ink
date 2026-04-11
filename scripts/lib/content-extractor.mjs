@@ -20,9 +20,146 @@ import fs from 'fs/promises';
 import path from 'path';
 import { analyzeAndCache, hasCachedPatterns, flattenTables } from './pattern-cache.mjs';
 
-// ── Content Type Constants ────────────────────────────────────────
+// ── Territorial Extraction Infrastructure (exported for testing) ───
+// These functions are internal to extractContent but exported for
+// Unit 1 testing. They will be un-exported after Unit 7.
 
-const TYPES = {
+/**
+ * Create territorial extraction helpers bound to a cheerio instance.
+ * Returns { claimed, claimSubtree, claimLeaf, isClaimed, hasClaimedAncestor,
+ *           extractByRules, extractRemaining, mergeAdjacentRegions }
+ *
+ * @param {Function} $ - cheerio instance (cheerio.load result)
+ * @param {typeof TYPES} types - content type constants
+ */
+export function createTerritory($, types) {
+  /** @type {Set<object>} */
+  const claimed = new Set();
+
+  function claimSubtree(node) {
+    claimed.add(node);
+    const $n = $(node);
+    $n.contents().each((_, child) => {
+      claimSubtree(child);
+    });
+  }
+
+  function claimLeaf(node) {
+    claimed.add(node);
+  }
+
+  function isClaimed(node) {
+    return claimed.has(node);
+  }
+
+  function hasClaimedAncestor(node) {
+    let parent = node.parent;
+    while (parent) {
+      if (claimed.has(parent)) return true;
+      parent = parent.parent;
+    }
+    return false;
+  }
+
+  function extractByRules(predicate, claimMode) {
+    /** @type {Array<{type: string, content: string, sourceNodes: object[]}>} */
+    const regions = [];
+
+    $('body').children().each((_, el) => {
+      if (hasClaimedAncestor(el) || isClaimed(el)) return;
+      const type = predicate($, el);
+      if (!type) return;
+      const $el = $(el);
+      const text = $el.text().trim();
+      if (claimMode === 'subtree') {
+        claimSubtree(el);
+      } else {
+        claimLeaf(el);
+      }
+      if (text) {
+        regions.push({ type, content: text, sourceNodes: [el] });
+      }
+    });
+
+    return regions;
+  }
+
+  function extractRemaining() {
+    /** @type {Array<{type: string, content: string, sourceNodes: object[]}>} */
+    const regions = [];
+    /** @type {object[]|null} */
+    let currentRegionNodes = null;
+    let currentText = '';
+
+    // Recursively walk the DOM tree starting from body children
+    function walkTextNodes(node) {
+      // Check if this node or any ancestor is claimed
+      if (isClaimed(node) || hasClaimedAncestor(node)) return;
+
+      if (node.type === 'text') {
+        const text = $(node).text().trim();
+        if (text) {
+          if (currentText) {
+            currentText += ' ' + text;
+          } else {
+            currentText = text;
+          }
+          if (!currentRegionNodes) currentRegionNodes = [];
+          currentRegionNodes.push(node);
+        }
+      } else if (node.children && node.children.length) {
+        // Only descend into element nodes
+        $(node).contents().each((_, child) => {
+          walkTextNodes(child);
+        });
+      }
+    }
+
+    $('body').contents().each((_, node) => {
+      walkTextNodes(node);
+    });
+
+    if (currentText && currentRegionNodes) {
+      regions.push({
+        type: types.MAIN_TEXT,
+        content: currentText.trim(),
+        sourceNodes: currentRegionNodes,
+      });
+    }
+
+    return regions;
+  }
+
+  function mergeAdjacentRegions(regions) {
+    if (regions.length === 0) return [];
+    /** @type {Array<{type: string, content: string, sourceNodes: object[]}>} */
+    const merged = [regions[0]];
+    for (let i = 1; i < regions.length; i++) {
+      const prev = merged[merged.length - 1];
+      const curr = regions[i];
+      if (prev.type === curr.type) {
+        prev.content += ' ' + curr.content;
+        prev.sourceNodes = prev.sourceNodes.concat(curr.sourceNodes);
+      } else {
+        merged.push(curr);
+      }
+    }
+    return merged;
+  }
+
+  return {
+    claimed,
+    claimSubtree,
+    claimLeaf,
+    isClaimed,
+    hasClaimedAncestor,
+    extractByRules,
+    extractRemaining,
+    mergeAdjacentRegions,
+  };
+}
+
+export const TYPES = {
   BOOK_TITLE: 'book-title',
   METADATA: 'metadata',
   CHAPTER_TITLE: 'chapter-title',
@@ -469,6 +606,24 @@ export function extractContent(html, sourcePath, options = {}) {
     });
     return ir;
   }
+
+  // ── Territorial Extraction Infrastructure (Unit 1) ─────────────
+  // Core data structures for multi-pass region claiming.
+  // DOM remains read-only during extraction -- no mutation.
+  // Variables below used by Unit 2+ territorial passes.
+  /* eslint-disable @typescript-eslint/no-unused-vars */
+  const territory = createTerritory($raw, TYPES);
+  const {
+    claimed,
+    claimSubtree,
+    claimLeaf,
+    isClaimed,
+    hasClaimedAncestor,
+    extractByRules,
+    extractRemaining,
+    mergeAdjacentRegions,
+  } = territory;
+  /* eslint-enable @typescript-eslint/no-unused-vars */
 
   // ── Content extraction ──
   let pastEndMarker = false;

@@ -23,13 +23,13 @@ origin: docs/session-checkpoint-content-pipeline-20260410.md
 
 审计 21 个文件后发现 **4 种内容模板** 覆盖 95%+ 文件：
 
-| 模板 | 特征 | 占比 |
-|------|------|------|
-| A: `<pre>` 纯文本 | 标题 `<font>`，正文 `<pre>` 内纯文本 | ~15% |
-| B: `<P>` 段落 | `<P align=justify>` 段落 + `<FONT>` 包裹 | ~50% |
-| C: Word 单文件 | `<H1>` 书 + `<H2>` 章 + 全部内容内联 | ~10% |
-| D: 目录页 | `<table>` 表格 + `<a href>` 章节链接 | ~20% |
-| F: 异常值 | 外链 .txt、Netscape 生成等 | ~5% |
+| 模板              | 特征                                     | 占比 |
+| ----------------- | ---------------------------------------- | ---- |
+| A: `<pre>` 纯文本 | 标题 `<font>`，正文 `<pre>` 内纯文本     | ~15% |
+| B: `<P>` 段落     | `<P align=justify>` 段落 + `<FONT>` 包裹 | ~50% |
+| C: Word 单文件    | `<H1>` 书 + `<H2>` 章 + 全部内容内联     | ~10% |
+| D: 目录页         | `<table>` 表格 + `<a href>` 章节链接     | ~20% |
+| F: 异常值         | 外链 .txt、Netscape 生成等               | ~5%  |
 
 详见 `docs/session-checkpoint-content-pipeline-20260410.md`。
 
@@ -96,7 +96,7 @@ origin: docs/session-checkpoint-content-pipeline-20260410.md
 
 ## High-Level Technical Design
 
-> *This illustrates the intended approach and is directional guidance for review, not implementation specification. The implementing agent should treat it as context, not code to reproduce.*
+> _This illustrates the intended approach and is directional guidance for review, not implementation specification. The implementing agent should treat it as context, not code to reproduce._
 
 ```
 ┌─────────────────────┐
@@ -129,21 +129,21 @@ origin: docs/session-checkpoint-content-pipeline-20260410.md
 ```html
 <!DOCTYPE html>
 <html lang="zh-CN">
-<head>
-  <meta charset="UTF-8">
-  <title>论语</title>
-  <!-- Tailwind v4 通过 CSS 变量引用项目 OKLCH tokens -->
-</head>
-<body class="bg-xuanzhi-50 text-mo-600">
-  <article>
-    <h1 class="font-li text-3xl text-zhusha-500">论语</h1>
-    <section>
-      <h2 class="font-kai text-xl text-dai-500">论语序说</h2>
-      <p class="font-kai leading-loose">史记世家曰：孔子名丘...</p>
-      <p class="font-kai leading-loose">何氏曰：鲁论语二十篇...</p>
-    </section>
-  </article>
-</body>
+  <head>
+    <meta charset="UTF-8" />
+    <title>论语</title>
+    <!-- Tailwind v4 通过 CSS 变量引用项目 OKLCH tokens -->
+  </head>
+  <body class="bg-xuanzhi-50 text-mo-600">
+    <article>
+      <h1 class="font-li text-3xl text-zhusha-500">论语</h1>
+      <section>
+        <h2 class="font-kai text-xl text-dai-500">论语序说</h2>
+        <p class="font-kai leading-loose">史记世家曰：孔子名丘...</p>
+        <p class="font-kai leading-loose">何氏曰：鲁论语二十篇...</p>
+      </section>
+    </article>
+  </body>
 </html>
 ```
 
@@ -158,6 +158,7 @@ origin: docs/session-checkpoint-content-pipeline-20260410.md
 **Dependencies:** 无（从零开始）
 
 **Files:**
+
 - Create: `scripts/normalize-html.mjs` — 主规范化脚本
 - Create: `scripts/lib/template-detector.mjs` — 模板检测逻辑
 - Create: `src/normalized-html/经部/论语.htm` — 输出（规范化 HTML）
@@ -166,6 +167,7 @@ origin: docs/session-checkpoint-content-pipeline-20260410.md
 - Test: `tests/html-normalization.test.ts`
 
 **Approach:**
+
 1. 实现 `detectTemplate(html)` 函数，根据以下规则判定模板：
    - 包含 `<PRE>` 且正文在 `<PRE>` 内 → Template A
    - 包含 `<P align=justify>` 或 `<P align="justify">` → Template B
@@ -184,16 +186,19 @@ origin: docs/session-checkpoint-content-pipeline-20260410.md
 7. 运行 `bun run build` 验证 Astro 能正确消费该 Markdown
 
 **Patterns to follow:**
+
 - 现有 `scripts/convert-htm-to-md.js` 的 cheerio + Turndown 架构
 - ESM 模块（`import` 语法，`fileURLToPath`）
 
 **Test scenarios:**
+
 - Happy path: 输入 `~/data/古籍/经部/论语.htm` → 输出规范化 HTML 含 `<h1>论语</h1>` 和 `<article>` 标签 → 输出 Markdown 含 `# 论语` 标题和 frontmatter
 - Happy path: 规范化 HTML 的 class 属性包含 Tailwind utility classes（如 `bg-xuanzhi-50`）
 - Edge case: 输入不存在 → 抛出清晰的错误信息
 - Error path: 输入 Template F（异常值）→ 输出标记为 skipped 并记录原因
 
 **Verification:**
+
 - `src/normalized-html/经部/论语.htm` 存在且可通过浏览器打开，显示正确排版
 - `content/guji/经部/论语.md` 存在且 `bun run build` 成功
 - 规范化 HTML 中无 `<FONT>`, `<CENTER>`, `<PRE>`, `<SPAN class=swy1>` 等遗留标签
@@ -207,12 +212,14 @@ origin: docs/session-checkpoint-content-pipeline-20260410.md
 **Dependencies:** Unit 1
 
 **Files:**
+
 - Create: `scripts/lib/file-mapping.mjs` — 文件映射与章节拼接逻辑
 - Create: `src/normalized-html/经部/论语集注.htm` — 输出
 - Create: `content/guji/经部/论语集注.md` — 输出
 - Test: `tests/html-normalization.test.ts`（追加测试用例）
 
 **Approach:**
+
 1. 实现 `buildFileMapping(sourceDir)` — 扫描目录，构建 {书名: [文件列表]} 映射
    - 检测目录中的 `index.htm` + 数字编号文件（001.htm, 002.htm...）
    - 检测目录中的 `index.htm` 是否包含完整正文（如果有，忽略章节文件）
@@ -224,16 +231,19 @@ origin: docs/session-checkpoint-content-pipeline-20260410.md
 4. frontmatter 中写入 `chapters` 数组记录来源文件
 
 **Patterns to follow:**
+
 - 现有 `scripts/parse-catalogs.js` 的文件扫描逻辑
 - 自然排序使用 `Intl.Collator` 或自定义比较函数
 
 **Test scenarios:**
+
 - Happy path: 输入 `~/data/古籍/经部/论语集注/` 目录 → 输出单一 `论语集注.htm` 包含所有章节
 - Happy path: 章节按正确顺序排列（001 在 002 之前）
 - Edge case: `index.htm` 包含完整正文 → 忽略章节文件，仅使用 index.htm
 - Edge case: 章节文件命名不规则（00.htm vs 000.htm）→ 正确排序
 
 **Verification:**
+
 - `src/normalized-html/经部/论语集注.htm` 包含所有章节标题和内容
 - Markdown frontmatter 中 `chapters` 数组正确记录了 12 个源文件
 
@@ -246,6 +256,7 @@ origin: docs/session-checkpoint-content-pipeline-20260410.md
 **Dependencies:** Unit 1
 
 **Files:**
+
 - Modify: `scripts/normalize-html.mjs` — 添加 Template B 和 C 处理器
 - Create: `src/normalized-html/史部-其他/官箴.htm` — Template B 示例输出
 - Create: `src/normalized-html/子部-先秦两汉/莊子.htm` — Template C 示例输出
@@ -254,6 +265,7 @@ origin: docs/session-checkpoint-content-pipeline-20260410.md
 - Test: `tests/html-normalization.test.ts`（追加测试用例）
 
 **Approach:**
+
 1. Template B normalizer（`<P align=justify>` 段落）：
    - 提取标题：居中 `<FONT color=#FF0000 size=5|6>` → `<h1>`
    - 提取章节标题：居中 `<FONT color=#000080 size=5>` 或 `<H2>` → `<h2>`
@@ -267,11 +279,13 @@ origin: docs/session-checkpoint-content-pipeline-20260410.md
 3. 选择 1-2 个样本文件运行，验证输出
 
 **Test scenarios:**
+
 - Happy path: 官箴.htm（Template B）→ `<p>` 段落正确分割，无 `<FONT>` 遗留
 - Happy path: 莊子.htm（Template C）→ `<H1>`→`<h1>`, `<H2>`→`<h2>`, 正文分段正确
 - Edge case: 段落内包含 `<br>` 或空行 → 正确处理为同一段落还是分段
 
 **Verification:**
+
 - 规范化 HTML 中无 `<FONT>`, `<P align=justify>` 遗留
 - Markdown 输出段落间有正确空行分隔
 
@@ -284,12 +298,14 @@ origin: docs/session-checkpoint-content-pipeline-20260410.md
 **Dependencies:** Unit 1
 
 **Files:**
+
 - Modify: `scripts/normalize-html.mjs` — 添加 Template D 处理器
 - Create: `src/normalized-html/经部/论语集注/index.htm` — 规范化目录
 - Create: `content/catalogs/经部-catalog.md` — 更新（或确认已有藏目一致）
 - Test: `tests/html-normalization.test.ts`（追加测试用例）
 
 **Approach:**
+
 1. Template D normalizer（目录页）：
    - 提取书名：`<FONT color=#FF0000 size=5|6>` → `<h1>`
    - 提取 `<table>` 中的 `<a href>` 链接 → `<nav><ul><li><a href="...">章节名</a></li></ul></nav>`
@@ -298,11 +314,13 @@ origin: docs/session-checkpoint-content-pipeline-20260410.md
 3. 规范化目录 HTML 使用 Tailwind 的 grid 或 flex 布局
 
 **Test scenarios:**
+
 - Happy path: 论语集注/index.htm → `<nav>` 含所有章节链接
 - Happy path: 双列表格目录（战国策）→ 正确转换为 `<ul>` 列表
 - Edge case: 目录页链接指向不存在的文件 → 正常处理（不验证目标文件存在性）
 
 **Verification:**
+
 - 规范化目录 HTML 可通过浏览器打开，链接可点击
 - Markdown frontmatter `docType: "catalog"`
 
@@ -315,11 +333,13 @@ origin: docs/session-checkpoint-content-pipeline-20260410.md
 **Dependencies:** Unit 1, Unit 2, Unit 3, Unit 4
 
 **Files:**
+
 - Modify: `scripts/normalize-html.mjs` — 添加 CLI 参数解析
 - Modify: `package.json` — 添加 `normalize` 和 `convert` 脚本命令
 - Create: `tests/cli-normalization.test.ts` — CLI 参数测试
 
 **Approach:**
+
 1. 使用 `process.argv` 解析参数：
    - `--book <name>` — 单书转换（如 `--book 论语`）
    - `--category <name>` — 按类别批量转换（如 `--category 经部`）
@@ -338,6 +358,7 @@ origin: docs/session-checkpoint-content-pipeline-20260410.md
    ```
 
 **Test scenarios:**
+
 - Happy path: `--book 论语` → 只转换论语相关文件
 - Happy path: `--category 经部` → 转换经部所有文件，输出统计
 - Happy path: `--dry-run` → 输出匹配文件列表，不写入任何文件
@@ -345,6 +366,7 @@ origin: docs/session-checkpoint-content-pipeline-20260410.md
 - Error path: `--category 不存在的类别` → 输出错误信息
 
 **Verification:**
+
 - `bun run normalize --category 经部` 成功执行
 - `src/normalized-html/经部/` 包含所有经部规范化 HTML
 - `content/guji/经部/` 包含所有经部 Markdown
@@ -359,10 +381,12 @@ origin: docs/session-checkpoint-content-pipeline-20260410.md
 **Dependencies:** Unit 5
 
 **Files:**
+
 - Create: `src/styles/normalized-html.css` — 规范化 HTML 专用样式
 - Modify: `scripts/normalize-html.mjs` — 注入样式引用到规范化 HTML
 
 **Approach:**
+
 1. 创建 `src/styles/normalized-html.css`：
    - 从 `src/styles/global.css` 的 `@theme` 块复制 OKLCH color tokens
    - 使用 Tailwind CDN（开发/预览模式）或内联 utility classes
@@ -371,10 +395,12 @@ origin: docs/session-checkpoint-content-pipeline-20260410.md
 3. 支持通过 `file://` 协议直接打开浏览（相对路径）
 
 **Test scenarios:**
+
 - Happy path: 直接在浏览器中打开 `src/normalized-html/经部/论语.htm` → 正确显示排版和颜色
 - Edge case: 离线打开（无网络）→ 如果使用了 CDN，颜色可能不生效但不影响内容可读性
 
 **Verification:**
+
 - 规范化 HTML 文件可通过 `file://` 协议直接打开，排版正确
 - 颜色使用 OKLCH 中国传统色
 
@@ -388,13 +414,13 @@ origin: docs/session-checkpoint-content-pipeline-20260410.md
 
 ## Risks & Dependencies
 
-| Risk | Likelihood | Impact | Mitigation |
-|------|-----------|--------|------------|
-| `<PRE>` 内文本无明确段落标记，分割不准 | High | Med | 实现时先观察 论语.htm 的 `<PRE>` 内容，确认分割规则；如无法分割，保留 `<pre>` 格式 |
-| 模板检测器误判（文件混合多种模板特征） | Med | Med | 添加 `--verbose` 模式输出检测依据；Template F 兜底 |
-| 经部全量转换后发现大量 skipped 文件 | Med | High | 单元 5 的统计输出暴露问题；人工检查 skipped 文件后补充模板处理器 |
-| 规范化 HTML 的 Tailwind classes 在独立浏览时不生效 | Low | Low | 使用内联 `<style>` 块而非 CDN；或使用 Tailwind Play CDN |
-| 多文件拼接时章节顺序错误 | Low | High | 使用自然排序算法，测试用例覆盖 00/000/001 混合场景 |
+| Risk                                               | Likelihood | Impact | Mitigation                                                                         |
+| -------------------------------------------------- | ---------- | ------ | ---------------------------------------------------------------------------------- |
+| `<PRE>` 内文本无明确段落标记，分割不准             | High       | Med    | 实现时先观察 论语.htm 的 `<PRE>` 内容，确认分割规则；如无法分割，保留 `<pre>` 格式 |
+| 模板检测器误判（文件混合多种模板特征）             | Med        | Med    | 添加 `--verbose` 模式输出检测依据；Template F 兜底                                 |
+| 经部全量转换后发现大量 skipped 文件                | Med        | High   | 单元 5 的统计输出暴露问题；人工检查 skipped 文件后补充模板处理器                   |
+| 规范化 HTML 的 Tailwind classes 在独立浏览时不生效 | Low        | Low    | 使用内联 `<style>` 块而非 CDN；或使用 Tailwind Play CDN                            |
+| 多文件拼接时章节顺序错误                           | Low        | High   | 使用自然排序算法，测试用例覆盖 00/000/001 混合场景                                 |
 
 ## Documentation / Operational Notes
 

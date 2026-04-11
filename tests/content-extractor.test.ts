@@ -1,4 +1,5 @@
 import { describe, it, expect } from 'vitest';
+import * as cheerio from 'cheerio';
 import {
   extractContent,
   renderHtml5,
@@ -6,6 +7,8 @@ import {
   decodeHtml,
   buildCatalogDict,
   lookupCatalogMeta,
+  createTerritory,
+  TYPES,
 } from '../scripts/lib/content-extractor.mjs';
 
 // ── Test Fixtures ────────────────────────────────────────────────
@@ -597,5 +600,280 @@ describe('renderMarkdown edge cases', () => {
     // No body content beyond frontmatter
     const afterFrontmatter = md.split('---')[2] || '';
     expect(afterFrontmatter.trim()).toBe('');
+  });
+});
+
+// ── Territorial Extraction Infrastructure (Unit 1) ────────────────
+
+function setupTerritory(html: string) {
+  const $raw = cheerio.load(html, { xmlMode: false, decodeEntities: true });
+  return createTerritory($raw, TYPES);
+}
+
+describe('createTerritory', () => {
+  // ── claimSubtree Tests ──
+
+  describe('claimSubtree', () => {
+    it('should mark a node and all its descendants as claimed', () => {
+      const t = setupTerritory(
+        '<html><body><div id="outer"><span id="inner">hello</span></div></body></html>'
+      );
+      const $ = cheerio.load(
+        '<html><body><div id="outer"><span id="inner">hello</span></div></body></html>',
+        { xmlMode: false, decodeEntities: true }
+      );
+      const outer = $('div#outer').get(0);
+      const inner = $('span#inner').get(0);
+
+      expect(t.isClaimed(outer)).toBe(false);
+      expect(t.isClaimed(inner)).toBe(false);
+
+      t.claimSubtree(outer);
+
+      expect(t.isClaimed(outer)).toBe(true);
+      expect(t.isClaimed(inner)).toBe(true);
+    });
+
+    it('should mark text nodes inside a claimed subtree as claimed', () => {
+      const html = '<html><body><div id="box">chapter title</div></body></html>';
+      const $raw = cheerio.load(html, { xmlMode: false, decodeEntities: true });
+      const t = createTerritory($raw, TYPES);
+      const box = $raw('div#box').get(0);
+      const textNode = $raw('div#box').contents().get(0);
+
+      t.claimSubtree(box);
+
+      expect(t.isClaimed(box)).toBe(true);
+      expect(t.isClaimed(textNode)).toBe(true);
+    });
+  });
+
+  // ── claimLeaf Tests ──
+
+  describe('claimLeaf', () => {
+    it('should mark only the target node, not its descendants', () => {
+      const html = '<html><body><span id="leaf"><small>nested</small></span></body></html>';
+      const $raw = cheerio.load(html, { xmlMode: false, decodeEntities: true });
+      const t = createTerritory($raw, TYPES);
+      const leaf = $raw('span#leaf').get(0);
+      const nested = $raw('span#leaf small').get(0);
+
+      t.claimLeaf(leaf);
+
+      expect(t.isClaimed(leaf)).toBe(true);
+      expect(t.isClaimed(nested)).toBe(false);
+    });
+  });
+
+  // ── hasClaimedAncestor Tests ──
+
+  describe('hasClaimedAncestor', () => {
+    it('should return true for a text node inside a claimed container', () => {
+      const html = '<html><body><div id="claimed">some text</div></body></html>';
+      const $raw = cheerio.load(html, { xmlMode: false, decodeEntities: true });
+      const t = createTerritory($raw, TYPES);
+      const div = $raw('div#claimed').get(0);
+      const textNode = $raw('div#claimed').contents().get(0);
+
+      t.claimSubtree(div);
+
+      expect(t.hasClaimedAncestor(textNode)).toBe(true);
+    });
+
+    it('should return false for nodes outside claimed containers', () => {
+      const html = '<html><body><div id="claimed">x</div><p>free text</p></body></html>';
+      const $raw = cheerio.load(html, { xmlMode: false, decodeEntities: true });
+      const t = createTerritory($raw, TYPES);
+      const div = $raw('div#claimed').get(0);
+      const p = $raw('p').get(0);
+      const pText = $raw('p').contents().get(0);
+
+      t.claimSubtree(div);
+
+      expect(t.hasClaimedAncestor(p)).toBe(false);
+      expect(t.hasClaimedAncestor(pText)).toBe(false);
+    });
+  });
+
+  // ── extractByRules Tests ──
+
+  describe('extractByRules', () => {
+    it('should match nodes by predicate and claim them in subtree mode', () => {
+      const html = `<html><body>
+        <div id="a" data-type="title">Title A</div>
+        <div id="b">Plain text</div>
+        <div id="c" data-type="title">Title C</div>
+      </body></html>`;
+      const $raw = cheerio.load(html, { xmlMode: false, decodeEntities: true });
+      const t = createTerritory($raw, TYPES);
+
+      const regions = t.extractByRules(
+        ($, node) => {
+          const $n = $(node);
+          if ($n.attr('data-type') === 'title') return 'book-title';
+          return null;
+        },
+        'subtree'
+      );
+
+      expect(regions.length).toBe(2);
+      expect(regions[0].content).toBe('Title A');
+      expect(regions[1].content).toBe('Title C');
+      expect(regions[0].type).toBe('book-title');
+    });
+
+    it('should skip already-claimed nodes', () => {
+      const html = `<html><body>
+        <div id="a" data-type="title">Title A</div>
+        <div id="b" data-type="title">Title B</div>
+      </body></html>`;
+      const $raw = cheerio.load(html, { xmlMode: false, decodeEntities: true });
+      const t = createTerritory($raw, TYPES);
+
+      const divA = $raw('div#a').get(0);
+      t.claimSubtree(divA);
+
+      const regions = t.extractByRules(
+        ($, node) => {
+          const $n = $(node);
+          if ($n.attr('data-type') === 'title') return 'book-title';
+          return null;
+        },
+        'subtree'
+      );
+
+      expect(regions.length).toBe(1);
+      expect(regions[0].content).toBe('Title B');
+    });
+
+    it('should work with empty claimed set (no pre-claimed nodes)', () => {
+      const html = `<html><body>
+        <div data-type="title">Solo</div>
+      </body></html>`;
+      const $raw = cheerio.load(html, { xmlMode: false, decodeEntities: true });
+      const t = createTerritory($raw, TYPES);
+
+      const regions = t.extractByRules(
+        ($, node) => ($(node).attr('data-type') === 'title' ? 'book-title' : null),
+        'subtree'
+      );
+
+      expect(regions.length).toBe(1);
+      expect(regions[0].content).toBe('Solo');
+    });
+  });
+
+  // ── extractRemaining Tests ──
+
+  describe('extractRemaining', () => {
+    it('should collect unclaimed text nodes as main-text', () => {
+      const html = `<html><body>
+        <div id="claimed">skip me</div>
+        Free text one
+        Free text two
+      </body></html>`;
+      const $raw = cheerio.load(html, { xmlMode: false, decodeEntities: true });
+      const t = createTerritory($raw, TYPES);
+
+      const div = $raw('div#claimed').get(0);
+      t.claimSubtree(div);
+
+      const regions = t.extractRemaining();
+
+      expect(regions.length).toBe(1);
+      expect(regions[0].type).toBe(TYPES.MAIN_TEXT);
+      expect(regions[0].content).toContain('Free text one');
+      expect(regions[0].content).toContain('Free text two');
+      expect(regions[0].content).not.toContain('skip me');
+    });
+
+    it('should not collect text inside claimed containers', () => {
+      const html = `<html><body>
+        <div id="box">This text is claimed<div>and nested</div></div>
+        <p>Unclaimed paragraph</p>
+      </body></html>`;
+      const $raw = cheerio.load(html, { xmlMode: false, decodeEntities: true });
+      const t = createTerritory($raw, TYPES);
+
+      const box = $raw('div#box').get(0);
+      t.claimSubtree(box);
+
+      const regions = t.extractRemaining();
+
+      expect(regions.length).toBe(1);
+      expect(regions[0].content).toContain('Unclaimed paragraph');
+      expect(regions[0].content).not.toContain('This text is claimed');
+      expect(regions[0].content).not.toContain('and nested');
+    });
+
+    it('should return empty array when all text is claimed', () => {
+      const html = `<html><body><div id="all">everything</div></body></html>`;
+      const $raw = cheerio.load(html, { xmlMode: false, decodeEntities: true });
+      const t = createTerritory($raw, TYPES);
+
+      const div = $raw('div#all').get(0);
+      t.claimSubtree(div);
+
+      const regions = t.extractRemaining();
+
+      expect(regions.length).toBe(0);
+    });
+  });
+
+  // ── mergeAdjacentRegions Tests ──
+
+  describe('mergeAdjacentRegions', () => {
+    it('should merge adjacent regions of the same type', () => {
+      const html = '<html><body></body></html>';
+      const $raw = cheerio.load(html, { xmlMode: false, decodeEntities: true });
+      const t = createTerritory($raw, TYPES);
+
+      const node1 = {};
+      const node2 = {};
+      const node3 = {};
+      const regions = [
+        { type: TYPES.MAIN_TEXT, content: 'First paragraph', sourceNodes: [node1] },
+        { type: TYPES.MAIN_TEXT, content: 'Second paragraph', sourceNodes: [node2] },
+        { type: TYPES.MAIN_TEXT, content: 'Third paragraph', sourceNodes: [node3] },
+      ];
+
+      const merged = t.mergeAdjacentRegions(regions);
+
+      expect(merged.length).toBe(1);
+      expect(merged[0].content).toBe('First paragraph Second paragraph Third paragraph');
+      expect(merged[0].sourceNodes.length).toBe(3);
+    });
+
+    it('should preserve boundaries between different types', () => {
+      const html = '<html><body></body></html>';
+      const $raw = cheerio.load(html, { xmlMode: false, decodeEntities: true });
+      const t = createTerritory($raw, TYPES);
+
+      const regions = [
+        { type: 'book-title', content: 'Title', sourceNodes: [{}] },
+        { type: TYPES.MAIN_TEXT, content: 'Text A', sourceNodes: [{}] },
+        { type: TYPES.MAIN_TEXT, content: 'Text B', sourceNodes: [{}] },
+        { type: TYPES.SECTION_SUMMARY, content: 'Summary', sourceNodes: [{}] },
+        { type: TYPES.MAIN_TEXT, content: 'Text C', sourceNodes: [{}] },
+      ];
+
+      const merged = t.mergeAdjacentRegions(regions);
+
+      expect(merged.length).toBe(4);
+      expect(merged[0].type).toBe('book-title');
+      expect(merged[1].content).toBe('Text A Text B');
+      expect(merged[2].type).toBe(TYPES.SECTION_SUMMARY);
+      expect(merged[3].content).toBe('Text C');
+    });
+
+    it('should return empty array for empty input', () => {
+      const html = '<html><body></body></html>';
+      const $raw = cheerio.load(html, { xmlMode: false, decodeEntities: true });
+      const t = createTerritory($raw, TYPES);
+
+      const merged = t.mergeAdjacentRegions([]);
+
+      expect(merged).toEqual([]);
+    });
   });
 });
