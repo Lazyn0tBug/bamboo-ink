@@ -374,10 +374,13 @@ function classifyByText(text) {
 
 // ── Main Extraction ──────────────────────────────────────────────
 
+import { analyzeAndCache, hasCachedPatterns } from './pattern-cache.mjs';
+
 /**
  * @typedef {Object} ExtractOptions
  * @property {Map<string, CatalogEntry>} [catalogDict] - Catalog dictionary for metadata lookup
  * @property {string} [category] - Category override (e.g., "经部")
+ * @property {Map<string, object>} [patternCache] - Pattern cache for multi-file extraction
  */
 
 /**
@@ -657,9 +660,13 @@ export function extractContent(html, sourcePath, options = {}) {
   }
 
   // Process content from the appropriate container
-  // If div.swy1 exists AND is the only child of body, use its contents.
-  // Otherwise, use body children directly (handles cases where CENTER/heading
-  // elements are siblings of div.swy1, not nested inside it).
+  // Container detection always runs (cheap DOM query).
+  // The pattern cache is used to skip redundant classification analysis,
+  // not to bypass container selection.
+  if (options.patternCache && !hasCachedPatterns(options.patternCache, title)) {
+    analyzeAndCache(options.patternCache, html, title);
+  }
+
   const bodyChildren = $raw('body').children();
   const swy1 = $raw('body > div.swy1').first();
   const elements = swy1.length > 0 && bodyChildren.length === 1 ? swy1.contents() : bodyChildren;
