@@ -11,6 +11,9 @@ import {
   TYPES,
   buildDomIndex,
   normalizeHtml,
+  pass1BookTitle,
+  pass2Metadata,
+  pass3ChapterTitle,
 } from '../scripts/lib/content-extractor.mjs';
 
 // ── Test Fixtures ────────────────────────────────────────────────
@@ -742,33 +745,23 @@ describe('normalizeHtml', () => {
     expect(result).toContain('text');
   });
 
-  it('should merge consecutive divs with identical attributes', () => {
+  it('should preserve consecutive divs (no merging — center blocks must stay separate)', () => {
     const html = `<html><body>
       <div class="swy1">paragraph one</div>
       <div class="swy1">paragraph two</div>
     </body></html>`;
     const result = normalizeHtml(html);
 
-    // Should merge into a single div
+    // Consecutive divs are NOT merged — merging would combine separate
+    // <center> blocks after conversion to data-center divs
     const divCount = (result.match(/<div/g) || []).length;
-    expect(divCount).toBe(1);
+    expect(divCount).toBe(2);
     expect(result).toContain('paragraph one');
     expect(result).toContain('paragraph two');
   });
 
-  it('should not merge divs with different attributes', () => {
-    const html = `<html><body>
-      <div class="swy1">text1</div>
-      <div class="article">title</div>
-    </body></html>`;
-    const result = normalizeHtml(html);
-
-    const divCount = (result.match(/<div/g) || []).length;
-    expect(divCount).toBe(2);
-  });
-
   it('should be idempotent', () => {
-    const html = `<html><body><CENTER><div class="swy1">text</div><div class="swy1">more</div></CENTER></body></html>`;
+    const html = `<html><body><CENTER><div class="swy1">text</div></CENTER></body></html>`;
     const first = normalizeHtml(html);
     const second = normalizeHtml(first);
 
@@ -1054,5 +1047,183 @@ describe('createTerritory', () => {
 
       expect(merged).toEqual([]);
     });
+  });
+});
+
+// ── Territorial Pass 1-3 (Unit 1b) ─────────────────────────────────
+
+function setupPasses(html: string) {
+  const normalized = normalizeHtml(html);
+  const $raw = cheerio.load(normalized, { xmlMode: false, decodeEntities: true });
+  const index = buildDomIndex($raw);
+  const territory = createTerritory($raw, TYPES);
+  return { $raw, index, territory };
+}
+
+describe('Pass 1: book-title extraction', () => {
+  it('should find book-title by class=article', () => {
+    const html = `<html><body>
+      <CENTER><B><FONT class=article>论语</FONT></B></CENTER>
+      <DIV class=swy1>content</DIV>
+    </body></html>`;
+    const { $raw, index, territory } = setupPasses(html);
+    const title = pass1BookTitle(index, $raw, territory);
+
+    expect(title).toBe('论语');
+    expect(territory.claimed.size).toBeGreaterThan(0);
+  });
+
+  it('should find book-title by centered #FF6666 + SIZE≥5', () => {
+    const html = `<html><body>
+      <CENTER><B><FONT COLOR="#FF6666" SIZE=5>大学章句集注</FONT></B></CENTER>
+    </body></html>`;
+    const { $raw, index, territory } = setupPasses(html);
+    const title = pass1BookTitle(index, $raw, territory);
+
+    expect(title).toBe('大学章句集注');
+  });
+
+  it('should find book-title by centered #FF0000 + SIZE≥5', () => {
+    const html = `<html><body>
+      <CENTER><B><FONT COLOR="#FF0000" SIZE=5>周易</FONT></B></CENTER>
+    </body></html>`;
+    const { $raw, index, territory } = setupPasses(html);
+    const title = pass1BookTitle(index, $raw, territory);
+
+    expect(title).toBe('周易');
+  });
+
+  it('should return null when no book-title found', () => {
+    const html = `<html><body><DIV class=swy1>just content</DIV></body></html>`;
+    const { $raw, index, territory } = setupPasses(html);
+    const title = pass1BookTitle(index, $raw, territory);
+
+    expect(title).toBeNull();
+  });
+
+  it('should not match long text (>80 chars) as book-title', () => {
+    const longText = 'a'.repeat(100);
+    const html = `<html><body><CENTER><FONT class=article>${longText}</FONT></CENTER></body></html>`;
+    const { $raw, index, territory } = setupPasses(html);
+    const title = pass1BookTitle(index, $raw, territory);
+
+    expect(title).toBeNull();
+  });
+});
+
+describe('Pass 2: metadata extraction', () => {
+  it('should extract dynasty/author from (朝代·作者) pattern', () => {
+    const html = `<html><body>(汉·刘向)</body></html>`;
+    const { $raw, index, territory } = setupPasses(html);
+    const meta = pass2Metadata(index, $raw, territory);
+
+    expect(meta).not.toBeNull();
+    expect(meta?.dynasty).toBe('汉');
+    expect(meta?.author).toBe('刘向');
+  });
+
+  it('should return null when no metadata pattern found', () => {
+    const html = `<html><body><DIV class=swy1>just content</DIV></body></html>`;
+    const { $raw, index, territory } = setupPasses(html);
+    const meta = pass2Metadata(index, $raw, territory);
+
+    expect(meta).toBeNull();
+  });
+});
+
+describe('Pass 3: chapter-title extraction', () => {
+  it('should find chapter-titles by class=chapter', () => {
+    const html = `<html><body>
+      <CENTER><B><FONT class=chapter>学而第一</FONT></B></CENTER>
+      <CENTER><B><FONT class=chapter>为政第二</FONT></B></CENTER>
+    </body></html>`;
+    const { $raw, index, territory } = setupPasses(html);
+    const chapters = pass3ChapterTitle(index, $raw, territory);
+
+    expect(chapters.length).toBe(2);
+    expect(chapters[0].title).toBe('学而第一');
+    expect(chapters[1].title).toBe('为政第二');
+  });
+
+  it('should find chapter-titles by color=#CC33CC', () => {
+    const html = `<html><body>
+      <CENTER><B><FONT COLOR="#CC33CC">大学章句序</FONT></B></CENTER>
+    </body></html>`;
+    const { $raw, index, territory } = setupPasses(html);
+    const chapters = pass3ChapterTitle(index, $raw, territory);
+
+    expect(chapters.length).toBe(1);
+    expect(chapters[0].title).toBe('大学章句序');
+  });
+
+  it('should find chapter-titles from centered H2/H3/H4', () => {
+    const html = `<html><body>
+      <CENTER><H2>第一章</H2></CENTER>
+    </body></html>`;
+    const { $raw, index, territory } = setupPasses(html);
+    const chapters = pass3ChapterTitle(index, $raw, territory);
+
+    expect(chapters.length).toBe(1);
+    expect(chapters[0].title).toBe('第一章');
+  });
+
+  it('should not match long text (>80 chars) as chapter-title', () => {
+    const longText = 'a'.repeat(100);
+    const html = `<html><body><CENTER><FONT COLOR="#CC33CC">${longText}</FONT></CENTER></body></html>`;
+    const { $raw, index, territory } = setupPasses(html);
+    const chapters = pass3ChapterTitle(index, $raw, territory);
+
+    expect(chapters.length).toBe(0);
+  });
+
+  it('should skip nodes already claimed by Pass 1', () => {
+    const html = `<html><body>
+      <CENTER><B><FONT class=article>论语</FONT></B></CENTER>
+    </body></html>`;
+    const { $raw, index, territory } = setupPasses(html);
+
+    // Run Pass 1 first
+    pass1BookTitle(index, $raw, territory);
+    // Then Pass 3
+    const chapters = pass3ChapterTitle(index, $raw, territory);
+
+    // The article class element is claimed by Pass 1, but it wouldn't match
+    // chapter rules anyway (no #CC33CC, no class=chapter)
+    // This tests that Pass 3 respects Pass 1's claims
+    expect(chapters.length).toBe(0);
+  });
+});
+
+describe('Pass 1-3 integration with extractContent', () => {
+  it('should extract Template F with territorial Pass 1-3', () => {
+    const ir = extractContent(templateFHtml, '经部/大学章句集注.htm');
+    expect(ir.title).toBe('大学章句集注');
+    expect(ir.docType).toBe('content');
+    // Should have chapters for 大学章句序 and 大学章句
+    expect(ir.chapters.some((ch) => ch.title.includes('大学章句序'))).toBe(true);
+    expect(ir.chapters.some((ch) => ch.title.includes('大学章句'))).toBe(true);
+    // Should have annotations
+    const sectionsWithAnnotations = ir.chapters
+      .flatMap((ch) => ch.sections)
+      .filter((s) => s.annotations && s.annotations.length > 0);
+    expect(sectionsWithAnnotations.length).toBeGreaterThan(0);
+  });
+
+  it('should extract Template G with territorial Pass 1-3', () => {
+    const ir = extractContent(templateGHtml, '经部/儀禮.htm');
+    expect(ir.title).toBe('儀禮');
+    expect(ir.docType).toBe('content');
+    expect(ir.chapters.length).toBeGreaterThan(0);
+    // End marker should not appear in output
+    const allText = JSON.stringify(ir);
+    expect(allText).not.toContain('儀 禮 終');
+  });
+
+  it('should handle empty HTML without errors', () => {
+    const emptyHtml = `<html><head><title></title></head><body></body></html>`;
+    const ir = extractContent(emptyHtml, '经部/empty.htm');
+
+    expect(ir.title).toBe('Untitled');
+    expect(ir.chapters.length).toBe(0);
   });
 });

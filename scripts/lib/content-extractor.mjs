@@ -356,32 +356,207 @@ export function normalizeHtml(html) {
   // Keep void elements and <br>, <hr>
   html = html.replace(/<(?!br|hr|img|input|meta|link)([a-z]+)[^>]*>\s*<\/\1>/gi, '');
 
-  // 4) Merge consecutive divs with identical attributes
-  html = mergeConsecutiveDivs(html);
-
   return html;
 }
 
+// ── Territorial Pass 1-3 (Unit 1b) ───────────────────────────────
+
 /**
- * Merge consecutive <div> elements with identical attribute strings.
- * E.g. <div class="swy1">A</div><div class="swy1">B</div> → <div class="swy1">A B</div>
+ * Pass 1: Extract book-title from DOM index.
+ * Rules: class=article, or centered #FF6666/#FF0000 + SIZE≥5.
+ * Text length guard: < 80 chars.
  *
- * @param {string} html
- * @returns {string}
+ * @param {DomIndex} index
+ * @param {Function} $
+ * @param {object} territory
+ * @returns {string|null} Book title text, or null if not found
  */
-function mergeConsecutiveDivs(html) {
-  let prev = '';
-  let maxIter = 50; // Safety limit
-  while (prev !== html && maxIter-- > 0) {
-    prev = html;
-    html = html.replace(
-      /(<div\b([^>]*)>)([\s\S]*?)<\/div>\s*(<div\b\2>)([\s\S]*?)<\/div>/gi,
-      (match, _open1, attrs, content1, _open2, content2) => {
-        return `<div${attrs}>${content1.trim()} ${content2.trim()}</div>`;
-      }
-    );
+export function pass1BookTitle(index, $, territory) {
+  // Strategy 1: class=article
+  const articleNodes = index.byClass.get('article') || [];
+  for (const node of articleNodes) {
+    if (territory.isClaimed(node) || territory.hasClaimedAncestor(node)) continue;
+    const $node = $(node);
+    const text = $node.text().trim();
+    if (text.length > 0 && text.length < 80) {
+      territory.claimSubtree(node);
+      return text;
+    }
   }
-  return html;
+
+  // Strategy 2: centered + #FF6666/#FF0000 + SIZE≥5
+  // Check if node is in centered context (data-center or align="center" ancestor)
+  function isInCenteredContext(node) {
+    const $node = $(node);
+    if (($node.attr('data-center') || '') === '1') return true;
+    if (($node.attr('align') || '').toLowerCase() === 'center') return true;
+    let found = false;
+    $node.parents().each((_, p) => {
+      if (found) return;
+      const $p = $(p);
+      if (($p.attr('data-center') || '') === '1') { found = true; return; }
+      if (($p.attr('align') || '').toLowerCase() === 'center') { found = true; return; }
+    });
+    return found;
+  }
+
+  // Check FONT elements with book-title colors
+  const colorFF6666 = index.byColor.get('#FF6666') || [];
+  const colorFF0000 = index.byColor.get('#FF0000') || [];
+  const bookColorNodes = [...colorFF6666, ...colorFF0000];
+
+  for (const node of bookColorNodes) {
+    if (territory.isClaimed(node) || territory.hasClaimedAncestor(node)) continue;
+    if (!isInCenteredContext(node)) continue;
+    const size = parseInt($(node).attr('size') || '0', 10);
+    if (size < 5) continue;
+    const text = $(node).text().trim();
+    if (text.length > 0 && text.length < 80) {
+      territory.claimSubtree(node);
+      return text;
+    }
+  }
+
+  // Strategy 3: FONT with book color has a SIZE≥5 descendant
+  for (const node of bookColorNodes) {
+    if (territory.isClaimed(node) || territory.hasClaimedAncestor(node)) continue;
+    if (!isInCenteredContext(node)) continue;
+    const sizeAttr = $(node).attr('size');
+    if (sizeAttr && parseInt(sizeAttr, 10) >= 5) {
+      // This node itself has size — already handled above
+      continue;
+    }
+    // Check descendants for SIZE≥5
+    let found = null;
+    $(node).find('font').each((_, nested) => {
+      if (found) return;
+      const nestedSize = parseInt($(nested).attr('size') || '0', 10);
+      if (nestedSize >= 5) {
+        const text = $(nested).text().trim();
+        if (text.length > 0 && text.length < 80) {
+          found = { node: nested, text };
+        }
+      }
+    });
+    if (found) {
+      territory.claimSubtree(node);
+      return found.text;
+    }
+  }
+
+  return null;
+}
+
+/**
+ * Pass 2: Extract metadata from DOM.
+ * Rules: text matching (朝代·作者) pattern, or class=metadata.
+ *
+ * @param {DomIndex} index
+ * @param {Function} $
+ * @param {object} territory
+ * @returns {{dynasty: string, author: string} | null}
+ */
+export function pass2Metadata(index, $, territory) {
+  const METADATA_RE = /\(?([\u4e00-\u9fff]{1,4})[·\.\-]([\u4e00-\u9fff]+?)[）)\s]/;
+
+  // Strategy 1: class=metadata
+  const metaNodes = index.byClass.get('metadata') || [];
+  for (const node of metaNodes) {
+    if (territory.isClaimed(node) || territory.hasClaimedAncestor(node)) continue;
+    const text = $(node).text().trim();
+    const match = text.match(METADATA_RE);
+    if (match) {
+      territory.claimSubtree(node);
+      return { dynasty: match[1], author: match[2] };
+    }
+  }
+
+  // Strategy 2: scan all text nodes for metadata pattern
+  for (const node of index.allTextNodes) {
+    if (territory.isClaimed(node) || territory.hasClaimedAncestor(node)) continue;
+    const text = $(node).text().trim();
+    const match = text.match(METADATA_RE);
+    if (match) {
+      // Claim the parent element, not the text node itself
+      const parent = node.parent;
+      if (parent) territory.claimSubtree(parent);
+      else territory.claimLeaf(node);
+      return { dynasty: match[1], author: match[2] };
+    }
+  }
+
+  return null;
+}
+
+/**
+ * Pass 3: Extract chapter-title nodes from DOM index.
+ * Rules: color=#CC33CC, class=chapter/class=section, centered+H2-H4.
+ * Text length guard: < 80 chars.
+ *
+ * @param {DomIndex} index
+ * @param {Function} $
+ * @param {object} territory
+ * @returns {Array<{title: string}>}
+ */
+export function pass3ChapterTitle(index, $, territory) {
+  /** @type {Array<{title: string, sourceNode: object}>} */
+  const chapters = [];
+
+  function isInCenteredContext(node) {
+    const $node = $(node);
+    if (($node.attr('data-center') || '') === '1') return true;
+    if (($node.attr('align') || '').toLowerCase() === 'center') return true;
+    let found = false;
+    $node.parents().each((_, p) => {
+      if (found) return;
+      const $p = $(p);
+      if (($p.attr('data-center') || '') === '1') { found = true; return; }
+      if (($p.attr('align') || '').toLowerCase() === 'center') { found = true; return; }
+    });
+    return found;
+  }
+
+  function tryClaimAndCollect(node) {
+    if (territory.isClaimed(node) || territory.hasClaimedAncestor(node)) return false;
+    const $node = $(node);
+    const text = $node.text().trim().replace(/\s+/g, '');
+    if (text.length === 0 || text.length >= 80) return false;
+    territory.claimSubtree(node);
+    chapters.push({ title: text, sourceNode: node });
+    return true;
+  }
+
+  // Strategy 1: class=chapter
+  const chapterNodes = index.byClass.get('chapter') || [];
+  for (const node of chapterNodes) {
+    tryClaimAndCollect(node);
+  }
+
+  // Strategy 1b: class=section → also chapter-title
+  const sectionNodes = index.byClass.get('section') || [];
+  for (const node of sectionNodes) {
+    tryClaimAndCollect(node);
+  }
+
+  // Strategy 2: color=#CC33CC (canonical chapter title color)
+  const cc33cc = index.byColor.get('#CC33CC') || [];
+  for (const node of cc33cc) {
+    if (territory.isClaimed(node) || territory.hasClaimedAncestor(node)) continue;
+    const tag = (node.tagName || '').toUpperCase();
+    if (['B', 'FONT', 'DIV', 'SPAN'].includes(tag)) {
+      tryClaimAndCollect(node);
+    }
+  }
+
+  // Strategy 3: centered H2/H3/H4
+  const hTags = [...(index.byTag.get('h2') || []), ...(index.byTag.get('h3') || []), ...(index.byTag.get('h4') || [])];
+  for (const node of hTags) {
+    if (isInCenteredContext(node)) {
+      tryClaimAndCollect(node);
+    }
+  }
+
+  return chapters;
 }
 
 // ── Encoding Detection ───────────────────────────────────────────
@@ -685,18 +860,13 @@ function classifyByText(text) {
  * @returns {object} JSON IR object
  */
 export function extractContent(html, sourcePath, options = {}) {
-  // Pre-process: flatten table-wrapped content (Template F pattern)
-  html = flattenTables(html);
-
-  // Pre-process: replace <center> with <div data-center="1"> to prevent
-  // cheerio's inconsistent hoisting. Cheerio hoists some <center> elements
-  // to body level but not others, scattering chapter title markers across
-  // the DOM. Replacing with a generic div preserves the container structure
-  // and prevents hoisting while keeping centered context detectable via
-  // the data-center attribute.
-  html = html.replace(/<center\b/gi, '<div data-center="1"').replace(/<\/center>/gi, '</div>');
+  // Pre-process: normalize HTML (center→div, table flattening, empty tags, div merge)
+  html = normalizeHtml(html);
 
   const $raw = cheerio.load(html, { xmlMode: false, decodeEntities: true });
+
+  // Build DOM index once — used by Pass 1-3 and future passes
+  const index = buildDomIndex($raw);
 
   const title = extractTitle($raw);
   const ir = {
@@ -745,11 +915,10 @@ export function extractContent(html, sourcePath, options = {}) {
   }
 
   // ── Territorial Extraction Infrastructure (Unit 1) ─────────────
-  // Core data structures for multi-pass region claiming.
-  // DOM remains read-only during extraction -- no mutation.
-  // Variables below used by Unit 2+ territorial passes.
-  /* eslint-disable @typescript-eslint/no-unused-vars */
   const territory = createTerritory($raw, TYPES);
+  // isClaimed/hasClaimedAncestor used by processNode;
+  // others reserved for Unit 1c/1d (Pass 4-9)
+  /* eslint-disable @typescript-eslint/no-unused-vars */
   const {
     claimed,
     claimSubtree,
@@ -761,6 +930,44 @@ export function extractContent(html, sourcePath, options = {}) {
     mergeAdjacentRegions,
   } = territory;
   /* eslint-enable @typescript-eslint/no-unused-vars */
+
+  // ── Pass 1: Book-title (territorial, DOM index based) ──────────
+  const bookTitle = pass1BookTitle(index, $raw, territory);
+  // Use territorial result if found, otherwise fall back to extractTitle
+  if (bookTitle) {
+    ir.title = bookTitle;
+  }
+
+  // ── Pass 2: Metadata (territorial) ─────────────────────────────
+  if (!ir.author || !ir.dynasty) {
+    const meta = pass2Metadata(index, $raw, territory);
+    if (meta) {
+      if (!ir.dynasty) ir.dynasty = meta.dynasty;
+      if (!ir.author) ir.author = meta.author;
+    }
+  }
+
+  // ── Pass 3: Chapter-title (territorial) ────────────────────────
+  const chapterTitles = pass3ChapterTitle(index, $raw, territory);
+  // Track chapter-title source nodes so processNode can flush chapters
+  // at the right position without re-processing claimed content
+  /** @type {WeakSet<object>} */
+  const chapterTitleNodes = new WeakSet();
+  for (const ch of chapterTitles) {
+    if (ch.sourceNode) chapterTitleNodes.add(ch.sourceNode);
+  }
+
+  /**
+   * Check if ancestor is an ancestor (direct or indirect) of node.
+   */
+  function isAncestorOf(node, ancestor) {
+    let current = node.parent;
+    while (current) {
+      if (current === ancestor) return true;
+      current = current.parent;
+    }
+    return false;
+  }
 
   // ── Content extraction ──
   let pastEndMarker = false;
@@ -815,6 +1022,39 @@ export function extractContent(html, sourcePath, options = {}) {
    * recursively process its children first.
    */
   function processNode(node) {
+    // Skip nodes claimed by territorial Pass 1-3
+    if (isClaimed(node)) {
+      // Check if this is a chapter-title node — flush chapter but skip content
+      if (chapterTitleNodes.has(node)) {
+        flushText();
+        const titleText = $raw(node).text().trim().replace(/\s+/g, '');
+        if (titleText) {
+          flushChapter();
+          currentChapter.title = titleText;
+        }
+      }
+      return;
+    }
+    if (hasClaimedAncestor(node)) {
+      // Check if a claimed ancestor was a chapter-title
+      let foundChapterTitle = false;
+      for (const chNode of chapterTitles.map((c) => c.sourceNode)) {
+        if (isAncestorOf(node, chNode)) {
+          foundChapterTitle = true;
+          break;
+        }
+      }
+      if (foundChapterTitle) {
+        flushText();
+        // Use the chapter title from Pass 3 result, not re-extracted text
+        for (const ch of chapterTitles) {
+          if (ch.sourceNode && isAncestorOf(node, ch.sourceNode) && !currentChapter.title) {
+            currentChapter.title = ch.title;
+          }
+        }
+      }
+      return;
+    }
     const context = detectStructure($raw, node);
     let type = classifyByAttributes($raw, node, context);
 
@@ -853,6 +1093,16 @@ export function extractContent(html, sourcePath, options = {}) {
 
         if (hasMixedChildren) {
           $node.contents().each((_, child) => {
+            // If child is claimed but is a chapter-title node, flush chapter
+            if (isClaimed(child) && chapterTitleNodes.has(child)) {
+              flushText();
+              const titleText = $raw(child).text().trim().replace(/\s+/g, '');
+              if (titleText) {
+                flushChapter();
+                currentChapter.title = titleText;
+              }
+              return; // skip processNode for this child
+            }
             processNode(child);
           });
           return; // Skip processing this node itself
