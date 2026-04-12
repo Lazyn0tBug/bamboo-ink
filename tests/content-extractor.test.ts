@@ -1130,6 +1130,32 @@ describe('Pass 2: metadata extraction', () => {
 
     expect(meta).toBeNull();
   });
+
+  it('should not claim subtree when matching metadata on class="metadata" container', () => {
+    // Bug: claimSubtree on .metadata node swallows nested non-metadata content
+    // When .metadata is a wrapper containing both metadata text AND child elements,
+    // claimSubtree claims everything — losing nested annotations or content.
+    const html = `<html><body>
+      <DIV class=swy1>
+        <DIV class="metadata">
+          (汉·刘向)
+          <FONT style="FONT-SIZE: 9pt">此为夹注内容不应被metadata吞噬</FONT>
+        </DIV>
+      </DIV>
+    </body></html>`;
+    const { $raw, index, territory } = setupPasses(html);
+
+    const meta = pass2Metadata(index, $raw, territory);
+    expect(meta).not.toBeNull();
+    expect(meta?.dynasty).toBe('汉');
+    expect(meta?.author).toBe('刘向');
+
+    // The FONT annotation should NOT be claimed — only the metadata text should be
+    const fontNodes = index.byTag.get('font') || [];
+    expect(fontNodes.length).toBe(1);
+    // Bug: with claimSubtree, the FONT would be claimed too
+    expect(territory.isClaimed(fontNodes[0])).toBe(false);
+  });
 });
 
 describe('Pass 3: chapter-title extraction', () => {

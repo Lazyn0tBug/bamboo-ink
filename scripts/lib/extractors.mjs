@@ -372,7 +372,7 @@ export function pass2Metadata(index, $, territory) {
     const text = $(node).text().trim();
     const match = text.match(METADATA_RE);
     if (match) {
-      territory.claimSubtree(node);
+      territory.claimLeaf(node);
       return { dynasty: match[1], author: match[2] };
     }
   }
