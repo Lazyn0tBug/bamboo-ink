@@ -1,4 +1,4 @@
-#!/usr/bin/env node
+#!/usr/bin/env bun
 /**
  * 文件树构建 — Phase A: 仅扫描文件系统，产出类别/书名/文件路径骨架
  *
@@ -143,29 +143,28 @@ export function writeFileTree(tree, outputPath) {
 
 const args = process.argv.slice(2);
 const sourceDir =
-  args.find((a) => a.startsWith('--source='))?.split('=')[1] ||
-  path.resolve('古籍');
+  args.find((a) => a.startsWith('--source='))?.split('=')[1] || path.resolve('古籍');
 const outPath =
   args.find((a) => a.startsWith('--out='))?.split('=')[1] ||
   path.resolve('src/content-ir/_filetree.json');
 const dryRun = args.includes('--dry-run');
 
+const isDev = process.env.NODE_ENV === 'development' || args.includes('--verbose');
+const log = (...args) => isDev && console.log('[build-filetree]', ...args);
+
 const tree = buildFileTree(sourceDir);
 
 const catCount = Object.keys(tree.categories).length;
-const bookCount = Object.values(tree.categories).reduce(
-  (sum, books) => sum + books.length,
-  0
-);
+const bookCount = Object.values(tree.categories).reduce((sum, books) => sum + books.length, 0);
 const fileCount = Object.values(tree.categories).reduce(
   (sum, books) => sum + books.reduce((s, b) => s + b.files.length, 0),
   0
 );
 
-console.log(`File Tree (Phase A)`);
-console.log(`  Categories: ${catCount}`);
-console.log(`  Books:      ${bookCount}`);
-console.log(`  Files:      ${fileCount}`);
+log(`File Tree (Phase A)`);
+log(`  Categories: ${catCount}`);
+log(`  Books:      ${bookCount}`);
+log(`  Files:      ${fileCount}`);
 
 if (!dryRun) {
   writeFileTree(tree, outPath);

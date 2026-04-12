@@ -1,4 +1,4 @@
-#!/usr/bin/env node
+#!/usr/bin/env bun
 /**
  * 批量编码转换脚本 — GBK → UTF-8 (BOM)
  *
@@ -31,7 +31,7 @@ function detectEncoding(buf) {
   if (buf[0] === 0xef && buf[1] === 0xbb && buf[2] === 0xbf) return 'utf8-bom';
 
   const ascii = buf.slice(0, 8192);
-  const hasNonAscii = ascii.some(b => b > 127);
+  const hasNonAscii = ascii.some((b) => b > 127);
   if (!hasNonAscii) return 'ascii';
 
   // Try UTF-8 decode, check for CJK
@@ -116,7 +116,7 @@ function convertDirectory(targetDir, dryRun = false) {
 
 const args = process.argv.slice(2);
 const dryRun = args.includes('--dry-run');
-const dirs = args.filter(a => !a.startsWith('--'));
+const dirs = args.filter((a) => !a.startsWith('--'));
 
 if (dirs.length === 0) {
   console.log('Usage:');

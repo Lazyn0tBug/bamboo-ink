@@ -558,104 +558,227 @@ function detectStructure($, node) {
 
 // ── Attribute Classification ───────────────────────────────────────
 
-function classifyByAttributes($, node, context) {
+/**
+ * Extract node data once, to avoid repeated $() calls in rule predicates.
+ *
+ * @param {Function} $
+ * @param {object} node
+ * @returns {{ $node: any, tag: string, text: string, className: string, style: string, elementColor: string, hasHref: string|undefined }}
+ */
+function extractNodeData($, node) {
   const $node = $(node);
   const tag = (node.tagName || '').toUpperCase();
   const text = $node.text().trim();
-
-  if (!text && tag !== 'BR' && tag !== 'HR') return null;
-
   const className = ($node.attr('class') || '').trim();
-
-  if (className === 'article') return TYPES.BOOK_TITLE;
-  if (className === 'chapter') return TYPES.CHAPTER_TITLE;
-  if (className === 'section') return TYPES.CHAPTER_TITLE;
-  if (className === 'annotation') return TYPES.INLINE_ANNOTATION;
-  if (className === 'reference') return TYPES.INLINE_ANNOTATION;
-  if (className === 'menu') return 'menu-context';
-  if (className === 'jing' || className === 'zhuan') return TYPES.MAIN_TEXT;
-
-  if ((tag === 'B' || tag === 'FONT' || tag === 'DIV' || tag === 'SPAN') && text.length < 80) {
-    let hasCC33CC = false;
-    $node.find('font').each((_, f) => {
-      if (($(f).attr('color') || '').toUpperCase() === '#CC33CC') {
-        hasCC33CC = true;
-      }
-    });
-    if (($(node).attr('color') || '').toUpperCase() === '#CC33CC' || hasCC33CC) {
-      return TYPES.CHAPTER_TITLE;
-    }
-  }
-
-  if (context === 'centered' || context === 'center') {
-    let hasChapterClass = false;
-    let hasArticleClass = false;
-    $node.find('font').each((_, f) => {
-      const childClass = ($(f).attr('class') || '').trim();
-      if (childClass === 'chapter') hasChapterClass = true;
-      if (childClass === 'article') hasArticleClass = true;
-    });
-    if (hasArticleClass) return TYPES.BOOK_TITLE;
-    if (hasChapterClass) return TYPES.CHAPTER_TITLE;
-
-    if (text.length < 80) {
-      let hasCC33CC = false;
-      $node.find('font').each((_, f) => {
-        if (($(f).attr('color') || '').toUpperCase() === '#CC33CC') {
-          hasCC33CC = true;
-        }
-      });
-      if (($(node).attr('color') || '').toUpperCase() === '#CC33CC' || hasCC33CC) {
-        return TYPES.CHAPTER_TITLE;
-      }
-    }
-
-    if (text.length < 80) {
-      let isBookTitle = false;
-      $node.find('font').each((_, f) => {
-        const color = ($(f).attr('color') || '').toUpperCase();
-        const size = parseInt($(f).attr('size') || '0', 10);
-        if ((color === '#FF6666' || color === '#FF0000') && size >= 5) {
-          isBookTitle = true;
-        }
-      });
-      if (isBookTitle) return TYPES.BOOK_TITLE;
-    }
-
-    if (['H2', 'H3', 'H4'].includes(tag)) {
-      return TYPES.CHAPTER_TITLE;
-    }
-  }
-
   const style = $node.attr('style') || '';
-  if (style) {
-    if (/FONT-SIZE:\s*9pt/i.test(style)) return TYPES.INLINE_ANNOTATION;
-    if (
-      /FONT-SIZE:\s*10pt/i.test(style) &&
-      /551A8B/i.test(($node.attr('color') || '') + ' ' + style)
-    )
-      return TYPES.INLINE_ANNOTATION;
+  const elementColor = ($node.attr('color') || '').toUpperCase();
+  const hasHref = $node.attr('href');
+  return { $node, tag, text, className, style, elementColor, hasHref };
+}
+
+/** Check if element or any child font has the given color. */
+function hasChildColor($, $node, elementColor, targetColor) {
+  if (elementColor === targetColor) return true;
+  let found = false;
+  $node.find('font').each((_, f) => {
+    if (found) return;
+    if (($(f).attr('color') || '').toUpperCase() === targetColor) {
+      found = true;
+    }
+  });
+  return found;
+}
+
+/** Check if any child font has the given class. */
+function hasChildClass($, $node, className) {
+  let found = false;
+  $node.find('font').each((_, f) => {
+    if (found) return;
+    if (($(f).attr('class') || '').trim() === className) {
+      found = true;
+    }
+  });
+  return found;
+}
+
+/** Check if any child font has #FF6666/#FF0000 color with size ≥ 5. */
+function hasChildBookColorAndSize($, $node) {
+  let found = false;
+  $node.find('font').each((_, f) => {
+    if (found) return;
+    const color = ($(f).attr('color') || '').toUpperCase();
+    const size = parseInt($(f).attr('size') || '0', 10);
+    if ((color === '#FF6666' || color === '#FF0000') && size >= 5) {
+      found = true;
+    }
+  });
+  return found;
+}
+
+/**
+ * Classification rules table — each rule is checked in priority order.
+ * First matching rule wins. Last rule is fallback → MAIN_TEXT.
+ *
+ * Predicate signature: ($, data, context) => boolean
+ *
+ * @type {Array<{ name: string, predicate: ($: Function, d: object, ctx: string) => boolean, type: string }>}
+ */
+const CLASSIFICATION_RULES = [
+  // Class-name shortcuts (exact match)
+  { name: 'class-article', predicate: ($, d) => d.className === 'article', type: TYPES.BOOK_TITLE },
+  {
+    name: 'class-chapter',
+    predicate: ($, d) => d.className === 'chapter',
+    type: TYPES.CHAPTER_TITLE,
+  },
+  {
+    name: 'class-section',
+    predicate: ($, d) => d.className === 'section',
+    type: TYPES.CHAPTER_TITLE,
+  },
+  {
+    name: 'class-annotation',
+    predicate: ($, d) => d.className === 'annotation',
+    type: TYPES.INLINE_ANNOTATION,
+  },
+  {
+    name: 'class-reference',
+    predicate: ($, d) => d.className === 'reference',
+    type: TYPES.INLINE_ANNOTATION,
+  },
+  { name: 'class-menu', predicate: ($, d) => d.className === 'menu', type: 'menu-context' },
+  {
+    name: 'class-jing-zhuan',
+    predicate: ($, d) => d.className === 'jing' || d.className === 'zhuan',
+    type: TYPES.MAIN_TEXT,
+  },
+
+  // CC33CC chapter detection (B/FONT/DIV/SPAN, text < 80)
+  {
+    name: 'cc33cc-chapter',
+    predicate: ($, d) =>
+      (d.tag === 'B' || d.tag === 'FONT' || d.tag === 'DIV' || d.tag === 'SPAN') &&
+      d.text.length < 80 &&
+      hasChildColor($, d.$node, d.elementColor, '#CC33CC'),
+    type: TYPES.CHAPTER_TITLE,
+  },
+
+  // Centered context: child fonts with class=article
+  {
+    name: 'centered-article',
+    predicate: ($, d, ctx) =>
+      (ctx === 'centered' || ctx === 'center') && hasChildClass($, d.$node, 'article'),
+    type: TYPES.BOOK_TITLE,
+  },
+
+  // Centered context: child fonts with class=chapter
+  {
+    name: 'centered-chapter-class',
+    predicate: ($, d, ctx) =>
+      (ctx === 'centered' || ctx === 'center') && hasChildClass($, d.$node, 'chapter'),
+    type: TYPES.CHAPTER_TITLE,
+  },
+
+  // Centered context: CC33CC color (short text)
+  {
+    name: 'centered-cc33cc',
+    predicate: ($, d, ctx) =>
+      (ctx === 'centered' || ctx === 'center') &&
+      d.text.length < 80 &&
+      hasChildColor($, d.$node, d.elementColor, '#CC33CC'),
+    type: TYPES.CHAPTER_TITLE,
+  },
+
+  // Centered context: #FF6666/#FF0000 + SIZE≥5 in child fonts (short text)
+  {
+    name: 'centered-book-color',
+    predicate: ($, d, ctx) =>
+      (ctx === 'centered' || ctx === 'center') &&
+      d.text.length < 80 &&
+      hasChildBookColorAndSize($, d.$node),
+    type: TYPES.BOOK_TITLE,
+  },
+
+  // Centered context: H2/H3/H4 heading
+  {
+    name: 'centered-heading',
+    predicate: ($, d, ctx) =>
+      (ctx === 'centered' || ctx === 'center') && ['H2', 'H3', 'H4'].includes(d.tag),
+    type: TYPES.CHAPTER_TITLE,
+  },
+
+  // Style-based: FONT-SIZE: 9pt → inline-annotation
+  {
+    name: 'style-annotation-9pt',
+    predicate: ($, d) => /FONT-SIZE:\s*9pt/i.test(d.style),
+    type: TYPES.INLINE_ANNOTATION,
+  },
+
+  // Style-based: FONT-SIZE: 10pt + #551A8B color → inline-annotation
+  {
+    name: 'style-annotation-10pt',
+    predicate: ($, d) =>
+      /FONT-SIZE:\s*10pt/i.test(d.style) && /551A8B/i.test(d.elementColor + ' ' + d.style),
+    type: TYPES.INLINE_ANNOTATION,
+  },
+
+  // Class 'notes' → inline-annotation
+  {
+    name: 'class-notes',
+    predicate: ($, d) => d.className === 'notes',
+    type: TYPES.INLINE_ANNOTATION,
+  },
+
+  // Class 'swy1' → main-text
+  { name: 'class-swy1', predicate: ($, d) => d.$node.hasClass('swy1'), type: TYPES.MAIN_TEXT },
+
+  // Anchor with href → nav-item
+  { name: 'anchor-nav', predicate: ($, d) => d.tag === 'A' && d.hasHref, type: TYPES.NAV_ITEM },
+
+  // P with align=justify or MsoNormal → main-text
+  {
+    name: 'p-justify',
+    predicate: ($, d) =>
+      (d.tag === 'P' && (d.$node.attr('align') || '').toLowerCase() === 'justify') ||
+      d.$node.hasClass('MsoNormal'),
+    type: TYPES.MAIN_TEXT,
+  },
+
+  // H2/H3/H4 → chapter-title
+  {
+    name: 'heading-chapter',
+    predicate: ($, d) => ['H2', 'H3', 'H4'].includes(d.tag),
+    type: TYPES.CHAPTER_TITLE,
+  },
+
+  // OL/UL → list-context
+  {
+    name: 'list-context',
+    predicate: ($, d) => d.tag === 'OL' || d.tag === 'UL',
+    type: 'list-context',
+  },
+
+  // Fallback → main-text
+  { name: 'fallback-main', predicate: () => true, type: TYPES.MAIN_TEXT },
+];
+
+/**
+ * Classify a DOM node into a content type using a declarative rules table.
+ *
+ * @param {Function} $
+ * @param {object} node
+ * @param {string} context
+ * @returns {string|null}
+ */
+function classifyByAttributes($, node, context) {
+  const data = extractNodeData($, node);
+  // Empty text nodes (except BR/HR) are not classified
+  if (!data.text && data.tag !== 'BR' && data.tag !== 'HR') return null;
+
+  for (const rule of CLASSIFICATION_RULES) {
+    if (rule.predicate($, data, context)) return rule.type;
   }
-  if (className === 'notes') return TYPES.INLINE_ANNOTATION;
-
-  if ($node.hasClass('swy1')) return TYPES.MAIN_TEXT;
-
-  if (tag === 'A' && $node.attr('href')) return TYPES.NAV_ITEM;
-
-  if (
-    tag === 'P' &&
-    (($node.attr('align') || '').toLowerCase() === 'justify' || $node.hasClass('MsoNormal'))
-  ) {
-    return TYPES.MAIN_TEXT;
-  }
-
-  if (['H2', 'H3', 'H4'].includes(tag)) return TYPES.CHAPTER_TITLE;
-
-  if (tag === 'OL' || tag === 'UL') {
-    return 'list-context';
-  }
-
-  return TYPES.MAIN_TEXT;
+  return null;
 }
 
 // ── Text Pattern Classification ────────────────────────────────────
@@ -676,10 +799,6 @@ function classifyByText(text) {
 
   return null;
 }
-
-// ── Metadata regex for catalog pages ───────────────────────────────
-
-const METADATA_RE_BODY = /\(?([\u4e00-\u9fff]{1,4})[·\.\-]([\u4e00-\u9fff]+?)[）)\s]/;
 
 // ── Main Extraction ────────────────────────────────────────────────
 
@@ -747,7 +866,7 @@ export function extractContent(html, sourcePath, options = {}) {
     ir.docType = 'catalog';
     if (!ir.author) {
       const bodyFullText = $raw('body').text().replace(/\s+/g, ' ').trim();
-      const match = bodyFullText.match(METADATA_RE_BODY);
+      const match = bodyFullText.match(METADATA_RE);
       if (match) {
         ir.dynasty = match[1];
         ir.author = match[2];
@@ -881,10 +1000,7 @@ export function extractContent(html, sourcePath, options = {}) {
     const tag = (node.tagName || '').toUpperCase();
 
     if (!type || type === TYPES.MAIN_TEXT) {
-      if (
-        ['FONT', 'DIV', 'P', 'B', 'SPAN', 'CENTER'].includes(tag) &&
-        $node.contents().length > 0
-      ) {
+      if (['FONT', 'DIV', 'P', 'B', 'SPAN'].includes(tag) && $node.contents().length > 0) {
         let hasMixedChildren = false;
         $node.contents().each((_, child) => {
           const childContext = detectStructure($raw, child);
