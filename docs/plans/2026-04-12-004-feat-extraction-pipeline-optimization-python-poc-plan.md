@@ -577,7 +577,7 @@ Pass 9: main-text 收集
 - `pyproject.toml`:
   - name = `bamboo-extract`
   - version = `0.1.0`
-  - dependencies = `["lxml"]`
+  - dependencies = `["lxml", "cssselect"]`
   - 可选依赖 `["jieba"]`（为 R18 预留，不安装）
   - `[project.scripts]` → `bamboo-extract = bamboo_extract.cli:main`
 - `bamboo_extract/__init__.py` 导出公共 API：`extract(html, source_path) -> dict`
