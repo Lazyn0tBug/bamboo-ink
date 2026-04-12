@@ -62,6 +62,8 @@ function parseArgs() {
     all: false,
     dryRun: false,
     output: undefined,
+    verbose: false,
+    debug: false,
   };
 
   for (let i = 0; i < args.length; i++) {
@@ -90,6 +92,12 @@ function parseArgs() {
         break;
       case '--output':
         opts.output = args[++i];
+        break;
+      case '--verbose':
+        opts.verbose = true;
+        break;
+      case '--debug':
+        opts.debug = true;
         break;
       case '--help':
       case '-h':
@@ -124,6 +132,8 @@ function printUsage() {
   --all                  所有文件
   --dry-run              只打印计划，不写入
   --output <dir>         覆盖输出目录
+  --verbose              输出每个文件的处理摘要
+  --debug                输出节点分类详情（预留）
   --help, -h             显示帮助`);
 }
 
@@ -328,25 +338,36 @@ function filterFiles(allFiles, opts) {
  * @param {object} options - extractContent options (catalogDict, patternCache)
  * @param {object} outputDirs - Output directories
  * @param {boolean} dryRun - If true, skip writing
- * @returns {Promise<{success: boolean, ir: object|null, isCatalog: boolean}>}
+ * @param {boolean} verbose - If true, return ProcessingResult
+ * @returns {Promise<{success: boolean, ir: object|null, isCatalog: boolean, result?: object}>}
  */
-async function processFileIr(filePath, options, outputDirs, dryRun) {
+async function processFileIr(filePath, options, outputDirs, dryRun, verbose = false) {
   try {
     const relPath = path.relative(SOURCE_DIR, filePath);
     const buffer = await fs.readFile(filePath);
     const html = decodeHtml(buffer);
-    const ir = extractContent(html, relPath, options);
+    const extractOpts = { ...options, returnResult: verbose };
+    const extractResult = extractContent(html, relPath, extractOpts);
+    const ir = verbose ? extractResult.ir : extractResult;
+    const result = verbose ? extractResult.result : null;
 
     if (dryRun) {
       console.log(
         `  [dry-run] ${relPath} → docType=${ir.docType}, chapters=${ir.chapters?.length ?? 0}, navItems=${ir.navItems?.length ?? 0}`
       );
-      return { success: true, ir, isCatalog: ir.docType === 'catalog' };
+      return { success: true, ir, isCatalog: ir.docType === 'catalog', result };
+    }
+
+    if (verbose && result) {
+      const warningStr = result.warnings.length > 0 ? ` [${result.warnings.join(', ')}]` : '';
+      console.log(
+        `  ${relPath} docType=${result.docType} chapters=${result.chaptersCount} annotations=${result.annotationsCount} time=${result.elapsedMs}ms${warningStr}`
+      );
     }
 
     // Write IR
     const irPath = await writeIr(ir, outputDirs.ir, relPath);
-    console.log(`  IR: ${irPath}`);
+    if (!verbose) console.log(`  IR: ${irPath}`);
 
     // Write Markdown
     const md = renderMarkdown(ir);
@@ -355,7 +376,7 @@ async function processFileIr(filePath, options, outputDirs, dryRun) {
     const mdPath = path.join(mdDir, `${mdBase}.md`);
     await fs.mkdir(mdDir, { recursive: true });
     await fs.writeFile(mdPath, md, 'utf8');
-    console.log(`  MD: ${mdPath}`);
+    if (!verbose) console.log(`  MD: ${mdPath}`);
 
     // Write HTML5 (for content-type only)
     if (ir.docType === 'content') {
@@ -364,10 +385,10 @@ async function processFileIr(filePath, options, outputDirs, dryRun) {
       const html5Path = path.join(html5Dir, `${mdBase}.htm`);
       await fs.mkdir(html5Dir, { recursive: true });
       await fs.writeFile(html5Path, html5, 'utf8');
-      console.log(`  HTM5: ${html5Path}`);
+      if (!verbose) console.log(`  HTM5: ${html5Path}`);
     }
 
-    return { success: true, ir, isCatalog: ir.docType === 'catalog' };
+    return { success: true, ir, isCatalog: ir.docType === 'catalog', result };
   } catch (error) {
     console.error(`  ✗ 错误：${error.message}`);
     return { success: false, ir: null, isCatalog: false };
@@ -422,7 +443,7 @@ async function runIrPipeline(files, opts) {
   const catalogDict = new Map();
   let catalogCount = 0;
   for (const file of catalogFiles) {
-    const result = await processFileIr(file, { patternCache }, outputDirs, opts.dryRun);
+    const result = await processFileIr(file, { patternCache }, outputDirs, opts.dryRun, opts.verbose);
     if (result.success && result.ir) {
       catalogCount++;
       // Build dict from this catalog's navItems
@@ -454,7 +475,8 @@ async function runIrPipeline(files, opts) {
       file,
       { catalogDict, patternCache },
       outputDirs,
-      opts.dryRun
+      opts.dryRun,
+      opts.verbose
     );
     if (result.success) {
       successCount++;

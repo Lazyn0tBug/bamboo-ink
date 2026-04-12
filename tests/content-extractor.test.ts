@@ -879,14 +879,11 @@ describe('createTerritory', () => {
       const $raw = cheerio.load(html, { xmlMode: false, decodeEntities: true });
       const t = createTerritory($raw, TYPES);
 
-      const regions = t.extractByRules(
-        ($, node) => {
-          const $n = $(node);
-          if ($n.attr('data-type') === 'title') return 'book-title';
-          return null;
-        },
-        'subtree'
-      );
+      const regions = t.extractByRules(($, node) => {
+        const $n = $(node);
+        if ($n.attr('data-type') === 'title') return 'book-title';
+        return null;
+      }, 'subtree');
 
       expect(regions.length).toBe(2);
       expect(regions[0].content).toBe('Title A');
@@ -905,14 +902,11 @@ describe('createTerritory', () => {
       const divA = $raw('div#a').get(0);
       t.claimSubtree(divA);
 
-      const regions = t.extractByRules(
-        ($, node) => {
-          const $n = $(node);
-          if ($n.attr('data-type') === 'title') return 'book-title';
-          return null;
-        },
-        'subtree'
-      );
+      const regions = t.extractByRules(($, node) => {
+        const $n = $(node);
+        if ($n.attr('data-type') === 'title') return 'book-title';
+        return null;
+      }, 'subtree');
 
       expect(regions.length).toBe(1);
       expect(regions[0].content).toBe('Title B');
@@ -1225,5 +1219,66 @@ describe('Pass 1-3 integration with extractContent', () => {
 
     expect(ir.title).toBe('Untitled');
     expect(ir.chapters.length).toBe(0);
+  });
+});
+
+// ── ProcessingResult & Warnings (Unit A5) ──────────────────────────
+
+describe('ProcessingResult (returnResult option)', () => {
+  it('should return { ir, result } when returnResult is true', () => {
+    const extractResult = extractContent(templateFHtml, '经部/大学章句集注.htm', {
+      returnResult: true,
+    }) as { ir: { title: string }; result: { sourcePath: string; docType: string; chaptersCount: number; elapsedMs: number } };
+    expect(extractResult).toHaveProperty('ir');
+    expect(extractResult).toHaveProperty('result');
+    expect(extractResult.ir.title).toBe('大学章句集注');
+    expect(extractResult.result.sourcePath).toBe('经部/大学章句集注.htm');
+    expect(extractResult.result.docType).toBe('content');
+    expect(extractResult.result.chaptersCount).toBeGreaterThan(0);
+    expect(extractResult.result.elapsedMs).toBeGreaterThanOrEqual(0);
+  });
+
+  it('should have empty warnings for a well-formed content file', () => {
+    // Template F with metadata pattern (宋·朱熹) added
+    const completeHtml = `<html><head><TITLE>大学章句集注</title></head><body>
+<CENTER><B><FONT COLOR="#FF6666"><FONT SIZE=5>大学章句集注</FONT></FONT></B></CENTER>
+<p>(宋·朱熹)</p>
+<table border="0" width="90%"><tr>
+<td class=swy1><center><B><FONT COLOR="#CC33CC">大学章句序</B></FONT></center>
+大学之书，古之大学所以教人之法也。<br>
+<FONT style="FONT-SIZE: 9pt">程子曰：此孔氏遗书，初学入德之门也。</FONT><br>
+</td></tr></table>
+</body></html>`;
+    const { result } = extractContent(completeHtml, '经部/大学章句集注.htm', {
+      returnResult: true,
+    }) as { ir: object; result: { warnings: string[] } };
+    expect(result.warnings).toEqual([]);
+  });
+
+  it('should detect untitled-title warning for empty HTML', () => {
+    const { result } = extractContent(emptyHtml, '经部/empty.htm', {
+      returnResult: true,
+    }) as { ir: object; result: { warnings: string[] } };
+    expect(result.warnings).toContain('untitled-title');
+    expect(result.warnings).toContain('zero-chapters');
+    expect(result.warnings).toContain('missing-metadata');
+  });
+
+  it('should NOT have catalog-no-navitems for a catalog with links', () => {
+    const { result } = extractContent(catalogHtml, '史部-其他/列女传/index.htm', {
+      returnResult: true,
+    }) as { ir: object; result: { warnings: string[]; docType: string; title: string } };
+    expect(result.warnings).not.toContain('catalog-no-navitems');
+    expect(result.docType).toBe('catalog');
+    expect(result.title).toBe('列女传');
+  });
+
+  it('should count annotations and sections correctly', () => {
+    const { result } = extractContent(templateFHtml, '经部/大学章句集注.htm', {
+      returnResult: true,
+    }) as { ir: object; result: { sectionsCount: number; annotationsCount: number } };
+    expect(result.sectionsCount).toBeGreaterThan(0);
+    expect(typeof result.annotationsCount).toBe('number');
+    expect(result.annotationsCount).toBeGreaterThanOrEqual(0);
   });
 });

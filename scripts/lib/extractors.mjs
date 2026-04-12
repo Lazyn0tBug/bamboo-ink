@@ -800,6 +800,46 @@ function classifyByText(text) {
   return null;
 }
 
+// ── Processing Result Builder ──────────────────────────────────────
+
+/**
+ * Build a ProcessingResult from an IR object and start time.
+ * Detects quality warnings for observability.
+ *
+ * @param {object} ir - The content IR object
+ * @param {number} startTime - Timestamp from Date.now() at start of extraction
+ * @returns {ProcessingResult}
+ */
+function buildResult(ir, startTime) {
+  const elapsedMs = Date.now() - startTime;
+  const warnings = [];
+
+  if (!ir.title || ir.title === 'Untitled') warnings.push('untitled-title');
+  if (ir.chapters.length === 0) warnings.push('zero-chapters');
+  if (!ir.author && !ir.dynasty) warnings.push('missing-metadata');
+  if (ir.docType === 'catalog' && ir.navItems.length === 0) warnings.push('catalog-no-navitems');
+
+  let annotationsCount = 0;
+  let sectionsCount = 0;
+  for (const ch of ir.chapters) {
+    sectionsCount += ch.sections.length;
+    for (const sec of ch.sections) {
+      annotationsCount += (sec.annotations || []).length;
+    }
+  }
+
+  return {
+    sourcePath: ir.source,
+    docType: ir.docType,
+    title: ir.title,
+    chaptersCount: ir.chapters.length,
+    annotationsCount,
+    sectionsCount,
+    elapsedMs,
+    warnings,
+  };
+}
+
 // ── Main Extraction ────────────────────────────────────────────────
 
 /**
@@ -812,10 +852,29 @@ function classifyByText(text) {
  */
 
 /**
+ * @typedef {Object} ProcessingResult
+ * @property {string} sourcePath
+ * @property {string} docType
+ * @property {string} title
+ * @property {number} chaptersCount
+ * @property {number} annotationsCount
+ * @property {number} sectionsCount
+ * @property {number} elapsedMs
+ * @property {string[]} warnings
+ */
+
+/**
+ * @typedef {Object} ExtractResult
+ * @property {object} ir - The content IR object
+ * @property {ProcessingResult} result - Processing metrics and warnings
+ */
+
+/**
  * @typedef {Object} ExtractOptions
  * @property {Map<string, CatalogEntry>} [catalogDict]
  * @property {string} [category]
  * @property {PatternCache} [patternCache]
+ * @property {boolean} [returnResult] - If true, return { ir, result } instead of just ir
  */
 
 /**
@@ -836,6 +895,7 @@ function classifyByText(text) {
  * @returns {object} JSON IR object
  */
 export function extractContent(html, sourcePath, options = {}) {
+  const startTime = Date.now();
   html = normalizeHtml(html);
 
   const $raw = cheerio.load(html, { xmlMode: false, decodeEntities: true });
@@ -879,6 +939,10 @@ export function extractContent(html, sourcePath, options = {}) {
         ir.navItems.push({ href, label });
       }
     });
+    const result = buildResult(ir, startTime);
+    if (options.returnResult) {
+      return { ir, result };
+    }
     return ir;
   }
 
@@ -1170,6 +1234,10 @@ export function extractContent(html, sourcePath, options = {}) {
 
   ir.chapters = ir.chapters.filter((ch) => ch.sections.length > 0 || ch.title);
 
+  const result = buildResult(ir, startTime);
+  if (options.returnResult) {
+    return { ir, result };
+  }
   return ir;
 }
 
