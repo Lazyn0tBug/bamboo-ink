@@ -9,7 +9,7 @@
 
 import * as cheerio from 'cheerio';
 import path from 'path';
-import { flattenTables, analyzeAndCache, hasCachedPatterns, buildClassificationSignature, classifyWithCache } from './pattern-cache.mjs';
+import { flattenTables, analyzeAndCache } from './pattern-cache.mjs';
 
 // ── Types constant ────────────────────────────────────────────────
 
@@ -447,6 +447,139 @@ export function pass3ChapterTitle(index, $, territory) {
   return chapters;
 }
 
+// ── Territorial Pass 4: Annotation ─────────────────────────────────
+
+/**
+ * Pass 4: Extract inline-annotation nodes from DOM index.
+ * Territorial: only claims unclaimed nodes, uses claimLeaf.
+ *
+ * Equivalent to CLASSIFICATION_RULES annotation branches:
+ *   class-annotation, class-reference, class-notes,
+ *   style-annotation-9pt, style-annotation-10pt
+ *
+ * @param {DomIndex} index
+ * @param {Function} $
+ * @param {object} territory
+ * @returns {Array<{text: string, sourceNode: object}>}
+ */
+export function pass4Annotation(index, $, territory) {
+  /** @type {Array<{text: string, sourceNode: object}>} */
+  const annotations = [];
+
+  function tryClaim(node) {
+    if (territory.isClaimed(node) || territory.hasClaimedAncestor(node)) return false;
+    const $node = $(node);
+    const text = $node.text().trim();
+    if (!text) return false;
+    territory.claimLeaf(node);
+    annotations.push({ text, sourceNode: node });
+    return true;
+  }
+
+  // Class-based: annotation, reference, notes
+  for (const cls of ['annotation', 'reference', 'notes']) {
+    const nodes = index.byClass.get(cls) || [];
+    for (const node of nodes) {
+      tryClaim(node);
+    }
+  }
+
+  // Style-based: FONT-SIZE: 9pt (check byTag for font elements)
+  const fontNodes = index.byTag.get('font') || [];
+  for (const node of fontNodes) {
+    if (territory.isClaimed(node) || territory.hasClaimedAncestor(node)) continue;
+    const $node = $(node);
+    const style = $node.attr('style') || '';
+    if (/FONT-SIZE:\s*9pt/i.test(style)) {
+      tryClaim(node);
+    }
+  }
+
+  // Style-based: FONT-SIZE: 10pt + #551A8B (check font and span elements)
+  const spanNodes = index.byTag.get('span') || [];
+  const styleCheckNodes = [...fontNodes, ...spanNodes];
+  for (const node of styleCheckNodes) {
+    if (territory.isClaimed(node) || territory.hasClaimedAncestor(node)) continue;
+    const $node = $(node);
+    const style = $node.attr('style') || '';
+    const color = ($node.attr('color') || '').toUpperCase();
+    if (/FONT-SIZE:\s*10pt/i.test(style) && /551A8B/i.test(color + ' ' + style)) {
+      tryClaim(node);
+    }
+  }
+
+  return annotations;
+}
+
+// ── Territorial Pass 8: Nav Item ───────────────────────────────────
+
+/**
+ * Pass 8: Extract nav-item nodes from DOM index.
+ * Territorial: only claims unclaimed nodes, uses claimLeaf.
+ *
+ * Equivalent to CLASSIFICATION_RULES nav-item branches:
+ *   anchor-nav, plus list-context/menu-context nav extraction
+ *
+ * @param {DomIndex} index
+ * @param {Function} $
+ * @param {object} territory
+ * @param {object} ir
+ */
+export function pass8NavItem(index, $, territory, ir) {
+  // menu-context: class=menu > a — claim menu first to prevent double-counting
+  const menuNodes = index.byClass.get('menu') || [];
+  for (const node of menuNodes) {
+    if (territory.isClaimed(node) || territory.hasClaimedAncestor(node)) continue;
+    $(node)
+      .find('a')
+      .each((_, child) => {
+        const $child = $(child);
+        const href = $child.attr('href') || '';
+        const label = $child.text().trim();
+        if (href && label && label.length < 50) {
+          ir.navItems.push({ href, label });
+        }
+      });
+    territory.claimSubtree(node);
+  }
+
+  // list-context: OL/UL > li/a — claim list first to prevent double-counting
+  for (const tag of ['ol', 'ul']) {
+    const listNodes = index.byTag.get(tag) || [];
+    for (const listNode of listNodes) {
+      if (territory.isClaimed(listNode) || territory.hasClaimedAncestor(listNode)) continue;
+      $(listNode)
+        .find('li, a')
+        .each((_, child) => {
+          const $child = $(child);
+          const childTag = (child.tagName || '').toUpperCase();
+          if (childTag === 'A') {
+            const href = $child.attr('href') || '';
+            const label = $child.text().trim();
+            if (href && label && label.length < 50) {
+              ir.navItems.push({ href, label });
+            }
+          }
+          // li text is handled by extractRemaining as main-text
+        });
+      territory.claimSubtree(listNode);
+    }
+  }
+
+  // Direct anchors with href (skip those inside claimed menu/list containers)
+  const anchorNodes = index.byTag.get('a') || [];
+  for (const node of anchorNodes) {
+    if (territory.isClaimed(node) || territory.hasClaimedAncestor(node)) continue;
+    const $node = $(node);
+    const href = $node.attr('href') || '';
+    const label = $node.text().trim();
+    if (href && label && label.length < 50) {
+      territory.claimLeaf(node);
+      ir.navItems.push({ href, label });
+    }
+  }
+}
+
 // ── Title Extraction (fallback) ────────────────────────────────────
 
 function extractTitle($, index) {
@@ -516,269 +649,229 @@ function extractTitle($, index) {
   return 'Untitled';
 }
 
-// ── Structural Context Detection ───────────────────────────────────
-
-function detectStructure($, node) {
-  const $node = $(node);
-  const tag = node.tagName || '';
-
-  if (tag === 'a' && $node.attr('href')) {
-    return 'link';
-  }
-
-  let inCenter = false;
-  $node.parents().each((_, p) => {
-    if ($(p).attr('data-center') === '1' || ($(p).attr('align') || '').toLowerCase() === 'center') {
-      inCenter = true;
-    }
-  });
-  if (
-    ($node.attr('data-center') || '') === '1' ||
-    tag === 'center' ||
-    ($node.attr('align') || '').toLowerCase() === 'center' ||
-    ($node.css('text-align') || '').toLowerCase() === 'center'
-  ) {
-    inCenter = true;
-  }
-
-  if (tag === 'ol' || tag === 'ul') {
-    return 'list';
-  }
-
-  if (tag === 'br' || tag === 'p') {
-    return 'paragraph';
-  }
-
-  if (tag === 'pre') {
-    return 'pre';
-  }
-
-  return inCenter ? 'centered' : 'general';
-}
-
-// ── Attribute Classification ───────────────────────────────────────
+// ── Text Assembly (replaces processNode recursive traversal) ───────
 
 /**
- * Extract node data once, to avoid repeated $() calls in rule predicates.
+ * Assemble text, annotations, and chapter titles into IR chapters/sections.
+ * Walks top-level elements under the content container. Skips claimed nodes.
+ * Chapter title nodes (claimed by Pass 3) serve as chapter boundaries.
  *
+ * @param {Array<{type: string, content: string, sourceNodes: object[]}>} textRegions
+ * @param {Array<{text: string, sourceNode: object}>} annotations
+ * @param {WeakSet<object>} chapterTitleNodes
  * @param {Function} $
- * @param {object} node
- * @returns {{ $node: any, tag: string, text: string, className: string, style: string, elementColor: string, hasHref: string|undefined }}
+ * @param {object} territory
+ * @param {object} ir
  */
-function extractNodeData($, node) {
-  const $node = $(node);
-  const tag = (node.tagName || '').toUpperCase();
-  const text = $node.text().trim();
-  const className = ($node.attr('class') || '').trim();
-  const style = $node.attr('style') || '';
-  const elementColor = ($node.attr('color') || '').toUpperCase();
-  const hasHref = $node.attr('href');
-  return { $node, tag, text, className, style, elementColor, hasHref };
-}
+export function assembleResults(textRegions, annotations, chapterTitleNodes, $, territory, ir) {
+  let pastEndMarker = false;
+  let currentChapter = { title: '', sections: [] };
+  let currentText = '';
+  /** @type {Array<{text: string}>} */
+  let currentAnnotations = [];
 
-/** Check if element or any child font has the given color. */
-function hasChildColor($, $node, elementColor, targetColor) {
-  if (elementColor === targetColor) return true;
-  let found = false;
-  $node.find('font').each((_, f) => {
-    if (found) return;
-    if (($(f).attr('color') || '').toUpperCase() === targetColor) {
-      found = true;
+  function flushText() {
+    if (currentText.trim()) {
+      const trimmed = currentText.trim();
+      if (SECTION_SUMMARY_RE.test(trimmed)) {
+        currentChapter.sections.push({
+          type: TYPES.SECTION_SUMMARY,
+          content: trimmed,
+        });
+      } else if (END_MARKER_RE.test(trimmed)) {
+        pastEndMarker = true;
+        const beforeMarker = trimmed.replace(END_MARKER_RE, '').trim();
+        if (beforeMarker) {
+          const section = { type: TYPES.MAIN_TEXT, content: beforeMarker };
+          if (currentAnnotations.length > 0) {
+            section.annotations = [...currentAnnotations];
+            currentAnnotations = [];
+          }
+          currentChapter.sections.push(section);
+        }
+      } else if (pastEndMarker) {
+        currentChapter.sections.push({
+          type: TYPES.COLOPHON,
+          content: trimmed,
+        });
+      } else {
+        const section = { type: TYPES.MAIN_TEXT, content: trimmed };
+        if (currentAnnotations.length > 0) {
+          section.annotations = [...currentAnnotations];
+          currentAnnotations = [];
+        }
+        currentChapter.sections.push(section);
+      }
+      currentText = '';
     }
-  });
-  return found;
-}
-
-/** Check if any child font has the given class. */
-function hasChildClass($, $node, className) {
-  let found = false;
-  $node.find('font').each((_, f) => {
-    if (found) return;
-    if (($(f).attr('class') || '').trim() === className) {
-      found = true;
-    }
-  });
-  return found;
-}
-
-/** Check if any child font has #FF6666/#FF0000 color with size ≥ 5. */
-function hasChildBookColorAndSize($, $node) {
-  let found = false;
-  $node.find('font').each((_, f) => {
-    if (found) return;
-    const color = ($(f).attr('color') || '').toUpperCase();
-    const size = parseInt($(f).attr('size') || '0', 10);
-    if ((color === '#FF6666' || color === '#FF0000') && size >= 5) {
-      found = true;
-    }
-  });
-  return found;
-}
-
-/**
- * Classification rules table — each rule is checked in priority order.
- * First matching rule wins. Last rule is fallback → MAIN_TEXT.
- *
- * Predicate signature: ($, data, context) => boolean
- *
- * @type {Array<{ name: string, predicate: ($: Function, d: object, ctx: string) => boolean, type: string }>}
- */
-const CLASSIFICATION_RULES = [
-  // Class-name shortcuts (exact match)
-  { name: 'class-article', predicate: ($, d) => d.className === 'article', type: TYPES.BOOK_TITLE },
-  {
-    name: 'class-chapter',
-    predicate: ($, d) => d.className === 'chapter',
-    type: TYPES.CHAPTER_TITLE,
-  },
-  {
-    name: 'class-section',
-    predicate: ($, d) => d.className === 'section',
-    type: TYPES.CHAPTER_TITLE,
-  },
-  {
-    name: 'class-annotation',
-    predicate: ($, d) => d.className === 'annotation',
-    type: TYPES.INLINE_ANNOTATION,
-  },
-  {
-    name: 'class-reference',
-    predicate: ($, d) => d.className === 'reference',
-    type: TYPES.INLINE_ANNOTATION,
-  },
-  { name: 'class-menu', predicate: ($, d) => d.className === 'menu', type: 'menu-context' },
-  {
-    name: 'class-jing-zhuan',
-    predicate: ($, d) => d.className === 'jing' || d.className === 'zhuan',
-    type: TYPES.MAIN_TEXT,
-  },
-
-  // CC33CC chapter detection (B/FONT/DIV/SPAN, text < 80)
-  {
-    name: 'cc33cc-chapter',
-    predicate: ($, d) =>
-      (d.tag === 'B' || d.tag === 'FONT' || d.tag === 'DIV' || d.tag === 'SPAN') &&
-      d.text.length < 80 &&
-      hasChildColor($, d.$node, d.elementColor, '#CC33CC'),
-    type: TYPES.CHAPTER_TITLE,
-  },
-
-  // Centered context: child fonts with class=article
-  {
-    name: 'centered-article',
-    predicate: ($, d, ctx) =>
-      (ctx === 'centered' || ctx === 'center') && hasChildClass($, d.$node, 'article'),
-    type: TYPES.BOOK_TITLE,
-  },
-
-  // Centered context: child fonts with class=chapter
-  {
-    name: 'centered-chapter-class',
-    predicate: ($, d, ctx) =>
-      (ctx === 'centered' || ctx === 'center') && hasChildClass($, d.$node, 'chapter'),
-    type: TYPES.CHAPTER_TITLE,
-  },
-
-  // Centered context: CC33CC color (short text)
-  {
-    name: 'centered-cc33cc',
-    predicate: ($, d, ctx) =>
-      (ctx === 'centered' || ctx === 'center') &&
-      d.text.length < 80 &&
-      hasChildColor($, d.$node, d.elementColor, '#CC33CC'),
-    type: TYPES.CHAPTER_TITLE,
-  },
-
-  // Centered context: #FF6666/#FF0000 + SIZE≥5 in child fonts (short text)
-  {
-    name: 'centered-book-color',
-    predicate: ($, d, ctx) =>
-      (ctx === 'centered' || ctx === 'center') &&
-      d.text.length < 80 &&
-      hasChildBookColorAndSize($, d.$node),
-    type: TYPES.BOOK_TITLE,
-  },
-
-  // Centered context: H2/H3/H4 heading
-  {
-    name: 'centered-heading',
-    predicate: ($, d, ctx) =>
-      (ctx === 'centered' || ctx === 'center') && ['H2', 'H3', 'H4'].includes(d.tag),
-    type: TYPES.CHAPTER_TITLE,
-  },
-
-  // Style-based: FONT-SIZE: 9pt → inline-annotation
-  {
-    name: 'style-annotation-9pt',
-    predicate: ($, d) => /FONT-SIZE:\s*9pt/i.test(d.style),
-    type: TYPES.INLINE_ANNOTATION,
-  },
-
-  // Style-based: FONT-SIZE: 10pt + #551A8B color → inline-annotation
-  {
-    name: 'style-annotation-10pt',
-    predicate: ($, d) =>
-      /FONT-SIZE:\s*10pt/i.test(d.style) && /551A8B/i.test(d.elementColor + ' ' + d.style),
-    type: TYPES.INLINE_ANNOTATION,
-  },
-
-  // Class 'notes' → inline-annotation
-  {
-    name: 'class-notes',
-    predicate: ($, d) => d.className === 'notes',
-    type: TYPES.INLINE_ANNOTATION,
-  },
-
-  // Class 'swy1' → main-text
-  { name: 'class-swy1', predicate: ($, d) => d.$node.hasClass('swy1'), type: TYPES.MAIN_TEXT },
-
-  // Anchor with href → nav-item
-  { name: 'anchor-nav', predicate: ($, d) => d.tag === 'A' && d.hasHref, type: TYPES.NAV_ITEM },
-
-  // P with align=justify or MsoNormal → main-text
-  {
-    name: 'p-justify',
-    predicate: ($, d) =>
-      (d.tag === 'P' && (d.$node.attr('align') || '').toLowerCase() === 'justify') ||
-      d.$node.hasClass('MsoNormal'),
-    type: TYPES.MAIN_TEXT,
-  },
-
-  // H2/H3/H4 → chapter-title
-  {
-    name: 'heading-chapter',
-    predicate: ($, d) => ['H2', 'H3', 'H4'].includes(d.tag),
-    type: TYPES.CHAPTER_TITLE,
-  },
-
-  // OL/UL → list-context
-  {
-    name: 'list-context',
-    predicate: ($, d) => d.tag === 'OL' || d.tag === 'UL',
-    type: 'list-context',
-  },
-
-  // Fallback → main-text
-  { name: 'fallback-main', predicate: () => true, type: TYPES.MAIN_TEXT },
-];
-
-/**
- * Classify a DOM node into a content type using a declarative rules table.
- *
- * @param {Function} $
- * @param {object} node
- * @param {string} context
- * @returns {string|null}
- */
-function classifyByAttributes($, node, context) {
-  const data = extractNodeData($, node);
-  // Empty text nodes (except BR/HR) are not classified
-  if (!data.text && data.tag !== 'BR' && data.tag !== 'HR') return null;
-
-  for (const rule of CLASSIFICATION_RULES) {
-    if (rule.predicate($, data, context)) return rule.type;
   }
-  return null;
+
+  function flushChapter() {
+    flushText();
+    if (currentAnnotations.length > 0) {
+      const sections = currentChapter.sections;
+      if (sections.length > 0) {
+        const lastSection = sections[sections.length - 1];
+        if (lastSection.type === TYPES.MAIN_TEXT) {
+          lastSection.annotations = [...(lastSection.annotations || []), ...currentAnnotations];
+        } else {
+          sections.push({
+            type: TYPES.MAIN_TEXT,
+            content: '',
+            annotations: [...currentAnnotations],
+          });
+        }
+      }
+      currentAnnotations = [];
+    }
+    if (currentChapter.sections.length > 0 || currentChapter.title) {
+      ir.chapters.push({ ...currentChapter });
+    }
+    currentChapter = { title: '', sections: [] };
+  }
+
+  // Build annotation lookup: node → [{text}]
+  /** @type {Map<object, Array<{text: string}>>} */
+  const annotationByNode = new Map();
+  for (const ann of annotations) {
+    const existing = annotationByNode.get(ann.sourceNode) || [];
+    existing.push({ text: ann.text });
+    annotationByNode.set(ann.sourceNode, existing);
+  }
+
+  /**
+   * Check if any descendant of node is a chapter title node.
+   */
+  function hasChapterTitleDescendant(node) {
+    let found = false;
+    $(node)
+      .find('*')
+      .each((_, child) => {
+        if (found) return;
+        if (chapterTitleNodes.has(child)) found = true;
+      });
+    return found;
+  }
+
+  /**
+   * Check if any descendant is an annotation node, and collect them.
+   * Walks annotationByNode and checks if the annotation node is under `node`.
+   */
+  function collectAnnotationsFromDescendants(node) {
+    for (const [annNode, anns] of annotationByNode) {
+      // Walk up from annNode to see if node is an ancestor
+      let p = annNode;
+      while (p) {
+        if (p === node) {
+          currentAnnotations.push(...anns);
+          break;
+        }
+        p = p.parent;
+      }
+    }
+  }
+
+  /**
+   * Process a single node, similar to old processNode but simpler.
+   * Only walks top-level elements; recurses only for mixed-content containers.
+   */
+  function processElement(node) {
+    // Skip claimed nodes (but check for chapter titles)
+    if (territory.isClaimed(node)) {
+      if (chapterTitleNodes.has(node)) {
+        flushText();
+        const titleText = $(node).text().trim().replace(/\s+/g, '');
+        if (titleText) {
+          flushChapter();
+          currentChapter.title = titleText;
+        }
+      }
+      return;
+    }
+
+    // Skip nodes under claimed ancestors (their text was already handled)
+    if (territory.hasClaimedAncestor(node)) return;
+
+    const tag = (node.tagName || '').toUpperCase();
+
+    // H2/H3/H4 → chapter boundary (even if not claimed by Pass 3, e.g. non-centered H4)
+    if (tag === 'H2' || tag === 'H3' || tag === 'H4') {
+      flushText();
+      const titleText = $(node).text().trim().replace(/\s+/g, '');
+      if (titleText) {
+        flushChapter();
+        currentChapter.title = titleText;
+      }
+      return;
+    }
+
+    // BR → paragraph break
+    if (tag === 'BR') {
+      flushText();
+      return;
+    }
+
+    // PRE → formatted text
+    if (tag === 'PRE') {
+      const preText = $(node).text().trim();
+      const paragraphs = preText.split(/\n\s*\n/).filter((p) => p.trim());
+      for (const para of paragraphs) {
+        if (currentText) currentText += ' ' + para.trim();
+        else currentText = para.trim();
+      }
+      flushText();
+      return;
+    }
+
+    // Check if this node has a chapter title descendant
+    if (hasChapterTitleDescendant(node)) {
+      // Collect annotations from this node before recursing
+      collectAnnotationsFromDescendants(node);
+      // Process children individually
+      $(node)
+        .contents()
+        .each((_, child) => {
+          processElement(child);
+        });
+      return;
+    }
+
+    // Check for annotations among descendants and collect them
+    collectAnnotationsFromDescendants(node);
+
+    // Accumulate text from this element, excluding claimed annotation text
+    // Clone and remove claimed annotation descendants to get clean text
+    const $clone = $(node).clone();
+    $clone.find('*').each((_, child) => {
+      if (territory.isClaimed(child)) {
+        $(child, $clone).remove();
+      }
+    });
+    // Also remove claimed direct children (find doesn't get direct children)
+    $clone.contents().each((_, child) => {
+      if (territory.isClaimed(child)) {
+        $(child, $clone).remove();
+      }
+    });
+    const text = $clone.text().trim();
+    if (text && text.length > 1) {
+      if (currentText) currentText += ' ' + text;
+      else currentText = text;
+    }
+  }
+
+  // Get root elements
+  const bodyChildren = $('body').children();
+  const swy1Direct = $('body > div.swy1').first();
+  const rootElements =
+    swy1Direct.length > 0 && bodyChildren.length === 1 ? swy1Direct.contents() : bodyChildren;
+
+  rootElements.each((_, node) => {
+    processElement(node);
+  });
+
+  flushChapter();
+  ir.chapters = ir.chapters.filter((ch) => ch.sections.length > 0 || ch.title);
 }
 
 // ── Text Pattern Classification ────────────────────────────────────
@@ -786,19 +879,6 @@ function classifyByAttributes($, node, context) {
 const SECTION_SUMMARY_RE =
   /^右(?:传之(?:首|[一二三四五六七八九十]+)章|经(?:首|[一二三四五六七八九十]*)章)/;
 const END_MARKER_RE = /[\u4e00-\u9fff]+[\s]*[終终]\s*$/;
-
-function classifyByText(text) {
-  const trimmed = text
-    .trim()
-    .replace(/<[^>]+>/g, '')
-    .trim();
-  if (!trimmed) return null;
-
-  if (END_MARKER_RE.test(trimmed)) return TYPES.END_MARKER;
-  if (SECTION_SUMMARY_RE.test(trimmed)) return TYPES.SECTION_SUMMARY;
-
-  return null;
-}
 
 // ── Processing Result Builder ──────────────────────────────────────
 
@@ -947,7 +1027,6 @@ export function extractContent(html, sourcePath, options = {}) {
   }
 
   const territory = createTerritory($raw, TYPES);
-  const { isClaimed, hasClaimedAncestor } = territory;
 
   const bookTitle = pass1BookTitle(index, $raw, territory);
   if (bookTitle) {
@@ -969,278 +1048,19 @@ export function extractContent(html, sourcePath, options = {}) {
     if (ch.sourceNode) chapterTitleNodes.add(ch.sourceNode);
   }
 
-  function isAncestorOf(node, ancestor) {
-    let current = node.parent;
-    while (current) {
-      if (current === ancestor) return true;
-      current = current.parent;
-    }
-    return false;
+  // ── Populate Pattern Cache (A4) ──────────────────────────────────
+  if (options.patternCache && ir.title && ir.title !== 'Untitled') {
+    analyzeAndCache(options.patternCache, html, ir.title);
   }
 
-  let pastEndMarker = false;
-  let currentChapter = { title: '', sections: [] };
-  let currentText = '';
-  let currentAnnotations = [];
+  // ── Territorial Pass 4-9 + Text Assembly ─────────────────────────
 
-  function flushText() {
-    if (currentText.trim()) {
-      const section = {
-        type: TYPES.MAIN_TEXT,
-        content: currentText.trim(),
-      };
-      if (currentAnnotations.length > 0) {
-        section.annotations = [...currentAnnotations];
-        currentAnnotations = [];
-      }
-      currentChapter.sections.push(section);
-      currentText = '';
-    }
+  const annotations = pass4Annotation(index, $raw, territory);
+  if (ir.docType !== 'catalog') {
+    pass8NavItem(index, $raw, territory, ir);
   }
-
-  function flushChapter() {
-    flushText();
-    if (currentAnnotations.length > 0) {
-      const sections = currentChapter.sections;
-      if (sections.length > 0) {
-        const lastSection = sections[sections.length - 1];
-        if (lastSection.type === TYPES.MAIN_TEXT) {
-          lastSection.annotations = [...(lastSection.annotations || []), ...currentAnnotations];
-        } else {
-          sections.push({
-            type: TYPES.MAIN_TEXT,
-            content: '',
-            annotations: [...currentAnnotations],
-          });
-        }
-      }
-      currentAnnotations = [];
-    }
-    if (currentChapter.sections.length > 0 || currentChapter.title) {
-      ir.chapters.push({ ...currentChapter });
-    }
-    currentChapter = { title: '', sections: [] };
-  }
-
-  function processNode(node) {
-    if (isClaimed(node)) {
-      if (chapterTitleNodes.has(node)) {
-        flushText();
-        const titleText = $raw(node).text().trim().replace(/\s+/g, '');
-        if (titleText) {
-          flushChapter();
-          currentChapter.title = titleText;
-        }
-      }
-      return;
-    }
-    if (hasClaimedAncestor(node)) {
-      let foundChapterTitle = false;
-      for (const chNode of chapterTitles.map((c) => c.sourceNode)) {
-        if (isAncestorOf(node, chNode)) {
-          foundChapterTitle = true;
-          break;
-        }
-      }
-      if (foundChapterTitle) {
-        flushText();
-        for (const ch of chapterTitles) {
-          if (ch.sourceNode && isAncestorOf(node, ch.sourceNode) && !currentChapter.title) {
-            currentChapter.title = ch.title;
-          }
-        }
-      }
-      return;
-    }
-    const context = detectStructure($raw, node);
-    let type;
-    if (options.patternCache && hasCachedPatterns(options.patternCache, ir.title)) {
-      const sig = buildClassificationSignature($raw, node);
-      type = classifyWithCache(options.patternCache, ir.title, sig, () =>
-        classifyByAttributes($raw, node, context)
-      );
-    } else {
-      type = classifyByAttributes($raw, node, context);
-    }
-
-    if (!type || type === TYPES.MAIN_TEXT) {
-      const textType = classifyByText($raw(node).html() || $raw(node).text());
-      if (textType) type = textType;
-    }
-
-    const $node = $raw(node);
-    const tag = (node.tagName || '').toUpperCase();
-
-    if (!type || type === TYPES.MAIN_TEXT) {
-      if (['FONT', 'DIV', 'P', 'B', 'SPAN'].includes(tag) && $node.contents().length > 0) {
-        let hasMixedChildren = false;
-        $node.contents().each((_, child) => {
-          const childContext = detectStructure($raw, child);
-          let childType = classifyByAttributes($raw, child, childContext);
-          if (!childType || childType === TYPES.MAIN_TEXT) {
-            const childText = $raw(child).text ? $raw(child).text() : '';
-            const textType = classifyByText(childText);
-            if (textType) childType = textType;
-          }
-          if (childType && childType !== TYPES.MAIN_TEXT && childType !== 'paragraph') {
-            hasMixedChildren = true;
-          }
-          const childTag = (child.tagName || '').toUpperCase();
-          if (
-            childTag === 'DIV' &&
-            ($raw(child).hasClass('swy1') || $raw(child).find('div.swy1').length > 0)
-          ) {
-            hasMixedChildren = true;
-          }
-        });
-
-        if (hasMixedChildren) {
-          $node.contents().each((_, child) => {
-            if (isClaimed(child) && chapterTitleNodes.has(child)) {
-              flushText();
-              const titleText = $raw(child).text().trim().replace(/\s+/g, '');
-              if (titleText) {
-                flushChapter();
-                currentChapter.title = titleText;
-              }
-              return;
-            }
-            processNode(child);
-          });
-          return;
-        }
-      }
-    }
-
-    switch (type) {
-      case TYPES.BOOK_TITLE:
-        break;
-
-      case TYPES.CHAPTER_TITLE: {
-        flushText();
-        const titleText = $node.text().trim().replace(/\s+/g, '');
-        if (titleText) {
-          flushChapter();
-          currentChapter.title = titleText;
-        }
-        break;
-      }
-
-      case TYPES.INLINE_ANNOTATION: {
-        const annText = $node.text().trim();
-        if (annText) {
-          currentAnnotations.push({ text: annText });
-        }
-        break;
-      }
-
-      case TYPES.SECTION_SUMMARY: {
-        flushText();
-        currentChapter.sections.push({
-          type: TYPES.SECTION_SUMMARY,
-          content: $node.text().trim(),
-        });
-        break;
-      }
-
-      case TYPES.END_MARKER: {
-        pastEndMarker = true;
-        break;
-      }
-
-      case TYPES.COLOPHON: {
-        flushText();
-        currentChapter.sections.push({
-          type: TYPES.COLOPHON,
-          content: $node.text().trim(),
-        });
-        break;
-      }
-
-      case TYPES.NAV_ITEM: {
-        const href = $node.attr('href') || '';
-        const label = $node.text().trim();
-        if (href && label) {
-          ir.navItems.push({ href, label });
-        }
-        break;
-      }
-
-      case 'list-context': {
-        $node.find('li, a').each((_, child) => {
-          const $child = $raw(child);
-          const childTag = (child.tagName || '').toUpperCase();
-          if (childTag === 'A') {
-            const href = $child.attr('href') || '';
-            const label = $child.text().trim();
-            if (href && label) {
-              ir.navItems.push({ href, label });
-            }
-          } else {
-            const liText = $child.text().trim();
-            if (liText) {
-              currentText += (currentText ? '\n' : '') + liText;
-            }
-          }
-        });
-        break;
-      }
-
-      case 'menu-context': {
-        $node.find('a').each((_, child) => {
-          const $child = $raw(child);
-          const href = $child.attr('href') || '';
-          const label = $child.text().trim();
-          if (href && label) {
-            ir.navItems.push({ href, label });
-          }
-        });
-        break;
-      }
-
-      default: {
-        if (pastEndMarker) {
-          flushText();
-          currentChapter.sections.push({
-            type: TYPES.COLOPHON,
-            content: $node.text().trim(),
-          });
-        } else if (tag === 'BR') {
-          flushText();
-        } else if (tag === 'PRE') {
-          const preText = $node.text().trim();
-          const paragraphs = preText.split(/\n\s*\n/).filter((p) => p.trim());
-          for (const para of paragraphs) {
-            currentText += (currentText ? ' ' : '') + para.trim();
-          }
-          flushText();
-        } else {
-          const text = $node.text().trim();
-          if (text && text.length > 1) {
-            currentText += (currentText ? ' ' : '') + text;
-          }
-        }
-        break;
-      }
-    }
-  }
-
-  if (options.patternCache && !hasCachedPatterns(options.patternCache, title)) {
-    analyzeAndCache(options.patternCache, html, title);
-  }
-
-  const bodyChildren = $raw('body').children();
-  const swy1Direct = $raw('body > div.swy1').first();
-  const elements =
-    swy1Direct.length > 0 && bodyChildren.length === 1 ? swy1Direct.contents() : bodyChildren;
-
-  elements.each((_, node) => {
-    processNode(node);
-  });
-
-  flushChapter();
-
-  ir.chapters = ir.chapters.filter((ch) => ch.sections.length > 0 || ch.title);
+  const textRegions = territory.extractRemaining();
+  assembleResults(textRegions, annotations, chapterTitleNodes, $raw, territory, ir, chapterTitles);
 
   const result = buildResult(ir, startTime);
   if (options.returnResult) {
