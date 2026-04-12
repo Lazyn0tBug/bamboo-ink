@@ -6,6 +6,7 @@ import {
   getCachedPatterns,
   hasCachedPatterns,
   analyzeAndCache,
+  flattenTables,
 } from '../scripts/lib/pattern-cache.mjs';
 import { extractContent } from '../scripts/lib/content-extractor.mjs';
 
@@ -145,6 +146,45 @@ describe('edge cases', () => {
 
     expect(fPatterns.contentContainerSelector).toBe('body > div.swy1');
     expect(gPatterns.contentContainerSelector).toBe('body');
+  });
+});
+
+// ── flattenTables (Unit A3) ──────────────────────────────────────
+
+describe('flattenTables', () => {
+  it('should flatten FrontPage table to divs, preserving class attribute', () => {
+    const html = `<html><body><table border="0"><tr><td class=swy1>Content</td></tr></table></body></html>`;
+    const result = flattenTables(html);
+    expect(result).toContain('div class="swy1"');
+    expect(result).toContain('Content');
+    expect(result).not.toContain('<td');
+    expect(result).not.toContain('<tr');
+    expect(result).not.toContain('<table');
+  });
+
+  it('should not mangle text content containing "table"/"td"/"tr"', () => {
+    const html = `<html><body><table><tr><td class=swy1>The table has a td tag and tr word</td></tr></table></body></html>`;
+    const result = flattenTables(html);
+    expect(result).toContain('The table has a td tag and tr word');
+  });
+
+  it('should recursively flatten nested tables', () => {
+    const html = `<html><body><table><tr><td class=outer>
+      <table><tr><td class=inner>Nested</td></tr></table>
+    </td></tr></table></body></html>`;
+    const result = flattenTables(html);
+    expect(result).not.toContain('<table');
+    expect(result).not.toContain('<td');
+    expect(result).toContain('class="outer"');
+    expect(result).toContain('class="inner"');
+    expect(result).toContain('Nested');
+  });
+
+  it('should return unchanged structure for HTML with no tables', () => {
+    const html = `<html><head><title>No tables</title></head><body><p>Plain text</p></body></html>`;
+    const result = flattenTables(html);
+    expect(result).toContain('<p>Plain text</p>');
+    expect(result).not.toContain('div class');
   });
 });
 

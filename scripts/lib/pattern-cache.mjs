@@ -23,13 +23,33 @@ import * as cheerio from 'cheerio';
  * @returns {string} HTML with table structure flattened to divs
  */
 export function flattenTables(html) {
-  return html
-    .replace(/<\/table>/gi, '')
-    .replace(/<\/tr>/gi, '')
-    .replace(/<tr[^>]*>/gi, '')
-    .replace(/<table[^>]*>/gi, '')
-    .replace(/<td\b([^>]*)>/gi, '<div$1>')
-    .replace(/<\/td>/gi, '</div>');
+  const $ = cheerio.load(html, { xmlMode: false, decodeEntities: true });
+
+  // Replace all <td> with <div>, preserving attributes
+  // Loop until no <td> remains (handles cheerio-injected tbody wrapping)
+  while ($('td').length > 0) {
+    $('td').each((_, el) => {
+      const $el = $(el);
+      const $div = $('<div></div>');
+      const attrs = $el.attr();
+      if (attrs) {
+        for (const [key, value] of Object.entries(attrs)) {
+          $div.attr(key, value);
+        }
+      }
+      $div.html($el.html());
+      $el.replaceWith($div);
+    });
+  }
+
+  // Unwrap <tbody>, <tr>, <table> — children promoted to parent
+  for (const tag of ['tbody', 'tr', 'table']) {
+    $(tag).each((_, el) => {
+      $(el).contents().unwrap();
+    });
+  }
+
+  return $.html();
 }
 
 /**
