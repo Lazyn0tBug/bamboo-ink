@@ -12,3 +12,12 @@ dist
 
 # 古籍源文件（体积大，不需要纳入版本控制）
 古籍/
+
+# Pipeline output directories
+.context/
+src/content-ir/
+src/content/
+src/normalized-html/
+
+# Temporary test files
+texure*.html
