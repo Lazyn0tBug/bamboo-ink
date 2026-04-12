@@ -247,6 +247,143 @@ export function lookupCatalogMeta(dict, sourcePath) {
   return null;
 }
 
+// ── DOM Index (Unit 0c) ──────────────────────────────────────────
+
+/**
+ * @typedef {Object} DomIndex
+ * @property {Map<string, object[]>} byColor — COLOR attribute → nodes
+ * @property {Map<string, object[]>} byClass — class attribute → nodes
+ * @property {Map<string, object[]>} byTag — tagName (lowercase) → nodes
+ * @property {Map<string, object[]>} bySize — SIZE attribute → nodes
+ * @property {object[]} allTextNodes — all text nodes (type === 'text')
+ */
+
+/**
+ * Build a DOM index from a cheerio instance — one-time per-file traversal.
+ * The index is immutable after construction; claimed tracking is separate.
+ *
+ * @param {Function} $ - cheerio instance (cheerio.load result)
+ * @returns {DomIndex}
+ */
+export function buildDomIndex($) {
+  /** @type {Map<string, object[]>} */
+  const byColor = new Map();
+  /** @type {Map<string, object[]>} */
+  const byClass = new Map();
+  /** @type {Map<string, object[]>} */
+  const byTag = new Map();
+  /** @type {Map<string, object[]>} */
+  const bySize = new Map();
+  /** @type {object[]} */
+  const allTextNodes = [];
+
+  function indexNode(node) {
+    if (node.type === 'text') {
+      allTextNodes.push(node);
+      return;
+    }
+    if (node.type === 'comment') return;
+
+    // Index by tag
+    const tag = (node.tagName || '').toLowerCase();
+    if (tag) {
+      if (!byTag.has(tag)) byTag.set(tag, []);
+      byTag.get(tag).push(node);
+    }
+
+    // Index by color attribute
+    const $node = $(node);
+    const color = $node.attr('color');
+    if (color) {
+      const upper = color.toUpperCase();
+      if (!byColor.has(upper)) byColor.set(upper, []);
+      byColor.get(upper).push(node);
+    }
+
+    // Index by class attribute
+    const className = $node.attr('class');
+    if (className) {
+      const classes = className.trim().split(/\s+/);
+      for (const cls of classes) {
+        if (!byClass.has(cls)) byClass.set(cls, []);
+        byClass.get(cls).push(node);
+      }
+    }
+
+    // Index by size attribute
+    const size = $node.attr('size');
+    if (size) {
+      if (!bySize.has(size)) bySize.set(size, []);
+      bySize.get(size).push(node);
+    }
+
+    // Recurse into children
+    $node.contents().each((_, child) => {
+      indexNode(child);
+    });
+  }
+
+  $('body').contents().each((_, node) => {
+    indexNode(node);
+  });
+
+  return { byColor, byClass, byTag, bySize, allTextNodes };
+}
+
+// ── HTML Normalization (Unit 0c) ─────────────────────────────────
+
+/**
+ * Normalize raw HTML before cheerio parsing.
+ * Structure-only transforms — no semantic tag replacement (D8 constraint).
+ *
+ * Transforms:
+ *   - <center> → <div data-center="1"> (prevents cheerio hoisting issues)
+ *   - Table flattening (unwrap table/tr/td wrappers around content)
+ *   - Empty tag removal
+ *   - Nested div merging (consecutive divs with same attributes → single div)
+ *
+ * @param {string} html - Raw HTML string
+ * @returns {string} Normalized HTML string
+ */
+export function normalizeHtml(html) {
+  // 1) Replace <center> with <div data-center="1">
+  html = html.replace(/<center\b/gi, '<div data-center="1"').replace(/<\/center>/gi, '</div>');
+
+  // 2) Flatten table wrappers
+  html = flattenTables(html);
+
+  // 3) Remove empty tags (self-closing or tags with only whitespace)
+  // Keep void elements and <br>, <hr>
+  html = html.replace(/<(?!br|hr|img|input|meta|link)([a-z]+)[^>]*>\s*<\/\1>/gi, '');
+
+  // 4) Merge consecutive divs with identical attributes
+  html = mergeConsecutiveDivs(html);
+
+  return html;
+}
+
+/**
+ * Merge consecutive <div> elements with identical attribute strings.
+ * E.g. <div class="swy1">A</div><div class="swy1">B</div> → <div class="swy1">A B</div>
+ *
+ * @param {string} html
+ * @returns {string}
+ */
+function mergeConsecutiveDivs(html) {
+  let prev = '';
+  let maxIter = 50; // Safety limit
+  while (prev !== html && maxIter-- > 0) {
+    prev = html;
+    html = html.replace(
+      /(<div\b([^>]*)>)([\s\S]*?)<\/div>\s*(<div\b\2>)([\s\S]*?)<\/div>/gi,
+      (match, _open1, attrs, content1, _open2, content2) => {
+        return `<div${attrs}>${content1.trim()} ${content2.trim()}</div>`;
+      }
+    );
+  }
+  return html;
+}
+
 // ── Encoding Detection ───────────────────────────────────────────
 
 export function detectEncoding(buffer) {
@@ -847,8 +984,6 @@ export function extractContent(html, sourcePath, options = {}) {
   }
 
   const bodyChildren = $raw('body').children();
-  // Find div.swy1 anywhere in body (may be nested inside align="center" wrappers)
-  const swy1 = $raw('div.swy1').first();
   // If swy1 is a direct body child and body has only one child, use swy1 contents
   // If swy1 is nested inside another body child, we need to process body children
   // but the mixed-children recursion should descend into swy1

@@ -9,6 +9,8 @@ import {
   lookupCatalogMeta,
   createTerritory,
   TYPES,
+  buildDomIndex,
+  normalizeHtml,
 } from '../scripts/lib/content-extractor.mjs';
 
 // ── Test Fixtures ────────────────────────────────────────────────
@@ -603,7 +605,184 @@ describe('renderMarkdown edge cases', () => {
   });
 });
 
-// ── Territorial Extraction Infrastructure (Unit 1) ────────────────
+// ── DOM Index (Unit 0c) ──────────────────────────────────────────
+
+describe('buildDomIndex', () => {
+  it('should index nodes by color attribute', () => {
+    const html = `<html><body>
+      <font color="#CC33CC">chapter</font>
+      <font color="#FF6666">title</font>
+      <font color="#CC33CC">another chapter</font>
+      <div>no color</div>
+    </body></html>`;
+    const $ = cheerio.load(html, { xmlMode: false, decodeEntities: true });
+    const index = buildDomIndex($);
+
+    expect(index.byColor.get('#CC33CC')).toHaveLength(2);
+    expect(index.byColor.get('#FF6666')).toHaveLength(1);
+    expect(index.byColor.has('#000000')).toBe(false);
+  });
+
+  it('should index nodes by class attribute', () => {
+    const html = `<html><body>
+      <div class="swy1">text1</div>
+      <div class="article">title</div>
+      <div class="swy1">text2</div>
+      <span class="annotation">note</span>
+    </body></html>`;
+    const $ = cheerio.load(html, { xmlMode: false, decodeEntities: true });
+    const index = buildDomIndex($);
+
+    expect(index.byClass.get('swy1')).toHaveLength(2);
+    expect(index.byClass.get('article')).toHaveLength(1);
+    expect(index.byClass.get('annotation')).toHaveLength(1);
+  });
+
+  it('should index nodes by tag name', () => {
+    const html = `<html><body>
+      <font color="#CC33CC">a</font>
+      <font color="#FF6666">b</font>
+      <div class="swy1">c</div>
+      <p>text</p>
+    </body></html>`;
+    const $ = cheerio.load(html, { xmlMode: false, decodeEntities: true });
+    const index = buildDomIndex($);
+
+    expect(index.byTag.get('font')).toHaveLength(2);
+    expect(index.byTag.get('div')).toHaveLength(1);
+    expect(index.byTag.get('p')).toHaveLength(1);
+    // body is the root — indexing starts from its contents, not body itself
+    expect(index.byTag.has('html')).toBe(false);
+  });
+
+  it('should index nodes by size attribute', () => {
+    const html = `<html><body>
+      <font size="5">big</font>
+      <font size="9">small</font>
+      <font size="5">also big</font>
+    </body></html>`;
+    const $ = cheerio.load(html, { xmlMode: false, decodeEntities: true });
+    const index = buildDomIndex($);
+
+    expect(index.bySize.get('5')).toHaveLength(2);
+    expect(index.bySize.get('9')).toHaveLength(1);
+  });
+
+  it('should collect all text nodes', () => {
+    const html = `<html><body>
+      <div>hello</div>
+      <span>world</span>
+      plain text
+    </body></html>`;
+    const $ = cheerio.load(html, { xmlMode: false, decodeEntities: true });
+    const index = buildDomIndex($);
+
+    const texts = index.allTextNodes
+      .map((n: object) => ($(n as any).text() || '').trim())
+      .filter((t: string) => t.length > 0);
+
+    expect(texts.some((t: string) => t.includes('hello'))).toBe(true);
+    expect(texts.some((t: string) => t.includes('world'))).toBe(true);
+    expect(texts.some((t: string) => t.includes('plain text'))).toBe(true);
+  });
+
+  it('should return empty maps for HTML with no attributes', () => {
+    const html = `<html><body><div><span>text</span></div></body></html>`;
+    const $ = cheerio.load(html, { xmlMode: false, decodeEntities: true });
+    const index = buildDomIndex($);
+
+    expect(index.byColor.size).toBe(0);
+    expect(index.bySize.size).toBe(0);
+    // byClass should be empty (no class attrs)
+    expect(index.byClass.size).toBe(0);
+    // byTag should still have entries
+    expect(index.byTag.size).toBeGreaterThan(0);
+  });
+
+  it('should normalize color values to uppercase', () => {
+    const html = `<html><body><font color="#ff6666">red</font></body></html>`;
+    const $ = cheerio.load(html, { xmlMode: false, decodeEntities: true });
+    const index = buildDomIndex($);
+
+    expect(index.byColor.has('#FF6666')).toBe(true);
+    expect(index.byColor.has('#ff6666')).toBe(false);
+  });
+});
+
+// ── HTML Normalization (Unit 0c) ─────────────────────────────────
+
+describe('normalizeHtml', () => {
+  it('should replace <center> with <div data-center="1">', () => {
+    const html = '<html><body><CENTER><FONT>title</FONT></CENTER></body></html>';
+    const result = normalizeHtml(html);
+
+    expect(result).toContain('<div data-center="1">');
+    expect(result).toContain('</div>');
+    expect(result).not.toContain('<CENTER');
+    expect(result).not.toContain('<center');
+  });
+
+  it('should flatten table-wrapped content', () => {
+    const html = `<html><body><table><tr><td class=swy1>
+      <p>content here</p>
+    </td></tr></table></body></html>`;
+    const result = normalizeHtml(html);
+
+    // Table wrapper should be removed, content preserved
+    expect(result).not.toContain('<table');
+    expect(result).toContain('content here');
+  });
+
+  it('should remove empty tags', () => {
+    const html = '<html><body><span></span><b></b><div class="swy1">text</div></body></html>';
+    const result = normalizeHtml(html);
+
+    expect(result).not.toContain('<span></span>');
+    expect(result).not.toContain('<b></b>');
+    expect(result).toContain('text');
+  });
+
+  it('should merge consecutive divs with identical attributes', () => {
+    const html = `<html><body>
+      <div class="swy1">paragraph one</div>
+      <div class="swy1">paragraph two</div>
+    </body></html>`;
+    const result = normalizeHtml(html);
+
+    // Should merge into a single div
+    const divCount = (result.match(/<div/g) || []).length;
+    expect(divCount).toBe(1);
+    expect(result).toContain('paragraph one');
+    expect(result).toContain('paragraph two');
+  });
+
+  it('should not merge divs with different attributes', () => {
+    const html = `<html><body>
+      <div class="swy1">text1</div>
+      <div class="article">title</div>
+    </body></html>`;
+    const result = normalizeHtml(html);
+
+    const divCount = (result.match(/<div/g) || []).length;
+    expect(divCount).toBe(2);
+  });
+
+  it('should be idempotent', () => {
+    const html = `<html><body><CENTER><div class="swy1">text</div><div class="swy1">more</div></CENTER></body></html>`;
+    const first = normalizeHtml(html);
+    const second = normalizeHtml(first);
+
+    expect(first).toBe(second);
+  });
+
+  it('should handle nested center tags', () => {
+    const html = '<html><body><CENTER><CENTER>deep</CENTER></CENTER></body></html>';
+    const result = normalizeHtml(html);
+
+    expect(result).toContain('data-center="1"');
+    expect(result).not.toContain('<CENTER');
+  });
+});
 
 function setupTerritory(html: string) {
   const $raw = cheerio.load(html, { xmlMode: false, decodeEntities: true });
