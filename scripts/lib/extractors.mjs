@@ -382,9 +382,7 @@ export function pass2Metadata(index, $, territory) {
     const text = $(node).text().trim();
     const match = text.match(METADATA_RE);
     if (match) {
-      const parent = node.parent;
-      if (parent) territory.claimSubtree(parent);
-      else territory.claimLeaf(node);
+      territory.claimLeaf(node);
       return { dynasty: match[1], author: match[2] };
     }
   }
@@ -451,28 +449,34 @@ export function pass3ChapterTitle(index, $, territory) {
 
 // ── Title Extraction (fallback) ────────────────────────────────────
 
-function extractTitle($) {
+function extractTitle($, index) {
   const titleTag = $('title').text().trim();
   if (titleTag) return titleTag;
 
   const h1 = $('h1').first().text().trim();
   if (h1) return h1;
 
-  let found = '';
-  $('font').each((_, el) => {
-    if (found) return;
-    const color = ($(el).attr('color') || '').toUpperCase();
-    const size = parseInt($(el).attr('size') || '0', 10);
+  // Use DOM index for color/size scan — eliminates duplicate $('font') traversal
+  // that pass1BookTitle also performs via index.byColor.
+  const colorFF6666 = index.byColor.get('#FF6666') || [];
+  const colorFF0000 = index.byColor.get('#FF0000') || [];
+  const bookColorNodes = [...colorFF6666, ...colorFF0000];
 
-    if ((color === '#FF6666' || color === '#FF0000') && size >= 5) {
-      const text = $(el).text().trim();
+  let found = '';
+  for (const node of bookColorNodes) {
+    if (found) break;
+    const size = parseInt($(node).attr('size') || '0', 10);
+
+    if (size >= 5) {
+      const text = $(node).text().trim();
       if (text.length > 0 && text.length < 50) {
         found = text;
       }
     }
 
-    if ((color === '#FF6666' || color === '#FF0000') && !size) {
-      $(el)
+    // Check for nested font with size ≥ 5
+    if (!size) {
+      $(node)
         .find('font')
         .each((_, nested) => {
           if (found) return;
@@ -485,13 +489,18 @@ function extractTitle($) {
           }
         });
     }
+  }
 
-    if (size >= 5 && !color) {
-      let parent = el.parent;
+  // Also check: size on element, color on ancestor font
+  if (!found) {
+    const size5plus = index.bySize.get('5') || [];
+    for (const node of size5plus) {
+      if (found) break;
+      let parent = node.parent;
       while (parent && parent.tagName === 'font') {
         const parentColor = ($(parent).attr('color') || '').toUpperCase();
         if (parentColor === '#FF6666' || parentColor === '#FF0000') {
-          const text = $(el).text().trim();
+          const text = $(node).text().trim();
           if (text.length > 0 && text.length < 50) {
             found = text;
           }
@@ -500,7 +509,8 @@ function extractTitle($) {
         parent = parent.parent;
       }
     }
-  });
+  }
+
   if (found) return found;
 
   return 'Untitled';
@@ -711,7 +721,7 @@ export function extractContent(html, sourcePath, options = {}) {
 
   const $raw = cheerio.load(html, { xmlMode: false, decodeEntities: true });
   const index = buildDomIndex($raw);
-  const title = extractTitle($raw);
+  const title = extractTitle($raw, index);
   const ir = {
     title,
     author: undefined,
