@@ -6,3 +6,9 @@ dist
 .env
 .env.local
 .bun-version
+
+# Astro build cache (auto-generated, not source code)
+.astro/
+
+# 古籍源文件（体积大，不需要纳入版本控制）
+古籍/
