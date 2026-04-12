@@ -9,7 +9,7 @@
 
 import * as cheerio from 'cheerio';
 import path from 'path';
-import { flattenTables, analyzeAndCache, hasCachedPatterns } from './pattern-cache.mjs';
+import { flattenTables, analyzeAndCache, hasCachedPatterns, buildClassificationSignature, classifyWithCache } from './pattern-cache.mjs';
 
 // ── Types constant ────────────────────────────────────────────────
 
@@ -1053,7 +1053,15 @@ export function extractContent(html, sourcePath, options = {}) {
       return;
     }
     const context = detectStructure($raw, node);
-    let type = classifyByAttributes($raw, node, context);
+    let type;
+    if (options.patternCache && hasCachedPatterns(options.patternCache, ir.title)) {
+      const sig = buildClassificationSignature($raw, node);
+      type = classifyWithCache(options.patternCache, ir.title, sig, () =>
+        classifyByAttributes($raw, node, context)
+      );
+    } else {
+      type = classifyByAttributes($raw, node, context);
+    }
 
     if (!type || type === TYPES.MAIN_TEXT) {
       const textType = classifyByText($raw(node).html() || $raw(node).text());

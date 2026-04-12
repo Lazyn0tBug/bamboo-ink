@@ -179,3 +179,52 @@ export function analyzeAndCache(cache, html, bookTitle) {
   cachePatterns(cache, patterns);
   return patterns;
 }
+
+// ── Node Classification Cache (Unit A4) ──────────────────────────
+
+/**
+ * Build a signature string from a DOM node's visual/structural features.
+ * Used as cache key for per-node classification results.
+ *
+ * @param {Function} $
+ * @param {object} node
+ * @returns {string}
+ */
+export function buildClassificationSignature($, node) {
+  const $node = $(node);
+  const tag = (node.tagName || '').toUpperCase();
+  const className = ($node.attr('class') || '').trim();
+  const color = ($node.attr('color') || '').toUpperCase();
+  const size = $node.attr('size') || '';
+  const textLen = $node.text().trim().length;
+  // Bucket text length to avoid overfitting to exact character counts
+  const textBucket = textLen < 10 ? 'short' : textLen < 50 ? 'medium' : 'long';
+  return `${tag}|${className}|${color}|${size}|${textBucket}`;
+}
+
+/**
+ * Classify a node with cache lookup. First-seen signature runs classifyFn and stores result.
+ * Subsequent hits return the cached type without re-running classifyByAttributes.
+ *
+ * @param {Map<string, object>} patternCache - The book-level pattern cache
+ * @param {string} bookTitle - Book title (cache key)
+ * @param {string} signature - Node signature from buildClassificationSignature
+ * @param {Function} classifyFn - () => string — the classification function to call on cache miss
+ * @returns {string|null} Classified type
+ */
+export function classifyWithCache(patternCache, bookTitle, signature, classifyFn) {
+  const patterns = patternCache.get(bookTitle);
+  if (!patterns) return classifyFn();
+
+  // Initialize classificationMap on first use
+  if (!patterns.classificationMap) {
+    patterns.classificationMap = new Map();
+  }
+
+  const cached = patterns.classificationMap.get(signature);
+  if (cached !== undefined) return cached;
+
+  const type = classifyFn();
+  patterns.classificationMap.set(signature, type);
+  return type;
+}

@@ -15,6 +15,13 @@ import {
   pass2Metadata,
   pass3ChapterTitle,
 } from '../scripts/lib/content-extractor.mjs';
+import {
+  createPatternCache,
+  analyzeAndCache,
+  hasCachedPatterns,
+  buildClassificationSignature,
+  classifyWithCache,
+} from '../scripts/lib/pattern-cache.mjs';
 
 // ── Test Fixtures ────────────────────────────────────────────────
 
@@ -1280,5 +1287,107 @@ describe('ProcessingResult (returnResult option)', () => {
     expect(result.sectionsCount).toBeGreaterThan(0);
     expect(typeof result.annotationsCount).toBe('number');
     expect(result.annotationsCount).toBeGreaterThanOrEqual(0);
+  });
+});
+
+// ── Classification Cache (Unit A4) ────────────────────────────────
+
+describe('buildClassificationSignature', () => {
+  it('should produce consistent signatures for identical nodes', () => {
+    const html = `<html><body><font color="#CC33CC" size="3" class="chapter">Title</font></body></html>`;
+    const $ = cheerio.load(html);
+    const node = $('font').get(0);
+    const sig1 = buildClassificationSignature($, node);
+    const sig2 = buildClassificationSignature($, node);
+    expect(sig1).toBe(sig2);
+  });
+
+  it('should produce different signatures for different nodes', () => {
+    const html = `<html><body>
+      <font color="#CC33CC" class="chapter">Title</font>
+      <font color="#551A8B" class="annotation">Note</font>
+    </body></html>`;
+    const $ = cheerio.load(html);
+    const nodes = $('font').toArray();
+    const sig1 = buildClassificationSignature($, nodes[0]);
+    const sig2 = buildClassificationSignature($, nodes[1]);
+    expect(sig1).not.toBe(sig2);
+  });
+});
+
+describe('classifyWithCache', () => {
+  it('should call classifyFn on cache miss', () => {
+    const cache = createPatternCache();
+    analyzeAndCache(cache, templateFHtml, '大学章句集注');
+
+    let callCount = 0;
+    const classifyFn = () => {
+      callCount++;
+      return 'test-type';
+    };
+
+    const result = classifyWithCache(cache, '大学章句集注', 'FONT|chapter|#CC33CC|3|short', classifyFn);
+    expect(result).toBe('test-type');
+    expect(callCount).toBe(1);
+  });
+
+  it('should return cached type on cache hit', () => {
+    const cache = createPatternCache();
+    analyzeAndCache(cache, templateFHtml, '大学章句集注');
+
+    let callCount = 0;
+    const classifyFn = () => {
+      callCount++;
+      return 'cached-type';
+    };
+
+    const sig = 'FONT|chapter|#CC33CC|3|short';
+    const result1 = classifyWithCache(cache, '大学章句集注', sig, classifyFn);
+    const result2 = classifyWithCache(cache, '大学章句集注', sig, classifyFn);
+
+    expect(result1).toBe('cached-type');
+    expect(result2).toBe('cached-type');
+    expect(callCount).toBe(1); // called only once
+  });
+
+  it('should fall through when book not in cache', () => {
+    const cache = createPatternCache();
+    // No patterns cached for this book
+
+    let callCount = 0;
+    const classifyFn = () => {
+      callCount++;
+      return 'fallback-type';
+    };
+
+    const result = classifyWithCache(cache, 'Unknown Book', 'FONT|chapter|#CC33CC|3|short', classifyFn);
+    expect(result).toBe('fallback-type');
+    expect(callCount).toBe(1);
+  });
+});
+
+describe('extractContent with classification cache', () => {
+  it('should produce identical IR with and without pattern cache', () => {
+    const cache = createPatternCache();
+
+    // First extraction: populates cache
+    const ir1 = extractContent(templateFHtml, '经部/大学章句集注.htm', {
+      patternCache: cache,
+    });
+
+    // Second extraction: uses cached classifications
+    const ir2 = extractContent(templateFHtml, '经部/大学章句集注.htm', {
+      patternCache: cache,
+    });
+
+    // Both should produce identical IR
+    expect(JSON.stringify(ir1)).toBe(JSON.stringify(ir2));
+  });
+
+  it('should produce identical IR without any patternCache', () => {
+    // No cache at all — full classification every time
+    const ir = extractContent(templateFHtml, '经部/大学章句集注.htm');
+    expect(ir.title).toBe('大学章句集注');
+    expect(ir.chapters.length).toBeGreaterThan(0);
   });
 });
