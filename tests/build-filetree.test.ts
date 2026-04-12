@@ -30,8 +30,8 @@ function createMockSource(structure: Record<string, string[]>) {
 describe('buildFileTree', () => {
   it('should group files by category', () => {
     const tmp = createMockSource({
-      '经部': ['论语.htm', '大学.htm'],
-      '史部': ['史记.htm'],
+      经部: ['论语.htm', '大学.htm'],
+      史部: ['史记.htm'],
     });
 
     const tree = buildFileTree(tmp);
@@ -44,7 +44,7 @@ describe('buildFileTree', () => {
 
   it('should handle single-file books from direct .htm files', () => {
     const tmp = createMockSource({
-      '经部': ['论语.htm', '大学.htm'],
+      经部: ['论语.htm', '大学.htm'],
     });
 
     const tree = buildFileTree(tmp);
@@ -61,7 +61,7 @@ describe('buildFileTree', () => {
 
   it('should group subdirectory files into a single book entry', () => {
     const tmp = createMockSource({
-      '经部': ['论语集注/学而.htm', '论语集注/为政.htm', '论语集注/八佾.htm'],
+      经部: ['论语集注/学而.htm', '论语集注/为政.htm', '论语集注/八佾.htm'],
     });
 
     const tree = buildFileTree(tmp);
@@ -74,12 +74,7 @@ describe('buildFileTree', () => {
 
   it('should handle mixed direct files and subdirectories', () => {
     const tmp = createMockSource({
-      '经部': [
-        '中庸.htm',
-        '大学.htm',
-        '四書章句集注/大学章句.htm',
-        '四書章句集注/中庸章句.htm',
-      ],
+      经部: ['中庸.htm', '大学.htm', '四書章句集注/大学章句.htm', '四書章句集注/中庸章句.htm'],
     });
 
     const tree = buildFileTree(tmp);
@@ -98,7 +93,7 @@ describe('buildFileTree', () => {
 
   it('should handle empty category directory', () => {
     const tmp = createMockSource({
-      '经部': [],
+      经部: [],
     });
 
     const tree = buildFileTree(tmp);
@@ -115,7 +110,7 @@ describe('buildFileTree', () => {
 
   it('should use relative paths from source root', () => {
     const tmp = createMockSource({
-      '经部': ['论语.htm'],
+      经部: ['论语.htm'],
     });
 
     const tree = buildFileTree(tmp);
@@ -126,7 +121,7 @@ describe('buildFileTree', () => {
 
   it('should set version and phase metadata', () => {
     const tmp = createMockSource({
-      '经部': ['论语.htm'],
+      经部: ['论语.htm'],
     });
 
     const tree = buildFileTree(tmp);
@@ -138,7 +133,7 @@ describe('buildFileTree', () => {
 
   it('should handle deeply nested subdirectories', () => {
     const tmp = createMockSource({
-      '史部': ['廿五史/史记/本纪/五帝本纪.htm', '廿五史/汉书/高帝纪.htm'],
+      史部: ['廿五史/史记/本纪/五帝本纪.htm', '廿五史/汉书/高帝纪.htm'],
     });
 
     const tree = buildFileTree(tmp);
@@ -154,9 +149,9 @@ describe('buildFileTree', () => {
 
   it('should sort categories and books alphabetically', () => {
     const tmp = createMockSource({
-      '集部': ['楚辞.htm', '诗经.htm'],
-      '经部': ['尚书.htm'],
-      '史部': ['左传.htm'],
+      集部: ['楚辞.htm', '诗经.htm'],
+      经部: ['尚书.htm'],
+      史部: ['左传.htm'],
     });
 
     const tree = buildFileTree(tmp);

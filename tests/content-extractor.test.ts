@@ -1235,7 +1235,10 @@ describe('ProcessingResult (returnResult option)', () => {
   it('should return { ir, result } when returnResult is true', () => {
     const extractResult = extractContent(templateFHtml, '经部/大学章句集注.htm', {
       returnResult: true,
-    }) as { ir: { title: string }; result: { sourcePath: string; docType: string; chaptersCount: number; elapsedMs: number } };
+    }) as {
+      ir: { title: string };
+      result: { sourcePath: string; docType: string; chaptersCount: number; elapsedMs: number };
+    };
     expect(extractResult).toHaveProperty('ir');
     expect(extractResult).toHaveProperty('result');
     expect(extractResult.ir.title).toBe('大学章句集注');
@@ -1326,7 +1329,12 @@ describe('classifyWithCache', () => {
       return 'test-type';
     };
 
-    const result = classifyWithCache(cache, '大学章句集注', 'FONT|chapter|#CC33CC|3|short', classifyFn);
+    const result = classifyWithCache(
+      cache,
+      '大学章句集注',
+      'FONT|chapter|#CC33CC|3|short',
+      classifyFn
+    );
     expect(result).toBe('test-type');
     expect(callCount).toBe(1);
   });
@@ -1360,7 +1368,12 @@ describe('classifyWithCache', () => {
       return 'fallback-type';
     };
 
-    const result = classifyWithCache(cache, 'Unknown Book', 'FONT|chapter|#CC33CC|3|short', classifyFn);
+    const result = classifyWithCache(
+      cache,
+      'Unknown Book',
+      'FONT|chapter|#CC33CC|3|short',
+      classifyFn
+    );
     expect(result).toBe('fallback-type');
     expect(callCount).toBe(1);
   });

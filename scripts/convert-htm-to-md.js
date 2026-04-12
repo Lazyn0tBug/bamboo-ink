@@ -443,7 +443,13 @@ async function runIrPipeline(files, opts) {
   const catalogDict = new Map();
   let catalogCount = 0;
   for (const file of catalogFiles) {
-    const result = await processFileIr(file, { patternCache }, outputDirs, opts.dryRun, opts.verbose);
+    const result = await processFileIr(
+      file,
+      { patternCache },
+      outputDirs,
+      opts.dryRun,
+      opts.verbose
+    );
     if (result.success && result.ir) {
       catalogCount++;
       // Build dict from this catalog's navItems
