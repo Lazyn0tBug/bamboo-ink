@@ -301,6 +301,63 @@ export default defineConfig({
 - ✅ 颜色对比度符合 WCAG AA
 - ✅ 键盘导航支持（`:focus-visible`）
 
+## Python 模块开发规范（bamboo-extract）
+
+`src/bamboo_extract/` 模块使用现代 Python 3.12+ 技术栈，独立于 Astro 项目。
+
+### Python 技术栈
+
+| 工具 | 用途 | 等价于 JS 侧 |
+|------|------|-------------|
+| **Python 3.12+** | 运行时 | Node.js / Bun |
+| **uv** | 包管理 + 虚拟环境 + 脚本运行 | bun install / bun run |
+| **ruff** | Linter + Formatter | eslint + prettier |
+| **ty** | 类型检查 | tsc --noEmit |
+| **pyproject.toml** | 项目元数据 + 工具配置 | package.json |
+| **pytest** | 单元测试 | vitest |
+| **selectolax** | HTML 解析（内置 Modest CSS 选择器引擎） | cheerio |
+
+### 工作流
+
+```bash
+uv sync                    # 安装依赖 + 创建 .venv
+uv run bamboo-extract ...  # 运行 CLI
+uv run ruff check .        # lint（等价于 bun run lint）
+uv run ruff format .       # format（等价于 bun run format）
+uv run ty check .          # type check（等价于 bun run check）
+uv run pytest tests/       # test（等价于 bun run test）
+```
+
+### Python 编码规范
+
+- **类型标注**：所有公共函数必须标注参数和返回值类型
+- **文档字符串**：所有公共函数必须有 docstring（三双引号，首行概述）
+- **命名约定**：`snake_case` 函数/变量，`PascalCase` 类/类型，`UPPER_SNAKE_CASE` 常量
+- **导入顺序**：标准库 → 第三方 → 本地（ruff I 规则自动排序）
+- **行宽限制**：88 字符（ruff 默认，与 black 一致）
+- **字符串**：优先使用 f-string
+- **数据类**：使用 `@dataclass` 或 `TypedDict`，避免裸 dict
+- **错误处理**：使用自定义异常类，不裸用 `raise Exception()`
+- **测试**：pytest，`tests/` 目录，`test_*.py` 命名，黑盒测试优先
+- **提交前必须通过**：`uv run ruff check .` + `uv run ty check .` + `uv run pytest tests/`
+
+### pyproject.toml 规范
+
+- 使用 `[project]` 表（PEP 621），不使用 `setup.py`
+- 依赖声明在 `dependencies` 数组，不使用 `requirements.txt`
+- 脚本入口在 `[project.scripts]`
+- 开发依赖在 `[project.optional-dependencies]` 的 `dev` 组
+- 工具配置在 `[tool.ruff]`、`[tool.ty]` 等表下
+
+### 禁止项
+
+- ❌ 不使用 `setup.py` / `setup.cfg` / `requirements.txt`
+- ❌ 不使用 pipenv / poetry / pip-tools（项目统一使用 uv）
+- ❌ 不使用 mypy / black / isort / flake8（项目统一使用 ruff + ty）
+- ❌ 不使用 BeautifulSoup（性能不足，使用 selectolax）
+- ❌ 不使用 cssselect 包（selectolax 内置 Modest 引擎）
+- ❌ 提交前未通过 ruff check / ty check / pytest
+
 ## 可用的 Skills
 
 项目中已配置来自 `/e/code/ai/.agents/skills/` 的 skills，开发时应根据场景调用：
