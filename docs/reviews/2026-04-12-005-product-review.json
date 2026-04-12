@@ -1,0 +1,297 @@
+```json
+{
+  "findings": [
+    {
+      "id": "F-001",
+      "title": "Premature 'JS no longer maintained' decision creates single-point-of-failure with no fallback",
+      "severity": "P0",
+      "file": "docs/plans/2026-04-12-005-feat-python-extraction-module-plan.md",
+      "line": 19,
+      "confidence": 0.85,
+      "autofix_class": "document_revision",
+      "owner": "product",
+      "requires_verification": false,
+      "pre_existing": false,
+      "suggested_fix": "Change the strategic positioning from 'JS版不再维护' to 'Python becomes primary, JS retained as fallback for 2 production cycles.' The previous brainstorm (001) explicitly framed this as a three-track strategy where JS correction is 'hemostasis', Bun is 'tonic', and Python is 'future' -- not an immediate cutover. The escalation from POC (50-100 files) to full 9000+ file replacement with immediate JS retirement is not justified by evidence. Add a measured transition criteria: JS retirement only triggers after Python passes 9000+ validation AND two full production conversion runs succeed with human-verified output quality. Until then, JS remains the verified fallback.",
+      "rationale": "Line 19 states 'JS 版不再维护' as an established decision. The origin document (001-extraction-pipeline-optimization.md D1) positioned this as a three-track approach where Python was explicitly a POC (D4). This plan escalates from POC to full replacement without explaining why the escalation is warranted. For an internal tool maintained by a small team, eliminating the only production-proven pipeline before the replacement has any operational history is a high-risk single-point-of-failure. The rollback criteria on line 1440 acknowledge the possibility of falling back to JS, contradicting the 'no longer maintained' stance."
+    },
+    {
+      "id": "F-002",
+      "title": "Parity-to-buggy-baseline: 'corrected JS output' as baseline conflates parity with correctness",
+      "severity": "P0",
+      "file": "docs/plans/2026-04-12-005-feat-python-extraction-module-plan.md",
+      "line": 17,
+      "confidence": 0.82,
+      "autofix_class": "document_revision",
+      "owner": "product",
+      "requires_verification": false,
+      "pre_existing": false,
+      "suggested_fix": "Define a ground-truth correctness standard independent of JS output. The plan should state: 'Parity to JS is a proxy metric. Ground truth is: for each of the 7 template types (A-G), manually annotate 3 representative files with expected IR output. Python must match ground truth on these annotated files. JS parity is secondary -- when JS and ground truth disagree, Python follows ground truth.' Add 21 annotated files (3 per template x 7 templates) as the truth set. The 6 known JS bug fixes are acknowledged but there may be undiscovered bugs in the remaining 9000 files.",
+      "rationale": "Line 17 defines the parity baseline as '修正后的 JS 输出' (corrected JS output) with only 6 known bug fixes. This means Python inherits every undiscovered JS bug in the remaining 8994 files. The document lists D3 as '规则表为事实标准' (rule table as source of truth) in the origin document, but this plan contradicts that by making JS output the de facto standard. The plan cannot claim to produce 'truly correct' output while measuring correctness against a system known to have bugs."
+    },
+    {
+      "id": "F-003",
+      "title": "Parity-by-translation vs. genuine improvement: the plan replicates JS bugs by design",
+      "severity": "P1",
+      "file": "docs/plans/2026-04-12-005-feat-python-extraction-module-plan.md",
+      "line": 15,
+      "confidence": 0.78,
+      "autofix_class": "document_revision",
+      "owner": "product",
+      "requires_verification": false,
+      "pre_existing": false,
+      "suggested_fix": "Explicitly enumerate which JS behaviors Python will intentionally NOT replicate (beyond the 6 known bugs). The plan should state: 'Python will deviate from JS output in the following categories: (1) known JS bugs (6 listed), (2) any behavior the rule table does not justify, (3) any behavior that produces empty or degenerate IR sections.' For each category, define how the deviation will be tracked and reviewed. This prevents the subtle failure mode where 'parity' becomes 'copy the bugs we haven't found yet.'",
+      "rationale": "The '对等' (parity) framing on line 15 creates an implicit incentive to replicate JS behavior including undiscovered quirks. The plan says '对于所有需求，Python 模块都能获得与 JS 版一致的结果' -- but what if JS produces an incorrect result that no one has noticed? The parity incentive will cause developers to spend time matching JS quirks rather than fixing them. Only 6 JS bugs are catalogued; with 9000 files and complex extraction logic, there are almost certainly more."
+    },
+    {
+      "id": "F-004",
+      "title": "FFmpeg-style pipeline filter architecture is overdesigned for PC1 -- adds ~200 lines of framework with zero active consumers",
+      "severity": "P1",
+      "file": "docs/plans/2026-04-12-005-feat-python-extraction-module-plan.md",
+      "line": 1200,
+      "confidence": 0.80,
+      "autofix_class": "simplify_scope",
+      "owner": "engineering",
+      "requires_verification": false,
+      "pre_existing": false,
+      "suggested_fix": "Remove U7 (ExtractPipeline registration framework) from PC1 scope entirely. Replace with a simple sequential function call chain inside extract(). The 'pipeline' abstraction adds: ExtractPipeline class with register/run methods, ExtractFilter Protocol, ExtractContext TypedDict, filter naming conflict resolution, error handling for filter exceptions -- all for a PC1 implementation where zero optional filters are registered and the core filter sequence is hardcoded. This is YAGNI. Defer the framework to PC2 when there are actual multiple filter implementations to compose. The design note on line 1242 itself acknowledges '首期管道简单（固定顺序注册），不引入复杂依赖注入/条件注册' -- if the plan knows it will be simple, make it simple now.",
+      "rationale": "U7 (lines 1199-1254) introduces a full filter registration framework modeled on FFmpeg filters, complete with Protocol definitions, registration points, and error handling -- but PC1 registers zero optional filters. The core pipeline is a fixed 10-step sequence. The plan's own risk table (line 1436) acknowledges 'Filter 架构过度设计风险' with Low likelihood and Medium impact. For a team of 1-2 maintainers on an internal tool, this is premature abstraction that creates a maintenance surface with no current benefit."
+    },
+    {
+      "id": "F-005",
+      "title": "assemble_results specification contradiction: interface says flat text_region iteration, implementation notes require recursive DOM traversal",
+      "severity": "P1",
+      "file": "docs/plans/2026-04-12-005-feat-python-extraction-module-plan.md",
+      "line": 606,
+      "confidence": 0.85,
+      "autofix_class": "document_revision",
+      "owner": "engineering",
+      "requires_verification": false,
+      "pre_existing": false,
+      "suggested_fix": "Choose one model and commit to it throughout the document. The interface signature on line 606 takes text_regions (flat list), but the implementation guidance on lines 777-835 and 1093-1130 requires recursive DOM traversal with processElement. These are fundamentally different input contracts. If recursive DOM traversal is needed, the interface should be assemble_results(root_elements, ir, chapter_title_node_ids, annotations) -- not text_regions. If flat iteration is sufficient, the recursive model description should be removed. The contradiction will cause the implementer to build the wrong thing or spend time reconciling two incompatible models.",
+      "rationale": "Section 3.5 (line 606) defines assemble_results taking text_regions as a flat list. But Section 7 (line 776) says 'Python 必须复制此模型 -- 平坦迭代 text_regions 无法处理混合内容容器中的嵌套结构.' The document acknowledges the contradiction but provides both specifications. The '关键设计' box on line 1093 reiterates: '实现方式应为递归 DOM 遍历而非 flat text_region 迭代.' This is not a minor implementation detail -- it determines the function signature, the data flow, and the test fixtures."
+    },
+    {
+      "id": "F-006",
+      "title": "9000+ validation has no defined failure escalation path beyond 'continue using JS'",
+      "severity": "P1",
+      "file": "docs/plans/2026-04-12-005-feat-python-extraction-module-plan.md",
+      "line": 1318,
+      "confidence": 0.75,
+      "autofix_class": "document_revision",
+      "owner": "product",
+      "requires_verification": false,
+      "pre_existing": false,
+      "suggested_fix": "Define explicit escalation tiers: (1) < 98% but > 95%: file-by-file analysis, fix Python bugs, re-verify affected subset. (2) < 95% but > 90%: pause full validation, return to sample-based iteration on failing template types. (3) < 90%: fundamental architecture mismatch -- either redesign approach or accept JS as primary for this cycle. Also define a time budget: if U9 takes more than X developer-days, what gets cut? The current plan has no time constraint, which means U9 could absorb indefinite effort.",
+      "rationale": "Line 1318 sets the pass threshold at '严格匹配 100%, 内容匹配 >= 98%' but defines no intermediate states. What happens at 97%? At 90%? The rollback criteria (line 1440) say 'strict match < 98% OR human sampling finds > 5% content loss' triggers rollback to JS -- but the cost of reaching that conclusion after investing in full 9000+ validation is enormous. There are no progressive failure modes defined, only a binary pass/fail."
+    },
+    {
+      "id": "F-007",
+      "title": "Dummy protocol interfaces add cognitive load without preventing breakage -- dead code risk",
+      "severity": "P2",
+      "file": "docs/plans/2026-04-12-005-feat-python-extraction-module-plan.md",
+      "line": 348,
+      "confidence": 0.72,
+      "autofix_class": "simplify_scope",
+      "owner": "engineering",
+      "requires_verification": false,
+      "pre_existing": false,
+      "suggested_fix": "Remove AIFallback, BookProfileStore, NLPPlugin, and Exporter Protocol definitions from PC1 entirely. Replace with a single comment in extract() docstring: 'PC2+ extension points: AI fallback, book profile, NLP integration -- interfaces TBD.' Protocol definitions that have no consumers and will be redefined when PC2 actually implements them are documentation debt. If PC2's actual requirements differ from these PC1 guesses (which they almost certainly will), these definitions will either be silently wrong or require maintenance to update. The one exception worth keeping is ExportFormat enum (3 lines, zero behavioral impact).",
+      "rationale": "Sections 2.3-2.6 (lines 348-414) define four Protocol interfaces (AIFallback, BookProfileStore, NLPPlugin, Exporter) that have zero runtime consumers in PC1. The plan acknowledges this on line 223 ('PC1 无消费者 -- 仅定义类型，不接入管道') and line 362 ('PC1 不注册 AIFilter 到管道'). These are dead code that future maintainers must understand, test, and keep in sync. The design intent described on line 1242 claims this 'reduces ~300 lines of dummy code' compared to dummy implementations -- but the Protocol definitions themselves are ~170 lines of dead code."
+    },
+    {
+      "id": "F-008",
+      "title": "Opportunity cost: 9000+ parity verification could yield higher ROI as AI-assisted extraction POC",
+      "severity": "P2",
+      "file": "docs/plans/2026-04-12-005-feat-python-extraction-module-plan.md",
+      "line": 14,
+      "confidence": 0.60,
+      "autofix_class": "strategic_note",
+      "owner": "product",
+      "requires_verification": false,
+      "pre_existing": false,
+      "suggested_fix": "Consider an alternative PC1 scope: implement core extraction pipeline (Pass 1-10) with 100-200 sample file validation, then use remaining effort to prototype one genuinely improved capability that JS cannot do -- e.g., LLM-assisted extraction for the hardest 5% of files that rule-based extraction fails on. This would deliver actual new value rather than parity. The document already describes an AI Fallback architecture -- the question is whether PC1 should validate that the fallback is needed, not just design its interface.",
+      "rationale": "The plan invests enormous effort (U9: full 9000+ file validation, differential analysis scripts, baseline correction, quality gates) in proving Python matches JS. For an internal tool where JS already works, this is defensive engineering. The same effort could prototype one capability that makes the system genuinely better. The AI Fallback architecture is designed but never validated against real hard cases. This is opportunity cost: the plan builds a mirror of the existing system rather than building something the existing system cannot do."
+    },
+    {
+      "id": "F-009",
+      "title": "Rules synchronization debt: rules.py and JS CLASSIFICATION_RULES will inevitably drift",
+      "severity": "P2",
+      "file": "docs/plans/2026-04-12-005-feat-python-extraction-module-plan.md",
+      "line": 111,
+      "confidence": 0.70,
+      "autofix_class": "strategic_note",
+      "owner": "engineering",
+      "requires_verification": false,
+      "pre_existing": false,
+      "suggested_fix": "Define a concrete synchronization mechanism now, not as a deferred open question. Options: (A) Extract rules to a shared YAML/JSON file consumed by both JS and Python (the origin document D3 already suggests this). (B) Generate Python rules.py from JS CLASSIFICATION_RULES via a build script. (C) Define a test that loads both rule sets and asserts equivalence. At minimum, option (C) should be a PC1 deliverable. The 'future: shared YAML/JSON' deferral is a known risk that will compound -- every rule change after PC1 requires dual maintenance until the shared format exists.",
+      "rationale": "The open question on line 111 acknowledges rules.py synchronization as a deferred concern with Medium/Medium risk. But this is not a future problem -- it starts the moment PC1 ships. Any rule adjustment discovered during U9 validation will need to be applied to both JS and Python, and there is no automated check that they match. The origin document D3 says the rule table should be the source of truth shared by both languages, but this plan reverts to dual maintenance."
+    },
+    {
+      "id": "F-010",
+      "title": "METADATA_RE change creates untracked deviation from JS parity baseline",
+      "severity": "P2",
+      "file": "docs/plans/2026-04-12-005-feat-python-extraction-module-plan.md",
+      "line": 533,
+      "confidence": 0.75,
+      "autofix_class": "document_revision",
+      "owner": "engineering",
+      "requires_verification": true,
+      "pre_existing": false,
+      "suggested_fix": "The regex change from JS's '[\\u）)\\s]' to Python's '[\\u）)\\s]|$' is documented as a bug fix. Explicitly quantify: how many of the 9000+ files have metadata at the end of a text node where JS fails to match? This number determines whether the fix is cosmetic (0-2 files) or material (10+ files). If material, the JS output baseline for those files is wrong and the parity report will need a separate category for 'Python correctly matches where JS does not.' Add this as a seventh bug fix category in the parity report.",
+      "rationale": "Line 533 changes METADATA_RE to add '$' as an alternative to the closing delimiter requirement. This is listed as a 'JS bug fix' and noted on line 1453. But the plan only lists 6 known JS bugs -- this is a 7th that affects extraction behavior for an unknown number of files. The parity baseline assumes all other JS behavior is correct, but this regex change means Python will produce different dynasty/author values for files where metadata appears at end of node with no closing delimiter."
+    },
+    {
+      "id": "F-011",
+      "title": "Pass 2 metadata claim behavior correction is not in the 6 known bugs list but is applied",
+      "severity": "P2",
+      "file": "docs/plans/2026-04-12-005-feat-python-extraction-module-plan.md",
+      "line": 535,
+      "confidence": 0.72,
+      "autofix_class": "document_revision",
+      "owner": "engineering",
+      "requires_verification": true,
+      "pre_existing": false,
+      "suggested_fix": "The claim_leaf vs claim_subtree behavior for pass2Metadata is documented in the known bugs table (line 1450) as bug #1. But the plan says 'Python 保持此行为' (line 536) while also saying it uses claim_leaf. Clarify: is Python fixing this bug (claim_leaf) or keeping JS behavior (claim_subtree)? The text on line 535 says 'JS 版 pass2 对 metadata 文本节点使用 claim_leaf' but line 1450 says JS uses claimSubtree(parent). This is contradictory. If JS uses claim_subtree and Python uses claim_leaf, this is another parity deviation that must be tracked.",
+      "rationale": "Line 535 states 'JS 版 pass2 对 metadata 文本节点使用 claim_leaf（仅认领文本节点本身）' but line 1450's bug table says 'pass2Metadata 过度认领：claimSubtree(parent).' These contradict each other. If JS uses claimLeaf, there is no bug. If JS uses claimSubtree, there is a bug. The plan cannot have it both ways. This affects parity: if Python uses claim_leaf and JS uses claim_subtree, files with metadata inside large containers will produce different IR."
+    },
+    {
+      "id": "F-012",
+      "title": "Trajectory: this decision transforms the project from a JS-first Astro site to a dual-language pipeline with Python as primary",
+      "severity": "P2",
+      "file": "docs/plans/2026-04-12-005-feat-python-extraction-module-plan.md",
+      "line": 87,
+      "confidence": 0.78,
+      "autofix_class": "strategic_note",
+      "owner": "product",
+      "requires_verification": false,
+      "pre_existing": false,
+      "suggested_fix": "Acknowledge the trajectory change explicitly. The project currently has zero Python infrastructure (line 87: '仓库中无 pyproject.toml'). After this plan, it will have: a Python package with 10+ modules, pytest test suite, virtual environment, CI configuration for Python, and a second build pipeline. The CLAUDE.md project instructions mention Bun/Vitest/Astro as the development toolchain -- this plan introduces an entirely new ecosystem. The document should address: will future contributors need to know Python? Will CI run both JS and Python tests? What is the Python version support commitment? These are not blockers, but they should be acknowledged as a system-level change, not an implementation detail.",
+      "rationale": "Line 87 acknowledges there is no Python infrastructure in the repo. The plan introduces a full Python ecosystem: pyproject.toml, selectolax dependency, pytest suite, uv/ruff/ty toolchain, virtual environment management, and a parallel CI pipeline. This is a fundamental change in what the project is. The CLAUDE.md project instructions define Bun as the package manager and Vitest as the test framework. After this plan, the project requires knowledge of both JS and Python ecosystems."
+    },
+    {
+      "id": "F-013",
+      "title": "Compounding direction: parity maintenance creates ongoing double-maintenance burden",
+      "severity": "P2",
+      "file": "docs/plans/2026-04-12-005-feat-python-extraction-module-plan.md",
+      "line": 27,
+      "confidence": 0.70,
+      "autofix_class": "strategic_note",
+      "owner": "product",
+      "requires_verification": false,
+      "pre_existing": false,
+      "suggested_fix": "Define an exit criterion for parity: after PC1 ships and passes validation, parity maintenance should end. Future improvements to extraction quality should go to Python only (since JS is 'no longer maintained'). The document should state: 'After PC1, Python output is the new baseline. Future rule improvements are implemented in Python first. JS parity is no longer a quality metric.' Without this statement, every future rule change creates a new parity verification burden.",
+      "rationale": "The plan establishes parity as the PC1 quality metric. But parity is a moving target -- every future rule improvement, edge case fix, or template adjustment requires re-verification. The plan says JS will no longer be maintained (line 19), which implies Python is the future baseline. But if that is the case, why measure quality against JS? The plan should define a one-time parity gate at PC1 and then transition to ground-truth quality metrics for all future work."
+    },
+    {
+      "id": "F-014",
+      "title": "Weak link: '9000+ file validation' as a quality gate assumes the comparison tooling is correct",
+      "severity": "P2",
+      "file": "docs/plans/2026-04-12-005-feat-python-extraction-module-plan.md",
+      "line": 1304,
+      "confidence": 0.65,
+      "autofix_class": "document_revision",
+      "owner": "engineering",
+      "requires_verification": false,
+      "pre_existing": false,
+      "suggested_fix": "Add a test for the comparison tool itself: create a known-different pair of IR files and verify compare_ir.py correctly classifies the difference. Create a known-identical pair and verify it reports exact match. The comparison script is the arbiter of the entire quality gate -- if it has bugs (false positives or false negatives), the entire 9000+ validation result is untrustworthy. The plan should include unit tests for compare_ir.py covering each classification category.",
+      "rationale": "Line 1304-1317 describes the compare_ir.py classification logic with five categories (exact match, whitespace/ordering, Python bug fix, Python bug, JS bug). This tool is the sole arbiter of the quality gate, but there are no tests for it. If compare_ir.py misclassifies a Python bug as a 'reasonable parsing difference' or a JS bug as a 'Python bug,' the quality report will be wrong."
+    },
+    {
+      "id": "F-015",
+      "title": "Adoption risk: Python extraction pipeline is an internal tool for a captive audience -- cognitive load of a second language stack is high",
+      "severity": "P2",
+      "file": "docs/plans/2026-04-12-005-feat-python-extraction-module-plan.md",
+      "line": 87,
+      "confidence": 0.68,
+      "autofix_class": "strategic_note",
+      "owner": "product",
+      "requires_verification": false,
+      "pre_existing": false,
+      "suggested_fix": "Address the team's Python competency explicitly. If the current team is primarily JS/TypeScript (indicated by the Astro + Bun + TypeScript codebase), the Python module creates a maintenance surface that requires either: (a) team members learning Python, (b) hiring Python developers, or (c) relying on a single Python-competent maintainer. The document should state who will maintain this module and what their Python experience level is. If the answer is 'the same person who maintains the JS version,' the plan should acknowledge the context-switching cost.",
+      "rationale": "This is an internal pipeline tool (not a customer-facing feature). The current project uses Astro + TypeScript + Bun. Introducing Python means the team maintains two language ecosystems for one pipeline. For a small internal team, every language addition is a permanent cognitive tax. The document does not address whether the maintainers are Python-proficient or what the learning cost is."
+    }
+  ],
+  "residual_risks": [
+    {
+      "id": "RR-001",
+      "title": "Dual-language pipeline creates two failure modes instead of one",
+      "description": "During the transition period (Python deployed, JS not yet retired), there are now two pipelines that can fail, two sets of dependencies to update, and two CI configurations to maintain. The plan does not define the transition period length or the handoff protocol.",
+      "severity": "P2",
+      "mitigation": "Define a clear transition period (e.g., 2 production cycles) with parallel run validation. After transition, retire JS pipeline entirely rather than keeping it as a 'just in case' fallback that nobody tests."
+    },
+    {
+      "id": "RR-002",
+      "title": "selectolax dependency lock-in",
+      "description": "The entire Python module is built around selectolax's Modest CSS selector engine and node model. If selectolax has a critical bug, stops being maintained, or has a breaking change, the entire extraction pipeline is blocked. The plan mentions this as a risk (line 1428) but the mitigation ('normalize.py 增加预处理') is vague.",
+      "severity": "P2",
+      "mitigation": "Abstract the parser behind a thin protocol so that lxml.html or BeautifulSoup can be swapped in as a fallback if selectolax fails. The NodeProxy pattern (line 268) already does partial abstraction -- extend it to cover the parser interface."
+    },
+    {
+      "id": "RR-003",
+      "title": "Quality gate bypass through 'reasonable parsing differences' category",
+      "description": "The compare_ir.py tool has a category for 'reasonable parsing differences' (line 1313). This category is subjective and can be used to hide real bugs. Without clear, testable criteria for what qualifies as 'reasonable,' a developer under pressure to hit the 98% target may over-classify failures as 'reasonable.'",
+      "severity": "P2",
+      "mitigation": "Define the 'reasonable parsing differences' category with concrete examples in the plan. Require that any difference classified as 'reasonable' must be reviewed by someone other than the implementer. Cap this category at a specific percentage (e.g., < 1% of files)."
+    },
+    {
+      "id": "RR-004",
+      "title": "PC2 activation cost is unknown",
+      "description": "The plan defers AI Fallback, Book Profile, NLP, and Exporter implementations to PC2+. But the PC1 architecture (filter registration framework, Protocol definitions, extract() signature) is designed to accommodate PC2 features. If PC2's actual requirements differ from PC1's guesses, the PC1 architecture may need to be redesigned -- wasting the PC1 design effort. The filter framework (U7) is the most likely casualty.",
+      "severity": "P2",
+      "mitigation": "Treat PC1 as 'dumb pipe' -- a simple function that takes HTML and returns IR. Design PC2 interfaces fresh when PC2 work begins. Defer all Protocol definitions and framework code to PC2."
+    }
+  ],
+  "testing_gaps": [
+    {
+      "id": "TG-001",
+      "title": "No unit tests for compare_ir.py classification logic",
+      "description": "The compare_ir.py script is the arbiter of the entire 9000+ file quality gate but has no tests. Each of the five classification categories (exact match, whitespace diff, Python bug fix, Python bug, JS bug) needs test fixtures that verify correct classification.",
+      "affected_unit": "U9",
+      "severity": "P1"
+    },
+    {
+      "id": "TG-002",
+      "title": "No tests for the parity baseline correction process",
+      "description": "The plan corrects 6 known JS bugs in the baseline (line 1302). There are no tests that verify the correction process produces the intended output. A bad correction would make Python appear to have bugs when it is actually correct, or vice versa.",
+      "affected_unit": "U9",
+      "severity": "P1"
+    },
+    {
+      "id": "TG-003",
+      "title": "No tests for assemble_results state machine edge cases",
+      "description": "The assemble_results state machine (Section 7, lines 763-852) has multiple state variables and transition conditions. The plan lists boundary cases (line 856-860) but does not specify test fixtures for each. Critical untested scenarios: (a) empty input, (b) end-marker before any chapter, (c) multiple end-markers, (d) chapter-title after end-marker, (e) all annotations before all text.",
+      "affected_unit": "U4",
+      "severity": "P1"
+    },
+    {
+      "id": "TG-004",
+      "title": "No tests for ExtractPipeline registration and error handling",
+      "description": "U7 introduces a filter registration framework (line 1200) but the test scenarios (line 1244-1249) only cover happy paths. Missing: (a) filter that modifies IR in unexpected ways, (b) filter that throws an exception mid-pipeline, (c) pipeline that registers duplicate filter names, (d) filter order dependency bugs.",
+      "affected_unit": "U7",
+      "severity": "P2"
+    },
+    {
+      "id": "TG-005",
+      "title": "No tests for flattenTables DOM operation (vs JS string-level regex)",
+      "description": "The plan changes flattenTables from JS string-level regex replacement to selectolax DOM operations (line 457). The test scenarios (line 977-979) cover basic cases but do not include: (a) deeply nested tables (3+ levels), (b) tables with malformed HTML (unclosed tags), (c) tables containing text that looks like table/tr/td HTML tags, (d) tables with CSS that affects the flattening result.",
+      "affected_unit": "U2",
+      "severity": "P2"
+    },
+    {
+      "id": "TG-006",
+      "title": "Catalog detection heuristics untested across template types",
+      "description": "The catalog detection heuristic (linkCount > 5 && bodyText < 3000) is a single threshold check. No analysis is provided showing these thresholds work across all 9000+ files. A content page with many cross-references could be misclassified as catalog; a catalog page with long descriptions could be misclassified as content.",
+      "affected_unit": "U3/U4",
+      "severity": "P2"
+    },
+    {
+      "id": "TG-007",
+      "title": "No performance regression tests for Python vs JS",
+      "description": "The plan mentions selectolax is 'fastest' (line 91, '9000 files ~45-135s') but defines no performance tests. Without a benchmark, there is no way to detect if a code change degrades performance. The origin document R9 mentions Bun runtime performance as a concern, but the Python plan has no equivalent.",
+      "affected_unit": "U6/U9",
+      "severity": "P2"
+    }
+  ]
+}
+```

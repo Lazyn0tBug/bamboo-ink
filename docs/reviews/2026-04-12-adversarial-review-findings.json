@@ -1,0 +1,232 @@
+{
+  "review_metadata": {
+    "document": "docs/brainstorms/2026-04-12-002-python-extraction-module.md",
+    "reviewer_type": "adversarial",
+    "date": "2026-04-12",
+    "depth": "deep",
+    "techniques_applied": [
+      "premise_challenging",
+      "assumption_surfacing",
+      "decision_stress_testing",
+      "simplification_pressure",
+      "alternative_blindness"
+    ]
+  },
+  "findings": [
+    {
+      "id": "F1",
+      "title": "JS-as-baseline parity target is fundamentally flawed",
+      "severity": "P0",
+      "file": "docs/brainstorms/2026-04-12-002-python-extraction-module.md",
+      "line": 68,
+      "confidence": 0.85,
+      "autofix_class": "ASSUMPTION_INVALID",
+      "owner": "requirements-author",
+      "requires_verification": true,
+      "pre_existing": false,
+      "suggested_fix": "Define parity against a canonical IR schema with explicit correctness criteria independent of either implementation. Use three-way comparison: Python == JS == schema-validated-correctness. When they differ, tiebreaker should be schema+rule compliance, not JS match.",
+      "detail": "The document states 'when Python and JS differ, use JS as the reference baseline.' But JS itself contains known bugs (R1 claim bug, R4 flattenTables regex, R8 double-classification) being actively fixed in parallel Track A. If Python development begins before Track A completes, Python will replicate buggy JS behavior. Worse, parity tests will pass when both versions produce the same wrong output, making JS bugs permanently invisible."
+    },
+    {
+      "id": "F2",
+      "title": "selectolax/cheerio structural DOM divergence unverified",
+      "severity": "P0",
+      "file": "docs/brainstorms/2026-04-12-002-python-extraction-module.md",
+      "line": 244,
+      "confidence": 0.82,
+      "autofix_class": "ASSUMPTION_INVALID",
+      "owner": "requirements-author",
+      "requires_verification": true,
+      "pre_existing": false,
+      "suggested_fix": "Before Pass implementation, build a DOM structure comparison test: parse 20 representative FrontPage HTML files with both cheerio and selectolax, dump tree structures (tag names, depths, text content, sibling counts), report structural differences. Make this a gating criterion before R8 begins.",
+      "detail": "The document assumes selectolax (Modest/lexbor) and cheerio (parse5/htmlparser) produce equivalent DOM trees for malformed FrontPage 4.0 HTML. This is unverified. Key divergence points: tbody injection behavior, entity decoding (&nbsp; handling), implicit tag insertion for unclosed FONT tags, text node splitting at br tags. The flattenTables strategy compounds this: JS uses DOM-based replacement after parsing, Python uses regex-based replacement before parsing -- producing fundamentally different input trees."
+    },
+    {
+      "id": "F3",
+      "title": "Territory irreversibility creates unfixable error cascades",
+      "severity": "P1",
+      "file": "docs/brainstorms/2026-04-12-002-python-extraction-module.md",
+      "line": 307,
+      "confidence": 0.80,
+      "autofix_class": "ASSUMPTION_INVALID",
+      "owner": "requirements-author",
+      "requires_verification": true,
+      "pre_existing": false,
+      "suggested_fix": "Add a claim audit log recording every claim (pass number, node ID, matched rule, text content preview). After all passes, cross-reference audit log against total text content to detect 'large claims' -- claims consuming more than X% of total text. Flag these as QualityWarning for manual review.",
+      "detail": "Claims are irreversible. If Pass 1 mis-matches a chapter title as book-title, that node and its subtree are permanently removed from visibility for Pass 3 (chapter-title), Pass 9 (main-text), and the assemble phase. No recovery mechanism exists. The R13 error classification has no 'claim conflict' or 'reclaim' error type. The Python version uses numeric node IDs while JS uses cheerio node objects, changing has_claimed_ancestor semantics when DOM structures differ."
+    },
+    {
+      "id": "F4",
+      "title": "Text conservation invariant unverifiable due to normalize_html",
+      "severity": "P1",
+      "file": "docs/brainstorms/2026-04-12-002-python-extraction-module.md",
+      "line": 216,
+      "confidence": 0.78,
+      "autofix_class": "ASSUMPTION_INVALID",
+      "owner": "requirements-author",
+      "requires_verification": true,
+      "pre_existing": false,
+      "suggested_fix": "Redefine invariant as: total text across ALL IR fields (section.content + annotations[].text + chapter.title + navItems.label) should be within X% of text content in the post-normalize_html HTML. Measure after normalization, exclude &nbsp; and non-content whitespace from both sides.",
+      "detail": "The invariant 'original HTML text >= IR section content' is impossible to verify because normalize_html strips empty tags, flattenTables restructures the DOM, cheerio and selectolax decode entities differently, and extractRemaining concatenates text nodes with spaces. The 30% gap threshold is arbitrary. Files with heavy annotation content will naturally show large gaps because annotation text is in annotations[], not section.content."
+    },
+    {
+      "id": "F6",
+      "title": "Color normalization breaks parity with JS by_color index",
+      "severity": "P1",
+      "file": "docs/brainstorms/2026-04-12-002-python-extraction-module.md",
+      "line": 287,
+      "confidence": 0.76,
+      "autofix_class": "ASSUMPTION_INCOMPLETE",
+      "owner": "requirements-author",
+      "requires_verification": true,
+      "pre_existing": false,
+      "suggested_fix": "Match JS behavior exactly: only uppercase, no shorthand expansion. If shorthand expansion is desired for correctness, apply it identically in both JS and Python as a normalization step before buildDomIndex.",
+      "detail": "Python proposes expanding #F66 to #FF6666 in by_color index. JS only uppercases (color.toUpperCase()). A file with <font color='#f66'> would be indexed as '#F66' in JS and '#FF6666' in Python. Any Pass querying by_color.get('#FF6666') finds nodes in Python that it would not find in JS. Also missing: inline style color normalization (style='color:#ff6666' vs COLOR:#FF6666 vs rgb format)."
+    },
+    {
+      "id": "F10",
+      "title": "Error classification omits infrastructure and resource errors",
+      "severity": "P2",
+      "file": "docs/brainstorms/2026-04-12-002-python-extraction-module.md",
+      "line": 472,
+      "confidence": 0.75,
+      "autofix_class": "ASSUMPTION_INCOMPLETE",
+      "owner": "requirements-author",
+      "requires_verification": true,
+      "pre_existing": false,
+      "suggested_fix": "Add ResourceError (memory, disk, timeout) and EngineError (parser crash, C extension failure) to error classification. Add per-file timeout (e.g., 30 seconds). Document that selectolax segfaults are uncatchable and require checkpoint-based restart.",
+      "detail": "Six error classes (Fatal, FileError, ParseError, ExtractError, QualityWarning, ParityMismatch) omit: disk I/O errors (disk full, read-only FS), memory exhaustion from pathological HTML, selectolax/lexbor C extension crashes (segfaults, uncatchable from Python), concurrent file modification, and timeout for slow files processing."
+    },
+    {
+      "id": "F5",
+      "title": "7-stage data flow has hidden sub-stages and cross-cutting concerns",
+      "severity": "P2",
+      "file": "docs/brainstorms/2026-04-12-002-python-extraction-module.md",
+      "line": 194,
+      "confidence": 0.72,
+      "autofix_class": "ASSUMPTION_INCOMPLETE",
+      "owner": "requirements-author",
+      "requires_verification": true,
+      "pre_existing": false,
+      "suggested_fix": "Add 'external inputs' column to data flow table showing catalog_dict, pattern_cache, and encoding_detection at their respective stages. Add 'error state' column showing partial failure behavior for each stage.",
+      "detail": "The linear 7-stage flow hides: (1) encoding detection/conversion for non-UTF-8 files dismissed as 'manual' but unhandled in pipeline design; (2) catalog_dict injection entering at an unspecified stage; (3) pattern cache consumption missing from Python module structure entirely; (4) partial vs total stage failure not distinguished in R13 tolerance strategy."
+    },
+    {
+      "id": "F8",
+      "title": "Dummy implementations risk becoming permanent production code",
+      "severity": "P2",
+      "file": "docs/brainstorms/2026-04-12-002-python-extraction-module.md",
+      "line": 22,
+      "confidence": 0.70,
+      "autofix_class": "DESIGN_RISK",
+      "owner": "requirements-author",
+      "requires_verification": true,
+      "pre_existing": false,
+      "suggested_fix": "Add a 'PC2 readiness checklist': for each dummy interface, specify what evidence triggers PC2 activation and what the minimum viable real implementation looks like. Define activation criteria that cannot be satisfied by dummy behavior.",
+      "detail": "PC1->PC2->PC3 path risks dummy implementations becoming permanent: AIFallback always returning False may seem 'fine' for 9000 well-structured files; BookProfileStore returning None may seem unnecessary if extraction works without it; NoOpNLP dummy produces no output so nobody notices it is missing. Additionally, dummy interface shapes (e.g., QualityScore with 4 fields) may be inadequate for real implementation, requiring breaking changes."
+    },
+    {
+      "id": "F9",
+      "title": "Module structure split (extractors.py vs passes.py) creates coupling risk",
+      "severity": "P2",
+      "file": "docs/brainstorms/2026-04-12-002-python-extraction-module.md",
+      "line": 400,
+      "confidence": 0.68,
+      "autofix_class": "STRUCTURAL_RISK",
+      "owner": "requirements-author",
+      "requires_verification": true,
+      "pre_existing": false,
+      "suggested_fix": "Consider a single pipeline.py for PC1 containing all passes and assembly, with normalize.py and rules.py as supporting modules. Split only when modules are large enough to justify coupling cost. Alternatively, define a clear PipelineContext dataclass as the only thing passed between modules.",
+      "detail": "Pass 4-10 depend on Territory instance created in Pass 1-3. The Territory.claimed set is shared state. The split between extractors.py (Pass 1-3) and passes.py (Pass 4-10 + assemble) is a logical separation not enforced by code structure. rules.py is shared between both modules. Changes to Territory API or Pass 1-3 output format require changes in both modules."
+    },
+    {
+      "id": "F7",
+      "title": "AI Fallback is reactive when it should be proactive quality assessment",
+      "severity": "P2",
+      "file": "docs/brainstorms/2026-04-12-002-python-extraction-module.md",
+      "line": 115,
+      "confidence": 0.65,
+      "autofix_class": "DESIGN_MISFRAME",
+      "owner": "requirements-author",
+      "requires_verification": true,
+      "pre_existing": false,
+      "suggested_fix": "Redesign protocol to include QualityAssessor with assess(ir, source_html) -> QualityReport returning structured findings per-section, not per-file boolean. Fallback decisions then target specific issues rather than re-extracting entire files.",
+      "detail": "AI Fallback triggers post-hoc (0 chapters, 0 annotations, single chapter containing everything). By detection time, wrong IR already exists. LLM re-extraction is expensive (90+ calls at 1% rate), unreliable (LLM may produce different wrong output), and untestable (no ground truth for fallback output). AI should assess rule-based output quality and flag specific issues, not replace extraction."
+    }
+  ],
+  "residual_risks": [
+    {
+      "risk_id": "RR1",
+      "description": "The 98% content match threshold in R7 is arbitrary. A file could have 98% content match but the 2% mismatch could be the most semantically important content (e.g., the last paragraph of a chapter).",
+      "likelihood": "Medium",
+      "impact": "Medium",
+      "mitigation": "Add semantic-weighted matching: weight mismatches by their position in the document (beginning/end content is more likely to be important)."
+    },
+    {
+      "risk_id": "RR2",
+      "description": "The document assumes 9000+ files are homogeneous enough that a single pipeline handles all. But the origin document mentions multiple template variants (Template F, G, etc.). Different templates may require different extraction rules.",
+      "likelihood": "Medium",
+      "impact": "High",
+      "mitigation": "Stratify the 9000 files by template type before batch processing. Report per-template match rates, not just aggregate."
+    },
+    {
+      "risk_id": "RR3",
+      "description": "Book Profile system assumes all files from the same book share the same FrontPage template. This invariant may not hold for scanned/OCR'd books processed at different times with different template versions.",
+      "likelihood": "Low",
+      "impact": "High",
+      "mitigation": "Validate the template-sharing invariant on a sample before PC2. If violated, fall back to per-file profiling."
+    },
+    {
+      "risk_id": "RR4",
+      "description": "The IREncoder that converts non-JSON-serializable types to strings (R4, line 79-83) silently masks type errors. A datetime, set, or custom object in the IR would be stringified without warning, producing valid JSON with incorrect content.",
+      "likelihood": "Medium",
+      "impact": "Low",
+      "mitigation": "Use IREncoder only in CLI output, not in the library API. The library should raise TypeError on non-serializable types."
+    },
+    {
+      "risk_id": "RR5",
+      "description": "The pipeline has no checkpointing mechanism. If processing fails at file 5000 of 9000, all 5000 results must be reprocessed or manually recovered.",
+      "likelihood": "Low",
+      "impact": "High",
+      "mitigation": "Implement incremental processing: write results per-file as they complete, track progress in a manifest file, resume from last completed file."
+    }
+  ],
+  "testing_gaps": [
+    {
+      "gap_id": "TG1",
+      "description": "No DOM structure comparison test between cheerio and selectolax. Without this, parity testing compares outputs of different input trees, making it impossible to determine whether differences are due to parser divergence or extraction logic errors.",
+      "affected_requirements": ["R3", "R8", "R16"],
+      "suggested_test": "Parse 20 representative FrontPage HTML files with both cheerio and selectolax. Dump tree structures (tag, depth, text, children count). Report structural differences."
+    },
+    {
+      "gap_id": "TG2",
+      "description": "No test for Territory claim cascade failures. A single mis-claimed node should not silently remove entire sections of content. Testing requires intentionally misconfiguring a Pass rule and observing the downstream impact.",
+      "affected_requirements": ["R8", "R13", "R16-A4"],
+      "suggested_test": "Create a test fixture where Pass 1's rule matches a chapter title node. Verify that Pass 3 still finds other chapter titles and Pass 9 finds the mis-claimed node's text in the error audit log."
+    },
+    {
+      "gap_id": "TG3",
+      "description": "No test for flattenTables regex vs DOM equivalence. The Python regex-based approach and JS DOM-based approach must produce equivalent HTML structures for parity to hold.",
+      "affected_requirements": ["R3", "R16-A1"],
+      "suggested_test": "Run both the JS flattenTables (cheerio DOM) and Python flattenTables (regex) on the same 50 HTML files. Compare output HTML structures. Report any structural differences."
+    },
+    {
+      "gap_id": "TG4",
+      "description": "No test for the 2 non-UTF-8 files. The document dismisses them as 'manually handled,' but they will crash the pipeline if encountered during batch processing.",
+      "affected_requirements": ["R13", "R4"],
+      "suggested_test": "Create test fixtures for GBK and Big5 encoded HTML. Verify that FileError is raised with clear message, file is skipped, and batch processing continues."
+    },
+    {
+      "gap_id": "TG5",
+      "description": "No test for the sys.setrecursionlimit(2000) side effects. Changing the recursion limit is process-global in CPython and affects all threads. If the extraction runs in a multi-threaded batch mode, this could cause unexpected behavior.",
+      "affected_requirements": ["R16-A6"],
+      "suggested_test": "Test with a maximally deep HTML file (>80 levels). Verify recursion limit increase works and does not affect subsequent files."
+    },
+    {
+      "gap_id": "TG6",
+      "description": "No test for the IREncoder silent stringification behavior. If any TypedDict field accidentally contains a non-serializable type, it will be silently converted to its repr() string.",
+      "affected_requirements": ["R4"],
+      "suggested_test": "Inject a non-serializable type (e.g., set) into a ContentIR field. Verify JSON output contains the stringified version. Flag as potentially undesirable behavior."
+    }
+  ]
+}

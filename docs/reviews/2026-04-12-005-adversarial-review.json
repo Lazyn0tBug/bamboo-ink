@@ -1,0 +1,202 @@
+{
+  "reviewer": "adversarial-reviewer",
+  "findings": [
+    {
+      "title": "Python assemble_results recursive model cannot faithfully replicate JS behavior due to fundamental text handling difference",
+      "severity": "P0",
+      "file": "docs/plans/2026-04-12-005-feat-python-extraction-module-plan.md",
+      "line": 792,
+      "confidence": 0.85,
+      "autofix_class": "manual",
+      "owner": "review-fixer",
+      "requires_verification": true,
+      "pre_existing": false,
+      "suggested_fix": "The JS assembleResults (extractors.mjs:666-875) does NOT iterate flat text_regions. It recursively walks top-level DOM elements, and for each element it: (1) clones the element, (2) removes claimed descendant nodes from the clone, (3) extracts clean text via $clone.text(). This means the Python plan's Section 3.5 spec that feeds flat list[TextRegion] to assemble_results is structurally incompatible with the JS model. The Python version would need to either (a) replicate the clone-and-remove-claimed pattern using selectolax DOM operations (which selectolax supports poorly -- Modest has limited mutation), or (b) prove that the flat text_region iteration produces byte-identical output for all 9000+ files. Neither approach is guaranteed. The plan mentions '递归 processElement DOM 遍历模型' in section 7.2 but the input to assemble_results in section 3.5 is list[TextRegion] -- these are contradictory data models. A flat list loses the parent-child DOM nesting context that the JS clone-and-scan relies on."
+    },
+    {
+      "title": "Territory.extract_remaining produces a single merged TextRegion, losing paragraph boundaries that JS extractRemaining preserves",
+      "severity": "P0",
+      "file": "docs/plans/2026-04-12-005-feat-python-extraction-module-plan.md",
+      "line": 329,
+      "confidence": 0.82,
+      "autofix_class": "manual",
+      "owner": "review-fixer",
+      "requires_verification": true,
+      "pre_existing": false,
+      "suggested_fix": "JS extractRemaining (extractors.mjs:91-136) walks the DOM recursively, collecting adjacent unclaimed text nodes into a single region string (currentText += ' ' + text). But critically, when it encounters a new unclaimed container element (not a text node), it starts a NEW region. The Python extract_remaining as specified iterates all_text_node_ids and groups them, but without the container-level granularity, all unclaimed text across the entire document collapses into one TextRegion. This means assemble_results cannot distinguish paragraph breaks, which the JS version handles via separate text_regions (each corresponding to a different sourceNodes array). The Python spec should either: (a) preserve container-level grouping in extract_remaining (one TextRegion per top-level unclaimed container), or (b) accept that paragraph merging is a known difference and adjust the parity threshold accordingly."
+    },
+    {
+      "title": "selectolax DOM mutation capabilities are insufficient for flattenTables as specified",
+      "severity": "P1",
+      "file": "docs/plans/2026-04-12-005-feat-python-extraction-module-plan.md",
+      "line": 1018,
+      "confidence": 0.78,
+      "autofix_class": "manual",
+      "owner": "review-fixer",
+      "requires_verification": true,
+      "pre_existing": false,
+      "suggested_fix": "The plan specifies using selectolax DOM operations to: replace <td> tags with <div>, unwrap <tbody> and <tr>, and handle nested tables recursively. However, selectolax's Modest engine is primarily a CSS selector/query engine. Its DOM mutation API is extremely limited compared to cheerio -- it does not support element.unwrap() or tag replacement in the way cheerio does. The plan should either: (a) switch normalize_html to use string-level regex/replace for the table flattening (matching the current JS pattern-cache.mjs implementation which operates on raw HTML strings), or (b) verify that selectolax actually supports the required mutation operations before committing to this design. The current JS flattenTables in pattern-cache.mjs uses string replacement, not cheerio DOM operations -- the plan's claim '使用 selectolax DOM 操作（非字符串层面正则替换，等价于 JS cheerio DOM 实现）' is factually incorrect; the JS implementation uses string-level operations."
+    },
+    {
+      "title": "METADATA_RE change from required to optional closing delimiter creates unquantified parity risk",
+      "severity": "P1",
+      "file": "docs/plans/2026-04-12-005-feat-python-extraction-module-plan.md",
+      "line": 544,
+      "confidence": 0.80,
+      "autofix_class": "gated_auto",
+      "owner": "review-fixer",
+      "requires_verification": true,
+      "pre_existing": false,
+      "suggested_fix": "The JS METADATA_RE (extractors.mjs:358) requires a closing delimiter: /[）)\\s]/ at the end. The Python version makes it optional with [）)\\s]?. This is listed as a JS bug fix. However, the plan does not analyze how many of the 9000+ files have metadata at the end of a string without a closing delimiter. If zero files have this pattern, the change is harmless but untested. If many files have it, those files will produce different dynasty/author values in Python vs JS, and the 'correction baseline' must explicitly cover each such file. The plan mentions 6 known JS bugs but does not enumerate which files are affected by the METADATA_RE bug specifically. The baseline correction directory tests/parity-baseline/ needs a clear mapping: which files need correction for which bug."
+    },
+    {
+      "title": "Color abbreviation expansion (#F66 -> #FF6666) is specified but the JS baseline does not do this",
+      "severity": "P1",
+      "file": "docs/plans/2026-04-12-005-feat-python-extraction-module-plan.md",
+      "line": 500,
+      "confidence": 0.83,
+      "autofix_class": "gated_auto",
+      "owner": "review-fixer",
+      "requires_verification": true,
+      "pre_existing": false,
+      "suggested_fix": "The plan specifies (line 500-501): 'by_color: 颜色键为大写 #RRGGBB...缩写形式（#F66）需展开为 #FF6666'. However, the JS buildDomIndex (extractors.mjs:210-215) does NOT expand abbreviated colors -- it simply does .toUpperCase() on the raw color attribute value. If any FrontPage 4.0 HTML files use abbreviated color notation like #F66 or #C3C, the Python by_color['#FF6666'] lookup will succeed while the JS byColor['#F66'] lookup fails, causing pass1BookTitle and pass3ChapterTitle to behave differently. Either: (a) do NOT expand abbreviations to match JS exactly, or (b) expand abbreviations AND normalize the JS baseline to also expand them, making this a deliberate improvement."
+    },
+    {
+      "title": "catalog detection thresholds depend on parser-specific text extraction behavior",
+      "severity": "P1",
+      "file": "docs/plans/2026-04-12-005-feat-python-extraction-module-plan.md",
+      "line": 700,
+      "confidence": 0.72,
+      "autofix_class": "gated_auto",
+      "owner": "review-fixer",
+      "requires_verification": true,
+      "pre_existing": false,
+      "suggested_fix": "The detect_catalog heuristic (linkCount > 5 && bodyText < 3000) depends on two values computed from the parsed DOM. cheerio and selectolax may count links and extract body text differently: cheerio uses decodeEntities: true which affects how &nbsp; and other entities are counted in text content; selectolax/Modest may handle these differently. A borderline catalog file with bodyText = 2990 in cheerio could be 3010 in selectolax, flipping the docType. The plan should either: (a) run catalog detection on a sample of known catalog files with both parsers to verify the threshold produces the same results, or (b) add a tolerance band (e.g., bodyText < 3500) and accept the discrepancy as a known difference."
+    },
+    {
+      "title": "Filter registration mechanism creates implicit ordering dependencies with no enforcement",
+      "severity": "P2",
+      "file": "docs/plans/2026-04-12-005-feat-python-extraction-module-plan.md",
+      "line": 1390,
+      "confidence": 0.75,
+      "autofix_class": "safe_auto",
+      "owner": "review-fixer",
+      "requires_verification": true,
+      "pre_existing": false,
+      "suggested_fix": "The ExtractPipeline uses a simple list of filters appended via register(). The plan states PC1 does not register any filters by default, but the mechanism is 'complete and usable'. The risk is that when PC2 adds real AI/BookProfile/NLP filters, their order in the list determines their behavior. A BookProfile filter that runs before pass10 quality assessment sees different data than one that runs after. The plan mentions '可选 filter 可在 pass10 前后注册' but the current API only supports appending to a single list with no before/after hooks. This is speculative complexity for PC1 -- the mechanism has exactly zero consumers in PC1 (all three filter types are dummy). Consider deferring the full pipeline mechanism to PC2 and using simple function calls in PC1."
+    },
+    {
+      "title": "98% content match threshold is unmotivated -- could be trivially met or impossible depending on text_region granularity mismatch",
+      "severity": "P2",
+      "file": "docs/plans/2026-04-12-005-feat-python-extraction-module-plan.md",
+      "line": 1544,
+      "confidence": 0.70,
+      "autofix_class": "advisory",
+      "owner": "human",
+      "requires_verification": false,
+      "pre_existing": false,
+      "suggested_fix": "The plan states '严格匹配 100%（不含 bug fix 差异），内容匹配 >= 98%' but does not define what 'content match' means operationally. Is it per-file: 98% of files match, or per-section: 98% of section content strings match? If it's per-file and the text_region granularity issue (Finding #2) causes every file to have minor text concatenation differences, then 0% of files would strictly match and the threshold is meaningless. The plan needs to define the comparison unit clearly and run a pilot on the 25-file 经部 sample before committing to 98% as the threshold."
+    },
+    {
+      "title": "NodeProxy snapshot becomes stale when normalize_html modifies the DOM between indexing and pass execution",
+      "severity": "P1",
+      "file": "docs/plans/2026-04-12-005-feat-python-extraction-module-plan.md",
+      "line": 280,
+      "confidence": 0.76,
+      "autofix_class": "manual",
+      "owner": "review-fixer",
+      "requires_verification": true,
+      "pre_existing": false,
+      "suggested_fix": "The plan builds NodeProxy objects during build_dom_index, capturing text, tag, class, style, href, color, font_size, is_centered at that moment. But normalize_html runs BEFORE build_dom_index, so the DOM should be stable. However, the plan mentions flattenTables uses 'selectolax DOM 操作' which would mutate the tree. If the index is built on the mutated tree, the NodeProxy values are consistent. But if any Pass modifies the DOM (the JS version does NOT modify the DOM during passes -- it only marks nodes as claimed), then NodeProxy values become stale. The current plan does not show Pass functions mutating the DOM, so this is likely safe. However, the claim_subtree operation in JS recursively walks the DOM to mark descendants; the Python version needs a descendants list passed in. Where does this descendants list come from? The plan's extract_by_rules takes descendants as an argument, but the caller must compute it -- and if it uses the NodeProxy snapshot, it may miss nodes that weren't in the original index."
+    },
+    {
+      "title": "JS assembleResults filters empty chapters but Python plan's flush_chapter does not replicate this filtering",
+      "severity": "P2",
+      "file": "docs/plans/2026-04-12-005-feat-python-extraction-module-plan.md",
+      "line": 677,
+      "confidence": 0.80,
+      "autofix_class": "gated_auto",
+      "owner": "review-fixer",
+      "requires_verification": true,
+      "pre_existing": false,
+      "suggested_fix": "The JS assembleResults has this final step (extractors.mjs:874): ir.chapters = ir.chapters.filter((ch) => ch.sections.length > 0 || ch.title). The Python flush_chapter (plan section 3.5) only checks '若 current_chapter.sections 非空 或 current_chapter.title 非空' before pushing. But the JS also does a POST-HOC filter of ALL chapters, not just the current one. This means if the first chapter is a preamble with empty title and no sections, the JS version filters it out entirely, while the Python version as specified may or may not push it depending on the flush_chapter condition. The plan should add the same post-hoc filter step at the end of assemble_results to ensure parity."
+    },
+    {
+      "title": "Pass 2 metadata claim behavior inconsistency: plan says claim_leaf but JS uses claimSubtree for class=metadata nodes",
+      "severity": "P1",
+      "file": "docs/plans/2026-04-12-005-feat-python-extraction-module-plan.md",
+      "line": 375,
+      "confidence": 0.88,
+      "autofix_class": "gated_auto",
+      "owner": "review-fixer",
+      "requires_verification": true,
+      "pre_existing": false,
+      "suggested_fix": "The plan's Known JS Bugs table (line 1645) correctly identifies that JS pass2Metadata uses claimSubtree on class=metadata nodes, which can over-claim and swallow content. The plan says Python should use claim_leaf. However, looking at the actual JS code (extractors.mjs:368-391), pass2Metadata DOES use claimSubtree for class=metadata container nodes (line 375) but uses claimLeaf for all-text-node scanning (line 385). The plan's description at line 547 says 'Python pass2 使用 claim_leaf 仅认领匹配文本节点，不认领父容器'. This is a deliberate deviation from JS behavior, which means ANY file where the JS version used claimSubtree on a class=metadata container will produce different text_region output. The 9000+ parity validation must explicitly account for this difference. The 'correction baseline' of 6 files may not cover all affected files."
+    },
+    {
+      "title": "Dummy-first strategy creates false confidence -- dummy extract() returning minimum legal IR does not exercise the actual data flow paths",
+      "severity": "P2",
+      "file": "docs/plans/2026-04-12-005-feat-python-extraction-module-plan.md",
+      "line": 1053,
+      "confidence": 0.65,
+      "autofix_class": "advisory",
+      "owner": "human",
+      "requires_verification": false,
+      "pre_existing": false,
+      "suggested_fix": "The dummy-first approach (U1 -> U2 dummy -> U3 dummy -> U4 dummy -> first run through) validates that the pipeline connects, but each dummy returns empty/None. This means the actual data transformation paths (territory claiming, text_region collection, assemble_results state machine) are NEVER exercised during the dummy phase. When real implementations replace dummies, integration bugs in the state machine will surface all at once with no incremental validation. Consider adding at least ONE fixture file with known expected output that runs through the FULL real pipeline during U4 real, not waiting until U9 9000+ validation."
+    },
+    {
+      "title": "Pass 5-7 not being real passes contradicts the 'Pass 1-10' terminology used throughout the plan",
+      "severity": "P3",
+      "file": "docs/plans/2026-04-12-005-feat-python-extraction-module-plan.md",
+      "line": 513,
+      "confidence": 0.72,
+      "autofix_class": "safe_auto",
+      "owner": "downstream-resolver",
+      "requires_verification": false,
+      "pre_existing": false,
+      "suggested_fix": "The plan repeatedly refers to 'Pass 1-10 + assembleResults' (e.g., lines 63, 76, 1601). But Pass 5 (section-summary), Pass 6 (end-marker), and Pass 7 (colophon) are NOT implemented as pass functions -- they are regex checks inside assemble_results. Pass 9 (unclaimed text collection) is territory.extract_remaining, not a separate pass. This naming is confusing for implementers who will look for pass5/6/7/9 functions. The plan should either: (a) rename these to be consistent with the actual implementation (e.g., 'text-level detection in assemble_results'), or (b) implement them as actual pass functions. The JS version also does not have separate pass5/6/7 functions -- they are embedded in assembleResults."
+    },
+    {
+      "title": "RecursionError guard at sys.setrecursionlimit(2000) does not prevent stack overflow on pathological DOM nesting",
+      "severity": "P2",
+      "file": "docs/plans/2026-04-12-005-feat-python-extraction-module-plan.md",
+      "line": 1039,
+      "confidence": 0.70,
+      "autofix_class": "gated_auto",
+      "owner": "review-fixer",
+      "requires_verification": true,
+      "pre_existing": false,
+      "suggested_fix": "The plan sets sys.setrecursionlimit(2000) and states 'FrontPage 4.0 HTML 实测最大深度 50-80 层'. But this measured depth is for the current 9000+ files. If even one file has deeply nested tables (e.g., from copy-paste artifacts or corrupted HTML), the recursive assemble_results processElement could exceed 2000 stack frames. Python's C stack limit is separate from sys.setrecursionlimit -- even if the Python limit is raised, a segfault can occur if the C stack overflows. The plan should implement an iterative version of assemble_results using an explicit stack, or at minimum add a depth counter that raises a controlled error before the recursion limit is hit."
+    },
+    {
+      "title": "JS extractTitle fallback is NOT replicated in Python extract() -- title extraction path is incomplete",
+      "severity": "P1",
+      "file": "docs/plans/2026-04-12-005-feat-python-extraction-module-plan.md",
+      "line": 748,
+      "confidence": 0.82,
+      "autofix_class": "manual",
+      "owner": "review-fixer",
+      "requires_verification": true,
+      "pre_existing": false,
+      "suggested_fix": "The JS extractContent function (extractors.mjs:977-1070) calls extractTitle (extractors.mjs:585-650) as a FALLBACK title extraction that runs BEFORE the territorial passes. extractTitle checks: <title> tag, <h1> tag, color+#FF6666 nodes with size>=5, nested font with size>=5, and size=5 with color-on-ancestor-font. The Python plan only calls pass1_book_title which covers a SUBSET of these strategies. Specifically, the <title> tag fallback and <h1> tag fallback are NOT mentioned in the Python pass1_book_title spec. If pass1_book_title returns None, the Python plan sets ir.title = 'Untitled' (line 749), while the JS version would have already tried extractTitle and may have found a title from <title> or <h1>. This means files without class=article or color-based titles will get 'Untitled' in Python but a real title in JS, causing parity failures."
+    }
+  ],
+  "residual_risks": [
+    "The correction baseline of 6 JS bug files may be incomplete -- the pass2Metadata claimSubtree bug (Finding #11) could affect dozens of files beyond the 6 known bugs, and each such file will show as a parity mismatch unless explicitly corrected.",
+    "selectolax's HTML parsing may handle malformed FrontPage 4.0 HTML differently from cheerio in ways that only manifest on edge-case files (unclosed tags, malformed attributes, nested <center> tags). The 98% threshold does not account for parser-level divergence.",
+    "The filter registration mechanism, while marked as 'must implement' in PC1, has no current consumers. It adds implementation and testing surface area that delays U9 validation. If PC2's filter requirements differ from PC1's design, the PC1 implementation may need rework.",
+    "The plan's color abbreviation expansion (Finding #5) and METADATA_RE relaxation (Finding #4) are both 'improvements' over JS behavior. If applied together, they compound the set of files where Python output intentionally differs from JS output, making the correction baseline harder to maintain.",
+    "9000+ file batch processing in Python using uv run bamboo-extract --dir may hit OS-level file descriptor limits or memory constraints that the Node.js version does not, especially if each file loads the full DOM into memory."
+  ],
+  "testing_gaps": [
+    "No test fixture exercises the assemble_results state machine with a document that triggers ALL state transitions (chapter-title, section-summary, end-marker, colophon, annotation attachment) in a single file.",
+    "No test verifies that flattenTables produces identical output between JS (string-level) and Python (DOM-operation) approaches on the same input HTML.",
+    "No test covers the catalog detection boundary condition (linkCount=5, bodyText=3000) with both cheerio and selectolax to verify identical classification.",
+    "No negative test for METADATA_RE false positives in the Python implementation -- the plan mentions (天·地人) as an example but does not specify which regex variants should and should not match.",
+    "No test for the post-hoc empty chapter filtering that JS performs at the end of assembleResults (ir.chapters.filter).",
+    "No test verifying that the extractTitle fallback strategies (<title>, <h1>) produce the same results in Python as in JS.",
+    "No test for the NodeProxy snapshot consistency when the same node is queried by different Pass functions.",
+    "No integration test that runs the FULL real pipeline (not dummy) on a known-good fixture file before U9 9000+ validation."
+  ]
+}

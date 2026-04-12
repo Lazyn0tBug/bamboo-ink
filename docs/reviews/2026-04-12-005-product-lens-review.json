@@ -1,0 +1,163 @@
+{
+  "reviewer": "product-lens-reviewer",
+  "findings": [
+    {
+      "title": "Parity trap: JS as the benchmark blocks Python-native improvements",
+      "severity": "P0",
+      "file": "docs/plans/2026-04-12-005-feat-python-extraction-module-plan.md",
+      "line": 15,
+      "confidence": 0.88,
+      "autofix_class": "manual",
+      "owner": "human",
+      "requires_verification": true,
+      "pre_existing": false,
+      "suggested_fix": "Reframe the primary success criterion from 'JS parity' to 'extraction quality on representative corpus'. Use JS output as a reference, not a ceiling. The plan already lists 6 known JS bugs -- this implies the team knows JS output is imperfect. Define an independent quality metric (e.g., 'extracted content must be human-readable and structurally correct on a 100-file sampled corpus') and treat JS parity as a secondary convenience metric, not the primary gate."
+    },
+    {
+      "title": "No fallback production strategy if Python slips",
+      "severity": "P0",
+      "file": "docs/plans/2026-04-12-005-feat-python-extraction-module-plan.md",
+      "line": 99,
+      "confidence": 0.92,
+      "autofix_class": "manual",
+      "owner": "human",
+      "requires_verification": true,
+      "pre_existing": false,
+      "suggested_fix": "The plan states 'JS version will no longer be maintained' (D5) but the JS version is the only working production pipeline today. Add an explicit fallback clause: if Python PC1 is not production-ready by [date], JS version continues to be maintained with known bugs fixed. Alternatively, adopt a dual-run period: run both pipelines in parallel for 2-4 weeks, compare output quality, then switch. This also provides a natural migration path and safety net."
+    },
+    {
+      "title": "PC1 scope is oversized -- should be split into two phases",
+      "severity": "P0",
+      "file": "docs/plans/2026-04-12-005-feat-python-extraction-module-plan.md",
+      "line": 13,
+      "confidence": 0.85,
+      "autofix_class": "gated_auto",
+      "owner": "human",
+      "requires_verification": true,
+      "pre_existing": false,
+      "suggested_fix": "PC1 currently bundles: (a) core extraction parity (Pass 1-10), (b) CLI, (c) 9000+ full verification, (d) AI/Export/NLP interface design + dummy, (e) Book Profile, (f) error handling R13, (g) observability R14, (h) data flow R15, (i) technical spec R16. This is at least 3 distinct phases. Recommend splitting: PC1a = core extraction parity + CLI on 100-file sample; PC1b = 9000+ full verification + error handling; PC1c = AI/Export/NLP interfaces + observability. The 'dummy-first' strategy is good but does not reduce scope -- it spreads risk."
+    },
+    {
+      "title": "98% content match threshold lacks user-facing justification",
+      "severity": "P1",
+      "file": "docs/plans/2026-04-12-005-feat-python-extraction-module-plan.md",
+      "line": 1544,
+      "confidence": 0.78,
+      "autofix_class": "advisory",
+      "owner": "human",
+      "requires_verification": true,
+      "pre_existing": false,
+      "suggested_fix": "The 98% threshold appears to be an engineering convenience number, not derived from user needs. For an internal tool processing 9000+ files, 2% = ~180 files with potential content issues. Define what 'failure' looks like for each of those 180 files: is it missing a chapter title? Dropped annotations? Wrong author? Then set the threshold based on acceptable failure rate per book, not per file. One file failing may affect an entire book's readability."
+    },
+    {
+      "title": "'JS retirement' narrative creates unnecessary time pressure",
+      "severity": "P1",
+      "file": "docs/plans/2026-04-12-005-feat-python-extraction-module-plan.md",
+      "line": 99,
+      "confidence": 0.72,
+      "autofix_class": "advisory",
+      "owner": "human",
+      "requires_verification": false,
+      "pre_existing": false,
+      "suggested_fix": "D5 frames JS as a temporary benchmark to be retired. This creates a sunk-cost fallacy: the team may rush Python to parity rather than use the rewrite opportunity to fix structural issues. The brainstorm document (2026-04-12-001) correctly framed this as 'three tracks in parallel' (JS fix, Bun runtime, Python module). This plan narrows it to 'JS out, Python in'. Recommend re-adding the Bun runtime optimization track as a near-term win while Python matures, or explicitly state that JS maintenance continues until Python passes a quality gate, not just a parity gate."
+    },
+    {
+      "title": "Opportunity cost: Bun runtime optimization dropped without discussion",
+      "severity": "P1",
+      "file": "docs/plans/2026-04-12-005-feat-python-extraction-module-plan.md",
+      "line": 31,
+      "confidence": 0.70,
+      "autofix_class": "advisory",
+      "owner": "human",
+      "requires_verification": false,
+      "pre_existing": false,
+      "suggested_fix": "The brainstorm document identified three tracks: JS bug fixes (immediate), Bun runtime switch (free performance gain), Python module (strategic). This plan addresses only the Python track. The JS bug fixes are partially absorbed into the Python parity work (6 known bugs listed), but the Bun runtime optimization is dropped entirely. If Python takes months, the team is running unoptimized JS on Node. Recommend at minimum applying the JS bug fixes to the current pipeline, regardless of Python timeline."
+    },
+    {
+      "title": "Filter architecture is over-engineered for PC1",
+      "severity": "P1",
+      "file": "docs/plans/2026-04-12-005-feat-python-extraction-module-plan.md",
+      "line": 1372,
+      "confidence": 0.75,
+      "autofix_class": "gated_auto",
+      "owner": "downstream-resolver",
+      "requires_verification": true,
+      "pre_existing": false,
+      "suggested_fix": "U7 implements ExtractPipeline with ExtractFilter Protocol, AIFallback, BookProfileStore, and NLPPlugin -- four Protocol definitions for a system where none will have real implementations in PC1. The plan even notes '首期管道简单（固定顺序调用），不引入注册机制' in the risks table. This is a contradiction: the risk is identified and acknowledged, but the plan proceeds anyway. Recommend deferring all Protocol definitions to PC2 and keeping PC1's extract() as a simple sequential function call. The dummy implementations add cognitive load and maintenance surface for zero user-facing value in PC1."
+    },
+    {
+      "title": "9000+ verification as a single unit (U9) is a risk concentration point",
+      "severity": "P1",
+      "file": "docs/plans/2026-04-12-005-feat-python-extraction-module-plan.md",
+      "line": 1514,
+      "confidence": 0.80,
+      "autofix_class": "gated_auto",
+      "owner": "downstream-resolver",
+      "requires_verification": true,
+      "pre_existing": false,
+      "suggested_fix": "U9 is the single largest unit and the gate for production readiness. It depends on U4(real) + U6 + U7 -- meaning all core implementation must be complete before U9 can start. The 5-phase approach (25 files each from 经/史/子/集) is good, but it's described as part of U9, not as a separate early verification gate. Recommend pulling the 100-file sample verification out as its own unit (call it U9a) that runs after U3(real), not after U4(real). This provides earlier feedback on extraction quality before investing in CLI and observability."
+    },
+    {
+      "title": "Rules synchronization risk deferred without ownership",
+      "severity": "P2",
+      "file": "docs/plans/2026-04-12-005-feat-python-extraction-module-plan.md",
+      "line": 115,
+      "confidence": 0.68,
+      "autofix_class": "advisory",
+      "owner": "human",
+      "requires_verification": false,
+      "pre_existing": false,
+      "suggested_fix": "The plan notes 'rules.py 与 JS CLASSIFICATION_RULES 的长期同步方案：首期手动等价，后续考虑共享 YAML/JSON 生成'. This is a deferred problem with no owner or timeline. For an internal tool with a small maintenance team, this is a permanent maintenance burden. Recommend deciding now: either (a) rules live in a shared YAML/JSON file consumed by both JS and Python from day one, or (b) JS is truly retired on a fixed date after which rules.py is the single source of truth. The 'manual sync indefinitely' option is not viable for a small team."
+    },
+    {
+      "title": "Rollback criteria reference JS parity threshold, not extraction quality",
+      "severity": "P2",
+      "file": "docs/plans/2026-04-12-005-feat-python-extraction-module-plan.md",
+      "line": 1636,
+      "confidence": 0.73,
+      "autofix_class": "advisory",
+      "owner": "human",
+      "requires_verification": false,
+      "pre_existing": false,
+      "suggested_fix": "The rollback trigger is '严格匹配 < 98%' (strict match < 98% with JS output). This measures parity with JS, not whether the Python output is good enough for production. The Python output could be 95% different from JS but 100% correct for user needs. Add a human quality gate: 'at least 2 books pass human review by someone who can read classical Chinese' as a primary quality metric, with JS parity as a secondary convenience check."
+    },
+    {
+      "title": "Dual-representation of annotations is an unresolved design debt",
+      "severity": "P2",
+      "file": "docs/plans/2026-04-12-005-feat-python-extraction-module-plan.md",
+      "line": 236,
+      "confidence": 0.65,
+      "autofix_class": "advisory",
+      "owner": "downstream-resolver",
+      "requires_verification": true,
+      "pre_existing": false,
+      "suggested_fix": "The plan states: '注疏的双表示（inline-annotation section type + annotations 数组）需要实现时明确...具体归属由文本装配器决定.' This means a core IR schema decision is deferred to implementation. For a plan whose primary goal is parity, an unresolved schema decision that affects output format is a risk. Resolve this before implementation: either keep both representations (and document when each is used), or pick one. The JS version likely already has a behavior here -- match it explicitly."
+    },
+    {
+      "title": "Performance budget absent despite being a stated motivation",
+      "severity": "P2",
+      "file": "docs/plans/2026-04-12-005-feat-python-extraction-module-plan.md",
+      "line": 95,
+      "confidence": 0.70,
+      "autofix_class": "advisory",
+      "owner": "downstream-resolver",
+      "requires_verification": false,
+      "pre_existing": false,
+      "suggested_fix": "D1 states selectolax parsing takes ~45-135s for 9000 files, with full pipeline estimated at 75-300 minutes. But the plan has no performance target or budget. If Python takes 4 hours vs JS taking 2 hours, is that acceptable? Define a performance budget (e.g., 'Python must process 9000 files in under X hours') as a non-functional requirement. The estimate of 75-300 minutes is too wide to be useful -- narrow it with a benchmark on 100 files."
+    }
+  ],
+  "residual_risks": [
+    "If the Python version achieves JS parity but JS output has structural issues that hurt readability, the project ships a 'correct but mediocre' extraction pipeline. The plan's focus on parity over quality means this scenario is not examined.",
+    "The 'JS no longer maintained' declaration creates a hard dependency on Python succeeding. If the project has a content processing deadline (e.g., books need to be available for a specific event), this risk is existential.",
+    "The plan creates a maintenance surface of two systems (JS + Python) during the transition, then plans to retire one. The team has no stated timeline for this transition, meaning both systems may be maintained indefinitely by default.",
+    "The 9000+ file verification is the only quality gate. If it passes at 98.1% match, the 2% of failing files (~180) may include entire books that are unreadable. No book-level quality metric exists.",
+    "The Filter architecture (U7) adds 4 Protocol definitions, multiple dummy classes, and a registration mechanism that will have zero real consumers in PC1. This is dead code from day one and will accumulate drift by PC2."
+  ],
+  "testing_gaps": [
+    "No test for the scenario where Python output is BETTER than JS output (because JS has an unfixed bug). The parity test would flag this as a mismatch, but the plan does not define how to handle this case.",
+    "No human-in-the-loop quality testing defined. The plan assumes automated parity == quality, but for classical Chinese text extraction, human readability is the ultimate metric.",
+    "No regression test defined for the 6 known JS bugs -- after Python fixes them, there's no plan to verify the fix is correct (only that it differs from JS output).",
+    "No test for performance degradation over time. The plan estimates 75-300 minutes but has no benchmark suite to catch regressions.",
+    "No test for the Filter registration mechanism actually working end-to-end in PC2 -- the dummy filters are pass-through, so the test only verifies 'nothing breaks' not 'filters can actually transform IR'."
+  ]
+}
