@@ -61,15 +61,15 @@ def build_dom_index(html: str) -> DOMIndex:
             return
 
         # Element node — extract attrs first
-        attrs = node.attrs or {}
+        attrs = dict(node.attrs or {})
+        attrs["tag"] = tag_lower = tag.lower()
 
         # Index by tag
-        tag_lower = tag.lower()
         if tag_lower:
             index.by_tag.setdefault(tag_lower, []).append(node_id)
 
-        # Store attrs and text for element nodes
-        index.attrs_by_id[node_id] = dict(attrs)
+        # Store attrs (including tag) and text for element nodes
+        index.attrs_by_id[node_id] = attrs
         index.text_by_id[node_id] = node.text() or ""
 
         # Index by color (normalized)

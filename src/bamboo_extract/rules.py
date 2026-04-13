@@ -54,7 +54,7 @@ def classify_by_attributes(node_id: int, index: DOMIndex) -> str | None:
         return "annotation"
 
     # 4. menu-context: class=menu with a[href] children
-    if "menu" in cls.lower() if cls else False:
+    if cls and "menu" in cls.lower():
         children = index.children_map.get(node_id, [])
         for child_id in children:
             child_attrs = index.attrs_by_id.get(child_id, {})

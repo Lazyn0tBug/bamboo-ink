@@ -19,7 +19,7 @@ def detect_catalog(index: DOMIndex) -> bool:
     """
     link_count = len(index.by_tag.get("a", []))
     body_text_len = sum(
-        len(index.text_by_id.get(nid, "").replace(" ", "").replace("\n", ""))
+        len("".join(index.text_by_id.get(nid, "").split()))
         for nid in index.all_text_nodes
     )
     return link_count > 5 and body_text_len < 3000

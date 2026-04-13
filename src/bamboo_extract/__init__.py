@@ -10,6 +10,7 @@ from .passes import (
     pass3_chapter_title,
 )
 from .regex_patterns import METADATA_RE
+from .rules import classify_by_attributes
 from .territory import Territory
 from .types import (
     Annotation,
@@ -39,6 +40,7 @@ __all__ = [
     "pass1_book_title",
     "pass2_metadata",
     "pass3_chapter_title",
+    "classify_by_attributes",
 ]
 
 
@@ -103,7 +105,7 @@ def extract(html: str, source_path: str = "") -> ContentIR:
     chapter_titles = pass3_chapter_title(index, territory)
 
     # Territory: collect remaining unclaimed text
-    text_content = {nid: node_text for nid, node_text in _collect_text(index, normalized)}
+    text_content = {nid: node_text for nid, node_text in _collect_text(index)}
     remaining = territory.extract_remaining(index.all_text_nodes, text_content)
 
     # Build chapters: one chapter per chapter_title, remaining as main-text
@@ -137,30 +139,15 @@ def extract(html: str, source_path: str = "") -> ContentIR:
     )
 
 
-def _collect_text(index: DOMIndex, html: str) -> list[tuple[int, str]]:
-    """Collect text content for all text node IDs.
+def _collect_text(index: DOMIndex) -> list[tuple[int, str]]:
+    """Collect text content for all text node IDs from index.text_by_id.
 
-    Temporary helper — Phase 4 will use NodeProxy-based text extraction.
-    For now, parse the normalized HTML and map text node IDs to their text.
+    Phase 4: build_dom_index populates text_by_id for every text node,
+    so no re-parsing is needed.
     """
-    # Phase 3 workaround: we don't have per-node text from DOMIndex yet.
-    # Collect all text via selectolax and assign by DOM order to match all_text_nodes.
-    from selectolax.parser import HTMLParser
-
-    tree = HTMLParser(html)
     result: list[tuple[int, str]] = []
-    root = tree.root
-    if root is None:
-        return result
-
-    text_idx = 0
-
-    for node in root.traverse():
-        if node.tag == "-text" and text_idx < len(index.all_text_nodes):
-            nid = index.all_text_nodes[text_idx]
-            text = node.text().strip()
-            if text:
-                result.append((nid, text))
-            text_idx += 1
-
+    for nid in index.all_text_nodes:
+        text = index.text_by_id.get(nid, "").strip()
+        if text:
+            result.append((nid, text))
     return result

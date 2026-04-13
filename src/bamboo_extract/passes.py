@@ -14,6 +14,22 @@ from .regex_patterns import METADATA_RE, TEXT_ALIGN_CENTER_RE
 from .territory import Territory
 from .types import DOMIndex
 
+
+def _all_descendants(node_id: int, children_map: dict[int, list[int]]) -> list[int]:
+    """Collect ALL descendants of node_id (DFS) from children_map.
+
+    children_map only stores direct children. This function walks the
+    full tree to collect every descendant, matching JS claimSubtree()
+    which does a complete DFS over the subtree.
+    """
+    result: list[int] = []
+    stack = list(children_map.get(node_id, []))
+    while stack:
+        cid = stack.pop()
+        result.append(cid)
+        stack.extend(children_map.get(cid, []))
+    return result
+
 # ── Pre-pass: extract_title ─────────────────────────────────────────
 
 
@@ -98,7 +114,7 @@ def pass1_book_title(index: DOMIndex, territory: Territory) -> str | None:
             continue
         text = index.text_by_id.get(nid, "").strip()
         if 0 < len(text) < 80:
-            descendants = index.children_map.get(nid, [])
+            descendants = _all_descendants(nid, index.children_map)
             territory.claim_subtree(nid, descendants)
             return text
 
@@ -119,7 +135,7 @@ def pass1_book_title(index: DOMIndex, territory: Territory) -> str | None:
             continue
         text = index.text_by_id.get(nid, "").strip()
         if 0 < len(text) < 80:
-            descendants = index.children_map.get(nid, [])
+            descendants = _all_descendants(nid, index.children_map)
             territory.claim_subtree(nid, descendants)
             return text
 
@@ -143,7 +159,7 @@ def pass1_book_title(index: DOMIndex, territory: Territory) -> str | None:
             if child_size >= 5:
                 child_text = index.text_by_id.get(child_id, "").strip()
                 if 0 < len(child_text) < 80:
-                    descendants = index.children_map.get(nid, [])
+                    descendants = _all_descendants(nid, index.children_map)
                     territory.claim_subtree(nid, descendants)
                     return child_text
 
@@ -209,7 +225,7 @@ def pass3_chapter_title(
         normalized = "".join(text.split())
         if not normalized or len(normalized) >= 80:
             return False
-        descendants = index.children_map.get(nid, [])
+        descendants = _all_descendants(nid, index.children_map)
         territory.claim_subtree(nid, descendants)
         chapters.append({"title": text, "node_id": nid})
         return True

@@ -14,7 +14,6 @@ from bamboo_extract.passes import (
 )
 from bamboo_extract.territory import Territory
 
-
 # ── Fixtures ────────────────────────────────────────────────────────
 
 TEMPLATE_F_HTML = """<html><head><TITLE>大学章句集注</title></head><body>

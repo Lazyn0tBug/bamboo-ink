@@ -151,14 +151,14 @@ class TestAttrsById:
         idx = build_dom_index(html)
         font_ids = idx.by_tag.get("font", [])
         assert len(font_ids) == 1
-        assert idx.attrs_by_id[font_ids[0]] == {"color": "#F66", "size": "5"}
+        assert idx.attrs_by_id[font_ids[0]] == {"tag": "font", "color": "#F66", "size": "5"}
 
     def test_no_attrs(self) -> None:
         html = "<body><div>x</div></body>"
         idx = build_dom_index(html)
         div_ids = idx.by_tag.get("div", [])
         assert len(div_ids) == 1
-        assert idx.attrs_by_id[div_ids[0]] == {}
+        assert idx.attrs_by_id[div_ids[0]] == {"tag": "div"}
 
 
 class TestChildrenMap:
