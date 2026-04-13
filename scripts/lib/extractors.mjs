@@ -271,6 +271,7 @@ function isInCenteredContext($, node) {
   const $node = $(node);
   if (($node.attr('data-center') || '') === '1') return true;
   if (($node.attr('align') || '').toLowerCase() === 'center') return true;
+  if (/text-align\s*:\s*center/i.test($node.attr('style') || '')) return true;
   let found = false;
   $node.parents().each((_, p) => {
     if (found) return;
@@ -280,6 +281,10 @@ function isInCenteredContext($, node) {
       return;
     }
     if (($p.attr('align') || '').toLowerCase() === 'center') {
+      found = true;
+      return;
+    }
+    if (/text-align\s*:\s*center/i.test($p.attr('style') || '')) {
       found = true;
       return;
     }

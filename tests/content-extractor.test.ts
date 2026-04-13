@@ -1194,6 +1194,21 @@ describe('Pass 3: chapter-title extraction', () => {
     expect(chapters[0].title).toBe('第一章');
   });
 
+  it('should find chapter-titles from style="text-align:center" wrapper', () => {
+    // Bug: isInCenteredContext only checks data-center and align="center",
+    // but NOT style="text-align:center" used by some FrontPage templates.
+    // This test uses H2 (which requires isInCenteredContext to match),
+    // not #CC33CC or class=chapter which have their own rules.
+    const html = `<html><body>
+      <DIV style="text-align:center"><H2>第二章</H2></DIV>
+    </body></html>`;
+    const { $raw, index, territory } = setupPasses(html);
+    const chapters = pass3ChapterTitle(index, $raw, territory);
+
+    expect(chapters.length).toBe(1);
+    expect(chapters[0].title).toBe('第二章');
+  });
+
   it('should not match long text (>80 chars) as chapter-title', () => {
     const longText = 'a'.repeat(100);
     const html = `<html><body><CENTER><FONT COLOR="#CC33CC">${longText}</FONT></CENTER></body></html>`;
