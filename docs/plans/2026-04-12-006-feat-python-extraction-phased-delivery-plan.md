@@ -192,19 +192,19 @@ Python 实施以 JS 侧 `2026-04-11-003` 号计划中的 Unit 定义为**需求�
 
 **实施内容**:
 
-- [ ] **1.1 pyproject.toml**
+- [x] **1.1 pyproject.toml**
   - name = `bamboo-extract`, version = `0.1.0`, requires-python = `>=3.12`
   - dependencies = `["selectolax", "pydantic>=2.0"]`
   - `[project.scripts]` → `bamboo-extract = bamboo_extract.cli:main`
   - dev dependencies: `pytest`, `ruff`, `ty`
   - 工具配置: `[tool.ruff]`, `[tool.ty]`, `[tool.pytest]`
 
-- [ ] **1.2 模块骨架**
+- [x] **1.2 模块骨架**
   - `src/bamboo_extract/__init__.py` — 导出 `extract` 函数（dummy 实现）
   - `src/bamboo_extract/cli.py` — argparse: `input.html --output output.json [--verbose]`
   - `src/bamboo_extract/types.py` — ContentIR + 核心 IR 模型（Pydantic BaseModel）
 
-- [ ] **1.3 dummy extract() 实现**
+- [x] **1.3 dummy extract() 实现**
   - 返回 `{title: "Untitled", source: source_path, docType: "content", chapters: [{title: "", sections: []}], navItems: []}`
   - 确保 `ir.model_dump(exclude_none=True)` 产出合法 JSON
 
@@ -238,14 +238,14 @@ Python 实施以 JS 侧 `2026-04-11-003` 号计划中的 Unit 定义为**需求�
 
 **实施内容**:
 
-- [ ] **2.1 Territory 类**
+- [x] **2.1 Territory 类**
   - `claimed: set[int]` — 用节点 ID 而非对象引用
   - `claim_leaf(node_id)`, `claim_subtree(node_id, descendants)`, `is_claimed(node_id)`, `has_claimed_ancestor(node_id)`
   - `extract_remaining()` — 返回未认领文本节点列表
 
-- [ ] **2.2 normalize.py**
+- [x] **2.2 normalize.py**
   - `normalize_html(html)` — `<center>` → `<div data-center>`，`flattenTables`，空标签剔除
-  - `flattenTables` — 字符串预处理：`<td[^>]*>` → `<div class="table-cell">`，`</td>` → `</div>`
+  - `flattenTables` — 正则预处理：`<td[^>]*>` → `<div class="table-cell">`，`</td>` → `</div>`
 
 **Files:**
 - Create: `src/bamboo_extract/territory.py`
@@ -291,7 +291,7 @@ Python 实施以 JS 侧 `2026-04-11-003` 号计划中的 Unit 定义为**需求�
 
 **实施内容**:
 
-- [ ] **3.1 build_dom_index**
+- [x] **3.1 build_dom_index**
   - selectolax 解析 → 构建 `by_color`, `by_class`, `by_tag`, `by_size` 索引
   - `all_text_nodes` — 全部文本节点列表（DOM 序）
   - `NodeProxy` — 快照属性（tag, attrs, text, id）
@@ -320,11 +320,11 @@ Python 实施以 JS 侧 `2026-04-11-003` 号计划中的 Unit 定义为**需求�
 - `extract()` 管道可调用 `normalize_html()` + `build_dom_index()` + `Territory()`（即使后续 Pass 仍为 dummy）
 
 **JS Unit 0c 验收:**
-- [ ] 含多种 color/class/size 的 HTML → 索引中每个 key 有对应节点
-- [ ] all_text_nodes 包含 DOM 中全部文本节点
-- [ ] 颜色规范化 `#F66` → `#FF6666`
-- [ ] Edge case: 无 COLOR 属性的 HTML → byColor 为空 Map
-- [ ] Edge case: normalize_html 幂等性（两次规范化结果相同，与 0b 联合验证）
+- [x] 含多种 color/class/size 的 HTML → 索引中每个 key 有对应节点
+- [x] all_text_nodes 包含 DOM 中全部文本节点
+- [x] 颜色规范化 `#F66` → `#FF6666`
+- [x] Edge case: 无 COLOR 属性的 HTML → byColor 为空 Map
+- [x] Edge case: normalize_html 幂等性（两次规范化结果相同，与 0b 联合验证）
 
 **里程碑**: DOM 索引就绪。Pass 查询机制的基础设施完成。管道：HTML → normalize → DOM index → Territory → (dummy Pass)。
 

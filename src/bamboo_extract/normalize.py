@@ -41,6 +41,7 @@ def flatten_tables(html: str) -> str:
 # Tags to preserve when removing empty elements
 _EMPTY_TAG_EXCEPTIONS = "br|hr|img|input|meta|link"
 
+
 def normalize_html(html: str) -> str:
     """Normalize HTML for extraction pipeline.
 
