@@ -84,12 +84,16 @@ P0: JS Bug Fix (基线固化)
     ▼
   P6: Pass 5-8 + assemble_results (Unit 1d)
     │
+    ▼
+  P6B: NLP 层 (Protocol + Service + Pass 2 接入)
+    │
     ├──────┬───────┬──────────┐
     ▼      ▼       ▼          ▼
    P7     P8      P9         P10
   Pass10 工具链  catalog    索引构建
   real   扩展点  meta注入   (依赖全部就绪)
   +质量  Repository         │
+        (NLP Plugin 已移出)  │
                             ▼
                          P11: 全量+CLI
                          (依赖 P0 + P10)
@@ -116,8 +120,9 @@ Python 实施以 JS 侧 `2026-04-11-003` 号计划中的 Unit 定义为**需求�
 | **P4: 核心提取** | Unit 1b | Pass 1-3 (book-title/metadata/chapter-title) + rules + catalog 检测 | `tests/content-extractor.test.ts` |
 | **P5: 注疏 + 正文** | Unit 1c | Pass 4 (annotation) + Pass 9 (main-text) | `tests/content-extractor.test.ts` |
 | **P6: 装配器** | Unit 1d | Pass 5-8 (section-summary/end-marker/colophon/nav-item) + assemble_results | `tests/content-extractor.test.ts` |
+| **P6B: NLP 层** | 无（新增能力） | NLPPlugin Protocol + NLPService + JiebaNLPPlugin + 动态元数据词典 + Pass 2 NLP 分类接入 | `tests/test_nlp.py`, `tests/test_meta_dict.py` |
 | **P7: 质量评估** | Unit 2a | Pass 10 quality assessment + AI Fallback 接口 | `tests/content-extractor.test.ts` |
-| **P8: 工具链** | Unit 2b + Unit 3a | Book Profile + 文件树内容增强 | `tests/book-profile.test.ts`, `tests/build-filetree.test.ts` |
+| **P8: 工具链** | Unit 2b + Unit 3a | Book Profile + 文件树内容增强 + Exporter/Repository（NLP Plugin 已移至 P6B） | `tests/book-profile.test.ts`, `tests/build-filetree.test.ts` |
 | **P9: 索引构建** | Unit 3b | JSON 索引构建 (_index.json) | `tests/build-index.test.ts` |
 | **P10: CLI 增强** | Unit 3c 部分 | CLI 批量模式 + FileRepository 集成 | `tests/content-extractor.test.ts` |
 | **P11: 全量验证** | Unit 3c 部分 + Unit 3d | 9000+ 对等 + 经部全量 | `tests/content-extractor.test.ts` |
@@ -568,17 +573,19 @@ Python 实施以 JS 侧 `2026-04-11-003` 号计划中的 Unit 定义为**需求�
 
 ### Phase 8: 工具链 — Book Profile + Repository + 扩展点（Unit 2b + Unit 3a）
 
-**目标**: Book Profile 系统、Repository 抽象、Exporter/NLP 协议、可观测性。
+**目标**: Book Profile 系统、Repository 抽象、Exporter 协议、可观测性。
 
 **对应 005 号计划单元**: U7, U8, U11
 
 **说明**: 这些单元彼此无强依赖，可在 Phase 8 内并行或交替实施。推荐顺序：U8/U11 → U7。
 
-- [ ] **8.1 U8: Exporter 协议 + NLP Plugin**
+**注意**: NLP Plugin（原 U8 的一部分）已在 Phase 6B 完成。
+
+- [ ] **8.1 U8: Exporter 协议**
   - `ExportFormat` Enum: JSON_IR, HTML5, MARKDOWN
   - `Exporter` Protocol: export(ir, fmt) -> str
-  - `NLPPlugin` Protocol: segment / recognize_entities / punctuate
-  - Files: `src/bamboo_extract/export.py`, `src/bamboo_extract/nlp.py`
+  - ~~`NLPPlugin` Protocol~~ — 已移至 Phase 6B
+  - Files: `src/bamboo_extract/export.py`
 
 - [ ] **8.2 U11: Repository 抽象 + FileRepository**
   - `Repository` ABC（save_ir, load_ir, list_books, search, build_filetree）
