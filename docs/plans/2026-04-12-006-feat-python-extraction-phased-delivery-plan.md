@@ -137,23 +137,23 @@ Python 实施以 JS 侧 `2026-04-11-003` 号计划中的 Unit 定义为**需求�
 
 **实施内容**:
 
-- [ ] **0.1 Bug 1: pass2Metadata 过度认领**
+- [x] **0.1 Bug 1: pass2Metadata 过度认领**
   - 位置: `scripts/lib/extractors.mjs:375`
-  - 修正: 收紧 CSS 选择器，避免将非 metadata 节点误判为 metadata
+  - 修正: `claimSubtree` → `claimLeaf`，只认领匹配节点本身
 
-- [ ] **0.2 Bug 2: Pattern cache 只写不读**
-  - 位置: `scripts/lib/extractors.mjs:1232-1234`
-  - 修正: 修复缓存读取逻辑，确保 flattenTables 结果被复用
-
-- [ ] **0.3 Bug 3: isInCenteredContext 缺失 CSS**
+- [x] **0.2 Bug 2: isInCenteredContext 缺失 CSS**
   - 位置: `scripts/lib/extractors.mjs:270`
-  - 修正: 补充缺失的 CSS 类判断条件
+  - 修正: 补充 `style="text-align:center"` 判断条件
 
-- [ ] **0.4 Bug 4: METADATA_RE 分隔符**
+- [x] **0.3 Bug 3: METADATA_RE 分隔符**
   - 位置: `scripts/lib/extractors.mjs:358`
-  - 修正: 放宽正则边界，支持末尾无闭合分隔符（如 `(汉·刘向`）
+  - 修正: 放宽正则边界 `[）)\s]` → `[）)\s]?`，支持末尾无闭合分隔符
 
-- [ ] **0.5 基线固化**
+- [x] **0.4 Bug 4: Pattern cache 只写不读**
+  - 位置: `scripts/lib/extractors.mjs:1057-1059`
+  - 修正: 添加 `hasCachedPatterns` 检查，避免重复分析
+
+- [x] **0.5 基线固化**
   - 对修正涉及的输出文件重新生成 JS IR 基线
   - 在 `tests/parity-baseline/` 目录编写每个 bug 的修正文档（表现描述、diff、预期输出示例、受影响文件数）
   - 将修正后的 JS 输出保存到 `tests/parity-baseline/js-baseline-output/`（每类 3-5 个样本）
@@ -161,22 +161,22 @@ Python 实施以 JS 侧 `2026-04-11-003` 号计划中的 Unit 定义为**需求�
 **Files:**
 - Modify: `scripts/lib/extractors.mjs`
 - Create: `tests/parity-baseline/bug-01-pass2-overclaim.md`
-- Create: `tests/parity-baseline/bug-02-pattern-cache.md`
-- Create: `tests/parity-baseline/bug-03-centered-context.md`
-- Create: `tests/parity-baseline/bug-04-metadata-regex.md`
+- Create: `tests/parity-baseline/bug-02-centered-context.md`
+- Create: `tests/parity-baseline/bug-03-metadata-regex.md`
+- Create: `tests/parity-baseline/bug-04-pattern-cache.md`
 - Create: `tests/parity-baseline/js-baseline-output/` 目录结构
 
 **Verification:**
-- 4 个 bug 修正后，现有 88 个测试全部通过
+- 4 个 bug 修正后，现有测试全部通过（92/92，含 4 个新增回归测试）
 - `tests/parity-baseline/` 目录包含 4 篇修正文档 + 基线样本（经/史/子/集各 3-5 个）
 - 基线样本 IR 与修正前相比，metadata/annotation 等受影响字段正确
 
 **JS Bug Fix 专项验收:**
-- [ ] Bug 1: metadata 不再过度认领（非 metadata 节点不被误判）
-- [ ] Bug 2: pattern cache 读取命中，flattenTables 结果被复用
-- [ ] Bug 3: isInCenteredContext 正确识别居中上下文
-- [ ] Bug 4: METADATA_RE 能匹配 `(汉·刘向`（无闭合分隔符）
-- [ ] 基线样本 IR 输出正确，文档完整
+- [x] Bug 1: metadata 不再过度认领（非 metadata 节点不被误判）
+- [x] Bug 2: isInCenteredContext 正确识别居中上下文（含 style 属性）
+- [x] Bug 3: METADATA_RE 能匹配 `(汉·刘向`（无闭合分隔符）
+- [x] Bug 4: pattern cache 读取命中，重复分析被跳过
+- [x] 基线样本 IR 输出正确，文档完整（10 个样本，经/史/子/集各 2-3 个）
 
 **里程碑**: JS 对等基线固化。Python 模块以修正后的 JS 输出为对等目标。
 

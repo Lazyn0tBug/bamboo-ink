@@ -1,0 +1,38 @@
+{
+  "title": "列女传(汉·刘向)",
+  "author": "刘向",
+  "dynasty": "汉",
+  "source": "古籍/史部-其他/列女传/index.htm",
+  "docType": "catalog",
+  "chapters": [],
+  "navItems": [
+    {
+      "href": "001.htm",
+      "label": "母仪传"
+    },
+    {
+      "href": "002.htm",
+      "label": "贤明传"
+    },
+    {
+      "href": "003.htm",
+      "label": "仁智传"
+    },
+    {
+      "href": "004.htm",
+      "label": "贞顺传"
+    },
+    {
+      "href": "005.htm",
+      "label": "节义传"
+    },
+    {
+      "href": "006.htm",
+      "label": "辩通传"
+    },
+    {
+      "href": "007.htm",
+      "label": "孽嬖传"
+    }
+  ]
+}
