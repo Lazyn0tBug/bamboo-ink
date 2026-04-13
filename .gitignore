@@ -29,3 +29,6 @@ __pycache__/
 .venv/
 *.egg-info/
 .pytest_cache/
+
+# Python lock file (auto-generated, not managed by repo)
+uv.lock
