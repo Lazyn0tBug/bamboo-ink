@@ -35,7 +35,9 @@ def assemble_results(
     for ann in annotations:
         nid = ann["node_id"]
         ann_obj = Annotation(text=ann["text"])
-        annotation_by_node.setdefault(nid, []).append(ann_obj)
+        if nid not in annotation_by_node:
+            annotation_by_node[nid] = []
+        annotation_by_node[nid].append(ann_obj)
 
     # Build tag lookup: for element node_ids, we need to know their tag.
     # We can derive this from by_tag — build a reverse map.

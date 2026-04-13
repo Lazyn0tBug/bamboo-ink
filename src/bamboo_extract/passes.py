@@ -8,7 +8,12 @@ Mirrors JS extractors.mjs:270-453.
 
 from __future__ import annotations
 
+from typing import TYPE_CHECKING
+
 from selectolax.parser import HTMLParser
+
+if TYPE_CHECKING:
+    from .nlp_service import NLPService
 
 from .regex_patterns import (
     COLOR_551A8B_RE,
@@ -18,7 +23,7 @@ from .regex_patterns import (
     TEXT_ALIGN_CENTER_RE,
 )
 from .territory import Territory
-from .types import DOMIndex
+from .types import ContentIR, DOMIndex
 
 
 def _all_descendants(node_id: int, children_map: dict[int, list[int]]) -> list[int]:
@@ -176,33 +181,69 @@ def pass1_book_title(index: DOMIndex, territory: Territory) -> str | None:
 
 
 def pass2_metadata(
-    index: DOMIndex, territory: Territory
+    index: DOMIndex,
+    territory: Territory,
+    nlp_service: NLPService | None = None,
 ) -> dict[str, str] | None:
     """Extract metadata (dynasty, author) from DOM.
 
     Strategy (JS extractors.mjs:373-396):
     1. class=metadata nodes with METADATA_RE match
     2. Fallback: all text nodes with METADATA_RE match
+
+    When nlp_service has an active plugin, uses iterative validation:
+    each regex match is verified by NLP before accepting.
     """
-    # Strategy 1: class=metadata
-    for nid in index.by_class.get("metadata", []):
-        if territory.is_claimed(nid) or territory.has_claimed_ancestor(nid, index.parent_map):
-            continue
+    # Check if NLP is actually active (has plugin + dictionary)
+    has_nlp = nlp_service is not None and nlp_service.is_active
+
+    def _validate_nlp(text: str):
+        if nlp_service is None:
+            return None
+        result = nlp_service.classify_short_text(text)
+        if result.get("type") == "metadata":
+            return result
+        return None
+
+    def _try_candidate(nid: int) -> dict[str, str] | None:
+        if territory.is_claimed(nid) or territory.has_claimed_ancestor(
+            nid, index.parent_map
+        ):
+            return None
         text = index.text_by_id.get(nid, "").strip()
         match = METADATA_RE.search(text)
-        if match:
-            territory.claim_leaf(nid)
-            return {"dynasty": match.group(1), "author": match.group(2)}
+        if not match:
+            return None
+
+        # NLP validation (if active)
+        if has_nlp:
+            nlp_result = _validate_nlp(match.group(0))
+            if nlp_result and nlp_result.get("type") == "metadata":
+                territory.claim_leaf(nid)
+                return {
+                    "dynasty": nlp_result["dynasty"],
+                    "author": nlp_result["author"],
+                }
+            return None  # NLP rejected — continue to next candidate
+
+        # No NLP: original regex-only behavior
+        territory.claim_leaf(nid)
+        return {
+            "dynasty": match.group(1),
+            "author": match.group(2),
+        }
+
+    # Strategy 1: class=metadata
+    for nid in index.by_class.get("metadata", []):
+        result = _try_candidate(nid)
+        if result is not None:
+            return result
 
     # Strategy 2: fallback to all text nodes
     for nid in index.all_text_nodes:
-        if territory.is_claimed(nid) or territory.has_claimed_ancestor(nid, index.parent_map):
-            continue
-        text = index.text_by_id.get(nid, "").strip()
-        match = METADATA_RE.search(text)
-        if match:
-            territory.claim_leaf(nid)
-            return {"dynasty": match.group(1), "author": match.group(2)}
+        result = _try_candidate(nid)
+        if result is not None:
+            return result
 
     return None
 
@@ -331,7 +372,7 @@ def pass4_annotation(
 
 
 def pass8_nav_item(
-    index: DOMIndex, territory: Territory, ir: object
+    index: DOMIndex, territory: Territory, ir: ContentIR
 ) -> None:
     """Extract nav-item nodes from DOM index.
 

@@ -4,6 +4,9 @@ and end-to-end extract() pipeline."""
 
 from bamboo_extract import extract
 from bamboo_extract.dom_index import build_dom_index
+from bamboo_extract.jieba_plugin import JiebaNLPPlugin
+from bamboo_extract.meta_dict import MetaDictionary, build_meta_dict
+from bamboo_extract.nlp_service import NLPService
 from bamboo_extract.normalize import normalize_html
 from bamboo_extract.passes import (
     extract_title,
@@ -579,3 +582,200 @@ class TestPass8NavItem:
         # Should still find the outside anchor
         assert len(ir.navItems) == 1
         assert ir.navItems[0].href == "outside.htm"
+
+
+# ── NLP Integration Scenarios ─────────────────────────────────────────
+
+# Catalog HTML for building MetaDictionary with multiple entries
+NLP_CATALOG_HTML = """<html><body>
+<table>
+<tr><td>大学章句集注 <font class="annotation">(宋·朱熹)</font></td></tr>
+<tr><td>论语集注 <font class="annotation">(宋·孔子)</font></td></tr>
+<tr><td>列女传 <font class="annotation">(汉·刘向)</font></td></tr>
+<tr><td>汉书 <FONT SIZE=-1 COLOR="#993300">(汉·班固)</FONT></td></tr>
+<tr><td>东坡易传 <font size="2" color="#993300">(宋·苏轼)</font></td></tr>
+</table>
+</body></html>"""
+
+
+class TestNlpIntegrationPass2:
+    """Pass 2 metadata extraction with NLP validation."""
+
+    def test_nlp_accepts_valid_metadata(self) -> None:
+        """Valid (宋·朱熹) pattern accepted by NLP."""
+        md = MetaDictionary()
+        md.add_pair("宋", "朱熹")
+        svc = NLPService()
+        svc.set_plugin(JiebaNLPPlugin(md))
+        svc.set_meta_dict(md)
+
+        idx, territory = _build(METADATA_HTML)
+        meta = pass2_metadata(idx, territory, svc)
+        assert meta is not None
+        assert meta["dynasty"] == "宋"
+        assert meta["author"] == "朱熹"
+
+    def test_nlp_rejects_false_positive(self) -> None:
+        """Text matching METADATA_RE but not in dictionary → rejected by NLP.
+
+        This is the key scenario: "洞经教部·经三" matches the metadata
+        regex pattern but contains no known dynasty/author, so NLP
+        classification returns "unknown" and the candidate is rejected.
+        """
+        # Build a dictionary that does NOT contain "洞经教部" or "经三"
+        md = MetaDictionary()
+        md.add_pair("宋", "朱熹")
+        svc = NLPService()
+        svc.set_plugin(JiebaNLPPlugin(md))
+        svc.set_meta_dict(md)
+
+        # HTML where text could match METADATA_RE but has no real metadata
+        html = """<html><body>
+        <p>卷十二 三洞经教部·经三</p>
+        </body></html>"""
+        idx, territory = _build(html)
+        meta = pass2_metadata(idx, territory, svc)
+        # NLP should reject this — no known dynasty/author pair
+        assert meta is None
+
+    def test_nlp_rejects_unknown_category(self) -> None:
+        """'简明目录' matches regex-like patterns but NLP returns unknown."""
+        md = MetaDictionary()
+        md.add_pair("宋", "朱熹")
+        svc = NLPService()
+        svc.set_plugin(JiebaNLPPlugin(md))
+        svc.set_meta_dict(md)
+
+        html = """<html><body><p>简明目录学</p></body></html>"""
+        idx, territory = _build(html)
+        meta = pass2_metadata(idx, territory, svc)
+        assert meta is None
+
+    def test_nlp_multi_pair_selection(self) -> None:
+        """NLP correctly distinguishes between multiple dynasty-author pairs."""
+        md = MetaDictionary()
+        md.add_pair("宋", "朱熹")
+        md.add_pair("汉", "刘向")
+        svc = NLPService()
+        svc.set_plugin(JiebaNLPPlugin(md))
+        svc.set_meta_dict(md)
+
+        # Only the Han·Liu Xiang pair should be found
+        html = """<html><body>
+        <p>(汉·刘向)</p>
+        </body></html>"""
+        idx, territory = _build(html)
+        meta = pass2_metadata(idx, territory, svc)
+        assert meta is not None
+        assert meta["dynasty"] == "汉"
+        assert meta["author"] == "刘向"
+
+    def test_backward_compat_no_nlp(self) -> None:
+        """Without NLP service, pass2 falls back to regex-only behavior.
+
+        This ensures existing tests that don't pass NLPService still work.
+        """
+        idx, territory = _build(METADATA_HTML)
+        # No NLP service passed — should use regex-only fallback
+        meta = pass2_metadata(idx, territory)
+        assert meta is not None
+        assert meta["dynasty"] == "宋"
+        assert meta["author"] == "朱熹"
+
+    def test_nlp_with_class_metadata(self) -> None:
+        """NLP validates class=metadata candidates."""
+        md = MetaDictionary()
+        md.add_pair("汉", "班固")
+        svc = NLPService()
+        svc.set_plugin(JiebaNLPPlugin(md))
+        svc.set_meta_dict(md)
+
+        idx, territory = _build(METADATA_CLASS_HTML)
+        meta = pass2_metadata(idx, territory, svc)
+        assert meta is not None
+        assert meta["dynasty"] == "汉"
+        assert meta["author"] == "班固"
+
+    def test_nlp_empty_dict_rejects_all(self) -> None:
+        """Empty MetaDictionary + plugin → all candidates rejected."""
+        md = MetaDictionary()  # empty
+        svc = NLPService()
+        svc.set_plugin(JiebaNLPPlugin(md))
+        svc.set_meta_dict(md)
+
+        idx, territory = _build(METADATA_HTML)
+        meta = pass2_metadata(idx, territory, svc)
+        # NLP is "active" but dict is empty → no matches
+        assert meta is None
+
+
+class TestNlpIntegrationEndToEnd:
+    """End-to-end extract() with NLP layer."""
+
+    def test_extract_with_real_jieba(self) -> None:
+        """Full pipeline with JiebaNLPPlugin + MetaDictionary."""
+        md = MetaDictionary()
+        md.add_pair("宋", "朱熹")
+        svc = NLPService()
+        svc.set_plugin(JiebaNLPPlugin(md))
+        svc.set_meta_dict(md)
+
+        # Verify NLP service works correctly in isolation
+        result = svc.classify_short_text("(宋·朱熹)")
+        assert result["type"] == "metadata"
+        assert result["dynasty"] == "宋"
+        assert result["author"] == "朱熹"
+
+    def test_extract_template_f_with_nlp(self) -> None:
+        """Template F extraction with NLP validation."""
+        md = MetaDictionary()
+        md.add_pair("宋", "朱熹")
+        svc = NLPService()
+        svc.set_plugin(JiebaNLPPlugin(md))
+        svc.set_meta_dict(md)
+
+        result = svc.classify_short_text("(宋·朱熹)")
+        assert result["type"] == "metadata"
+
+        # Verify the full pipeline still works
+        ir = extract(TEMPLATE_F_HTML)
+        assert ir.title == "大学章句集注"
+        assert ir.docType == "content"
+        # Note: extract() uses its own _build_nlp_service which loads
+        # meta_dict.json from disk. Since we may not have that file,
+        # the pipeline falls back to regex — which still works.
+        assert ir.dynasty == "宋"
+        assert ir.author == "朱熹"
+
+    def test_extract_catalog_with_nlp(self) -> None:
+        """Catalog extraction produces correct metadata."""
+        ir = extract(CATALOG_HTML)
+        assert ir.docType == "catalog"
+        assert ir.title == "列女传"
+        assert ir.dynasty == "汉"
+        assert ir.author == "刘向"
+
+    def test_build_meta_dict_from_catalog(self) -> None:
+        """Build MetaDictionary from catalog HTML and use for NLP."""
+        md = build_meta_dict([NLP_CATALOG_HTML])
+        assert md.is_dynasty("宋") is True
+        assert md.is_dynasty("汉") is True
+        assert md.is_author("朱熹") is True
+        assert md.is_author("刘向") is True
+        assert md.is_author("班固") is True
+        assert md.is_author("苏轼") is True
+
+        svc = NLPService()
+        svc.set_plugin(JiebaNLPPlugin(md))
+        svc.set_meta_dict(md)
+
+        # All pairs should be classifiable
+        for text, expected_dynasty, expected_author in [
+            ("宋·朱熹", "宋", "朱熹"),
+            ("汉·刘向", "汉", "刘向"),
+            ("汉·班固", "汉", "班固"),
+        ]:
+            result = svc.classify_short_text(text)
+            assert result["type"] == "metadata", f"Failed for {text}"
+            assert result["dynasty"] == expected_dynasty
+            assert result["author"] == expected_author

@@ -1,8 +1,14 @@
 """bamboo-extract — Ancient Chinese text extraction module."""
 
+from pathlib import Path
+
 from .assembler import assemble_results
 from .catalog_detect import detect_catalog, extract_nav_items
 from .dom_index import build_dom_index
+from .jieba_plugin import JiebaNLPPlugin
+from .meta_dict import MetaDictionary
+from .nlp import NLPPlugin
+from .nlp_service import NLPService
 from .normalize import normalize_html
 from .passes import (
     extract_title,
@@ -47,7 +53,25 @@ __all__ = [
     "pass8_nav_item",
     "assemble_results",
     "classify_by_attributes",
+    "NLPService",
+    "NLPPlugin",
+    "JiebaNLPPlugin",
+    "MetaDictionary",
 ]
+
+# Package resource path
+_PACKAGE_DIR = Path(__file__).parent
+
+
+def _build_nlp_service() -> NLPService:
+    """Initialize NLPService with meta_dict and JiebaNLPPlugin if available."""
+    service = NLPService()
+    meta_dict_path = _PACKAGE_DIR / "resources" / "meta_dict.json"
+    if meta_dict_path.exists():
+        meta_dict = MetaDictionary.load(meta_dict_path)
+        service.set_meta_dict(meta_dict)
+        service.set_plugin(JiebaNLPPlugin(meta_dict))
+    return service
 
 
 def extract(html: str, source_path: str = "") -> ContentIR:
@@ -94,6 +118,9 @@ def extract(html: str, source_path: str = "") -> ContentIR:
 
     # ── Content path ─────────────────────────────────────────────
 
+    # Initialize NLP service (loads meta_dict + jieba plugin if available)
+    nlp_service = _build_nlp_service()
+
     # Pre-pass: title from <title> tag / <h1> / color scan
     title = extract_title(html, index)
 
@@ -102,8 +129,8 @@ def extract(html: str, source_path: str = "") -> ContentIR:
     if pass1_result:
         title = pass1_result
 
-    # Pass 2: metadata (dynasty, author)
-    metadata = pass2_metadata(index, territory)
+    # Pass 2: metadata (dynasty, author) — with optional NLP validation
+    metadata = pass2_metadata(index, territory, nlp_service)
     dynasty = metadata["dynasty"] if metadata else None
     author = metadata["author"] if metadata else None
 
