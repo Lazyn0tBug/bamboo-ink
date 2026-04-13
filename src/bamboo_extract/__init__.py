@@ -1,5 +1,6 @@
 """bamboo-extract — Ancient Chinese text extraction module."""
 
+from .assembler import assemble_results
 from .catalog_detect import detect_catalog, extract_nav_items
 from .dom_index import build_dom_index
 from .normalize import normalize_html
@@ -9,6 +10,7 @@ from .passes import (
     pass2_metadata,
     pass3_chapter_title,
     pass4_annotation,
+    pass8_nav_item,
 )
 from .regex_patterns import METADATA_RE
 from .rules import classify_by_attributes
@@ -42,6 +44,8 @@ __all__ = [
     "pass2_metadata",
     "pass3_chapter_title",
     "pass4_annotation",
+    "pass8_nav_item",
+    "assemble_results",
     "classify_by_attributes",
 ]
 
@@ -54,7 +58,7 @@ def extract(html: str, source_path: str = "") -> ContentIR:
     2. build_dom_index — by_color/class/tag/size + text_by_id/attrs_by_id
     3. detect_catalog — catalog vs content path decision
     4a. Catalog path: navItems from <a> elements, metadata from body text
-    4b. Content path: extract_title → Pass 1-4 → Territory remaining
+    4b. Content path: extract_title → Pass 1-4 → Pass 8 → assemble_results
     """
     normalized = normalize_html(html)
     index = build_dom_index(normalized)
@@ -105,34 +109,17 @@ def extract(html: str, source_path: str = "") -> ContentIR:
 
     # Pass 3: chapter titles
     chapter_titles = pass3_chapter_title(index, territory)
+    chapter_title_nodes = {ch["node_id"] for ch in chapter_titles}
 
     # Pass 4: annotations (claims annotation nodes from territory)
-    # Side effect: annotation nodes are claimed; return value wired in Phase 6
-    _annotations = pass4_annotation(index, territory)
+    annotations = pass4_annotation(index, territory)
 
-    # Territory: collect remaining unclaimed text
-    text_content = {nid: node_text for nid, node_text in _collect_text(index)}
-    remaining = territory.extract_remaining(index.all_text_nodes, text_content)
+    # Pass 8: nav items (extracts navigation links)
+    ir = ContentIR()
+    pass8_nav_item(index, territory, ir)
 
-    # Build chapters: one chapter per chapter_title, remaining as main-text
-    chapters: list[Chapter] = []
-    for ch_info in chapter_titles:
-        chapters.append(Chapter(title=ch_info["title"], sections=[]))
-
-    # Remaining text as section(s)
-    if remaining:
-        if chapters:
-            # Attach remaining text to last chapter
-            sections = [Section(type=r["type"], content=r["content"]) for r in remaining]
-            chapters[-1].sections.extend(sections)
-        else:
-            # No chapters — put all remaining text in one default chapter
-            sections = [Section(type=r["type"], content=r["content"]) for r in remaining]
-            chapters = [Chapter(title="", sections=sections)]
-
-    # Always return at least one chapter
-    if not chapters:
-        chapters = [Chapter(title="", sections=[])]
+    # Assemble: walk DOM, split sections, associate annotations, build chapters
+    assemble_results(index, annotations, chapter_title_nodes, territory, ir)
 
     return ContentIR(
         title=title,
@@ -140,20 +127,6 @@ def extract(html: str, source_path: str = "") -> ContentIR:
         docType="content",
         dynasty=dynasty,
         author=author,
-        chapters=chapters,
-        navItems=[],
+        chapters=ir.chapters,
+        navItems=ir.navItems,
     )
-
-
-def _collect_text(index: DOMIndex) -> list[tuple[int, str]]:
-    """Collect text content for all text node IDs from index.text_by_id.
-
-    Phase 4: build_dom_index populates text_by_id for every text node,
-    so no re-parsing is needed.
-    """
-    result: list[tuple[int, str]] = []
-    for nid in index.all_text_nodes:
-        text = index.text_by_id.get(nid, "").strip()
-        if text:
-            result.append((nid, text))
-    return result

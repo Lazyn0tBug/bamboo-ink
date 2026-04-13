@@ -12,6 +12,7 @@ from bamboo_extract.passes import (
     pass2_metadata,
     pass3_chapter_title,
     pass4_annotation,
+    pass8_nav_item,
 )
 from bamboo_extract.territory import Territory
 
@@ -453,3 +454,128 @@ class TestExtractPipeline:
         for chapter in ir.chapters:
             for section in chapter.sections:
                 assert "大学章句集注" not in section.content
+
+
+# ── Pass 8: Nav Item ────────────────────────────────────────────────
+
+
+class TestPass8NavItem:
+    """pass8_nav_item — territorial nav-item extraction."""
+
+    def test_direct_anchors(self) -> None:
+        """Direct <a href> links → claimed, navItems collected."""
+        html = """<body>
+        <a href="001.htm">第一章</a>
+        <a href="002.htm">第二章</a>
+        </body>"""
+        idx, territory = _build(html)
+
+        class _IR:
+            navItems: list = []  # noqa: N815 — matches ContentIR field name
+
+        ir = _IR()
+        pass8_nav_item(idx, territory, ir)
+        assert len(ir.navItems) == 2
+        assert ir.navItems[0].href == "001.htm"
+        assert ir.navItems[0].label == "第一章"
+        assert ir.navItems[1].href == "002.htm"
+
+    def test_menu_context(self) -> None:
+        """class=menu with <a> children → navItems extracted, menu claimed."""
+        html = """<body>
+        <div class="menu">
+            <a href="a.htm">Alpha</a>
+            <a href="b.htm">Beta</a>
+        </div>
+        </body>"""
+        idx, territory = _build(html)
+
+        class _IR:
+            navItems: list = []  # noqa: N815
+
+        ir = _IR()
+        pass8_nav_item(idx, territory, ir)
+        assert len(ir.navItems) == 2
+        # Menu should be claimed
+        div_ids = idx.by_tag.get("div", [])
+        assert any(territory.is_claimed(nid) for nid in div_ids)
+
+    def test_list_context(self) -> None:
+        """<ol>/<ul> with <a> children → navItems extracted, list claimed."""
+        html = """<body>
+        <ol>
+            <li><a href="1.htm">One</a></li>
+            <li><a href="2.htm">Two</a></li>
+        </ol>
+        </body>"""
+        idx, territory = _build(html)
+
+        class _IR:
+            navItems: list = []  # noqa: N815
+
+        ir = _IR()
+        pass8_nav_item(idx, territory, ir)
+        assert len(ir.navItems) == 2
+        # OL should be claimed
+        ol_ids = idx.by_tag.get("ol", [])
+        assert any(territory.is_claimed(nid) for nid in ol_ids)
+
+    def test_empty_href_skipped(self) -> None:
+        """<a> with empty href → skipped."""
+        html = '<body><a href="">Empty</a><a href="real.htm">Real</a></body>'
+        idx, territory = _build(html)
+
+        class _IR:
+            navItems: list = []  # noqa: N815
+
+        ir = _IR()
+        pass8_nav_item(idx, territory, ir)
+        assert len(ir.navItems) == 1
+        assert ir.navItems[0].href == "real.htm"
+
+    def test_long_label_skipped(self) -> None:
+        """<a> with label >= 50 chars → skipped."""
+        long_label = "a" * 50
+        html = f'<body><a href="x.htm">{long_label}</a><a href="y.htm">Short</a></body>'
+        idx, territory = _build(html)
+
+        class _IR:
+            navItems: list = []  # noqa: N815
+
+        ir = _IR()
+        pass8_nav_item(idx, territory, ir)
+        assert len(ir.navItems) == 1
+        assert ir.navItems[0].label == "Short"
+
+    def test_no_links(self) -> None:
+        """No <a> elements → empty navItems."""
+        html = "<body><p>No links here</p></body>"
+        idx, territory = _build(html)
+
+        class _IR:
+            navItems: list = []  # noqa: N815
+
+        ir = _IR()
+        pass8_nav_item(idx, territory, ir)
+        assert len(ir.navItems) == 0
+
+    def test_claimed_container_skipped(self) -> None:
+        """Links inside claimed container → skipped (territory isolation)."""
+        html = """<body>
+        <div class="article">Menu</div>
+        <a href="outside.htm">Outside</a>
+        </body>"""
+        idx, territory = _build(html)
+        # Claim the div first
+        div_ids = idx.by_tag.get("div", [])
+        for nid in div_ids:
+            territory.claim_subtree(nid, idx.children_map.get(nid, []))
+
+        class _IR:
+            navItems: list = []  # noqa: N815
+
+        ir = _IR()
+        pass8_nav_item(idx, territory, ir)
+        # Should still find the outside anchor
+        assert len(ir.navItems) == 1
+        assert ir.navItems[0].href == "outside.htm"

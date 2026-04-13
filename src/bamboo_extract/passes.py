@@ -325,3 +325,66 @@ def pass4_annotation(
             try_claim(nid)
 
     return annotations
+
+
+# ── Pass 8: Nav Item ────────────────────────────────────────────────
+
+
+def pass8_nav_item(
+    index: DOMIndex, territory: Territory, ir: object
+) -> None:
+    """Extract nav-item nodes from DOM index.
+
+    Mirrors JS pass8NavItem() from extractors.mjs:533-586.
+    Three strategies in order:
+    1. menu-context: class=menu → find <a> children → claim_subtree
+    2. list-context: ol/ul → find <a> children → claim_subtree
+    3. direct anchors: <a> with href → claim_leaf
+
+    Writes directly to ir.navItems (matching JS pattern).
+    """
+    from .types import NavItem
+
+    def _collect_anchor_links(container_id: int) -> list[tuple[str, str]]:
+        """Find all <a> descendants of container_id with href + label."""
+        results: list[tuple[str, str]] = []
+        anchor_ids = set(index.by_tag.get("a", []))
+        for desc_id in _all_descendants(container_id, index.children_map):
+            if desc_id not in anchor_ids:
+                continue
+            href = index.attrs_by_id.get(desc_id, {}).get("href", "")
+            label = index.text_by_id.get(desc_id, "").strip()
+            if href and label and len(label) < 50:
+                results.append((href, label))
+        return results
+
+    # Strategy 1: menu-context — class=menu > a
+    for nid in index.by_class.get("menu", []):
+        if territory.is_claimed(nid) or territory.has_claimed_ancestor(nid, index.parent_map):
+            continue
+        links = _collect_anchor_links(nid)
+        for href, label in links:
+            ir.navItems.append(NavItem(href=href, label=label))
+        descendants = _all_descendants(nid, index.children_map)
+        territory.claim_subtree(nid, descendants)
+
+    # Strategy 2: list-context — ol/ul > li/a
+    for tag in ("ol", "ul"):
+        for nid in index.by_tag.get(tag, []):
+            if territory.is_claimed(nid) or territory.has_claimed_ancestor(nid, index.parent_map):
+                continue
+            links = _collect_anchor_links(nid)
+            for href, label in links:
+                ir.navItems.append(NavItem(href=href, label=label))
+            descendants = _all_descendants(nid, index.children_map)
+            territory.claim_subtree(nid, descendants)
+
+    # Strategy 3: direct anchors — <a> with href (skip those inside claimed containers)
+    for nid in index.by_tag.get("a", []):
+        if territory.is_claimed(nid) or territory.has_claimed_ancestor(nid, index.parent_map):
+            continue
+        href = index.attrs_by_id.get(nid, {}).get("href", "")
+        label = index.text_by_id.get(nid, "").strip()
+        if href and label and len(label) < 50:
+            territory.claim_leaf(nid)
+            ir.navItems.append(NavItem(href=href, label=label))
