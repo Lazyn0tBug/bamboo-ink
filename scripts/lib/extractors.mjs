@@ -9,7 +9,7 @@
 
 import * as cheerio from 'cheerio';
 import path from 'path';
-import { flattenTables, analyzeAndCache } from './pattern-cache.mjs';
+import { flattenTables, analyzeAndCache, hasCachedPatterns } from './pattern-cache.mjs';
 
 // ── Types constant ────────────────────────────────────────────────
 
@@ -1055,7 +1055,9 @@ export function extractContent(html, sourcePath, options = {}) {
 
   // ── Populate Pattern Cache (A4) ──────────────────────────────────
   if (options.patternCache && ir.title && ir.title !== 'Untitled') {
-    analyzeAndCache(options.patternCache, html, ir.title);
+    if (!hasCachedPatterns(options.patternCache, ir.title)) {
+      analyzeAndCache(options.patternCache, html, ir.title);
+    }
   }
 
   // ── Territorial Pass 4-9 + Text Assembly ─────────────────────────

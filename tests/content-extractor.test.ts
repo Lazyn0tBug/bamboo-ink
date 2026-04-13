@@ -1456,4 +1456,31 @@ describe('extractContent with classification cache', () => {
     expect(ir.title).toBe('大学章句集注');
     expect(ir.chapters.length).toBeGreaterThan(0);
   });
+
+  it('should read from patternCache on second extraction (not re-analyze)', () => {
+    // Bug: pattern cache was write-only — analyzeAndCache called every time
+    // even for same book. Fix: check hasCachedPatterns before analyzing.
+    const cache = createPatternCache();
+
+    // Before any extraction: not cached
+    expect(hasCachedPatterns(cache, '大学章句集注')).toBe(false);
+
+    // First extraction: populates cache
+    extractContent(templateFHtml, '经部/大学章句集注.htm', { patternCache: cache });
+    expect(hasCachedPatterns(cache, '大学章句集注')).toBe(true);
+
+    // Capture cache state after first extraction
+    const cachedPatternsAfterFirst = JSON.parse(
+      JSON.stringify(cache.get('大学章句集注') || {})
+    );
+
+    // Second extraction: should NOT re-analyze (cache already populated)
+    extractContent(templateFHtml, '经部/大学章句集注.htm', { patternCache: cache });
+
+    // Cache content should be identical (not re-analyzed)
+    const cachedPatternsAfterSecond = JSON.parse(
+      JSON.stringify(cache.get('大学章句集注') || {})
+    );
+    expect(cachedPatternsAfterSecond).toEqual(cachedPatternsAfterFirst);
+  });
 });
