@@ -1156,6 +1156,18 @@ describe('Pass 2: metadata extraction', () => {
     // Bug: with claimSubtree, the FONT would be claimed too
     expect(territory.isClaimed(fontNodes[0])).toBe(false);
   });
+
+  it('should match metadata pattern without closing delimiter', () => {
+    // Bug: METADATA_RE requires closing ）, ), or whitespace at the end,
+    // but some metadata like "(汉·刘向" has no closing delimiter.
+    const html = `<html><body>(汉·刘向</body></html>`;
+    const { $raw, index, territory } = setupPasses(html);
+    const meta = pass2Metadata(index, $raw, territory);
+
+    expect(meta).not.toBeNull();
+    expect(meta?.dynasty).toBe('汉');
+    expect(meta?.author).toBe('刘向');
+  });
 });
 
 describe('Pass 3: chapter-title extraction', () => {

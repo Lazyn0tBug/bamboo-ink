@@ -360,7 +360,7 @@ export function pass1BookTitle(index, $, territory) {
 
 // ── Territorial Pass 2: Metadata ───────────────────────────────────
 
-const METADATA_RE = /\(?([\u4e00-\u9fff]{1,4})[·\.\-]([\u4e00-\u9fff]+?)[）)\s]/;
+const METADATA_RE = /\(?([\u4e00-\u9fff]{1,4})[·\.\-]([\u4e00-\u9fff]+)[）)\s]?/;
 
 /**
  * Pass 2: Extract metadata from DOM.
