@@ -10,7 +10,13 @@ from __future__ import annotations
 
 from selectolax.parser import HTMLParser
 
-from .regex_patterns import METADATA_RE, TEXT_ALIGN_CENTER_RE
+from .regex_patterns import (
+    COLOR_551A8B_RE,
+    FONT_SIZE_9PT_RE,
+    FONT_SIZE_10PT_RE,
+    METADATA_RE,
+    TEXT_ALIGN_CENTER_RE,
+)
 from .territory import Territory
 from .types import DOMIndex
 
@@ -257,3 +263,65 @@ def pass3_chapter_title(
                 try_claim(nid)
 
     return chapters
+
+
+# ── Pass 4: Annotation ──────────────────────────────────────────────
+
+
+def pass4_annotation(
+    index: DOMIndex, territory: Territory
+) -> list[dict]:
+    """Extract annotation nodes from DOM.
+
+    Mirrors JS pass4Annotation() from extractors.mjs:470-517.
+    Three strategies in order:
+    1. Class-based: annotation, reference, notes
+    2. Style-based: FONT-SIZE: 9pt on font elements
+    3. Style-based: FONT-SIZE: 10pt + color=#551A8B on font+span elements
+
+    Uses claim_leaf (not claim_subtree) — annotation nodes are leaf text
+    nodes (span, font), not containers with nested structure.
+    """
+    annotations: list[dict] = []
+
+    def try_claim(nid: int) -> bool:
+        if territory.is_claimed(nid) or territory.has_claimed_ancestor(nid, index.parent_map):
+            return False
+        text = index.text_by_id.get(nid, "").strip()
+        if not text:
+            return False
+        territory.claim_leaf(nid)
+        # Also claim text children so extract_remaining excludes them
+        for child_id in index.children_map.get(nid, []):
+            territory.claim_leaf(child_id)
+        annotations.append({"text": text, "node_id": nid})
+        return True
+
+    # Strategy 1: Class-based — annotation, reference, notes
+    for cls in ("annotation", "reference", "notes"):
+        for nid in index.by_class.get(cls, []):
+            try_claim(nid)
+
+    # Strategy 2: FONT-SIZE: 9pt on font elements
+    for nid in index.by_tag.get("font", []):
+        if territory.is_claimed(nid) or territory.has_claimed_ancestor(nid, index.parent_map):
+            continue
+        attrs = index.attrs_by_id.get(nid, {})
+        style = attrs.get("style", "")
+        if style and FONT_SIZE_9PT_RE.search(style):
+            try_claim(nid)
+
+    # Strategy 3: FONT-SIZE: 10pt + color=#551A8B on font+span
+    # Check both color attribute AND style string for the color
+    for nid in index.by_tag.get("font", []) + index.by_tag.get("span", []):
+        if territory.is_claimed(nid) or territory.has_claimed_ancestor(nid, index.parent_map):
+            continue
+        attrs = index.attrs_by_id.get(nid, {})
+        style = attrs.get("style", "")
+        if not style or not FONT_SIZE_10PT_RE.search(style):
+            continue
+        color = attrs.get("color", "")
+        if COLOR_551A8B_RE.search(color) or COLOR_551A8B_RE.search(style):
+            try_claim(nid)
+
+    return annotations

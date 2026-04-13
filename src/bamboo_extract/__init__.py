@@ -8,6 +8,7 @@ from .passes import (
     pass1_book_title,
     pass2_metadata,
     pass3_chapter_title,
+    pass4_annotation,
 )
 from .regex_patterns import METADATA_RE
 from .rules import classify_by_attributes
@@ -40,6 +41,7 @@ __all__ = [
     "pass1_book_title",
     "pass2_metadata",
     "pass3_chapter_title",
+    "pass4_annotation",
     "classify_by_attributes",
 ]
 
@@ -52,7 +54,7 @@ def extract(html: str, source_path: str = "") -> ContentIR:
     2. build_dom_index — by_color/class/tag/size + text_by_id/attrs_by_id
     3. detect_catalog — catalog vs content path decision
     4a. Catalog path: navItems from <a> elements, metadata from body text
-    4b. Content path: extract_title → Pass 1-3 → Territory remaining
+    4b. Content path: extract_title → Pass 1-4 → Territory remaining
     """
     normalized = normalize_html(html)
     index = build_dom_index(normalized)
@@ -103,6 +105,10 @@ def extract(html: str, source_path: str = "") -> ContentIR:
 
     # Pass 3: chapter titles
     chapter_titles = pass3_chapter_title(index, territory)
+
+    # Pass 4: annotations (claims annotation nodes from territory)
+    # Side effect: annotation nodes are claimed; return value wired in Phase 6
+    _annotations = pass4_annotation(index, territory)
 
     # Territory: collect remaining unclaimed text
     text_content = {nid: node_text for nid, node_text in _collect_text(index)}

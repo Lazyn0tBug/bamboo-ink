@@ -11,6 +11,7 @@ from bamboo_extract.passes import (
     pass1_book_title,
     pass2_metadata,
     pass3_chapter_title,
+    pass4_annotation,
 )
 from bamboo_extract.territory import Territory
 
@@ -256,6 +257,129 @@ class TestPass3ChapterTitle:
             territory.claim_subtree(nid, idx.children_map.get(nid, []))
         chapters = pass3_chapter_title(idx, territory)
         assert len(chapters) == 0
+
+
+# ── Pass 4: Annotation ──────────────────────────────────────────────
+
+
+class TestPass4Annotation:
+    """pass4_annotation — territorial annotation extraction."""
+
+    def test_class_annotation(self) -> None:
+        """class="annotation" → claimed, text collected."""
+        html = '<body><span class="annotation">注释文字</span></body>'
+        idx, territory = _build(html)
+        annotations = pass4_annotation(idx, territory)
+        assert len(annotations) == 1
+        assert annotations[0]["text"] == "注释文字"
+        assert territory.is_claimed(annotations[0]["node_id"])
+
+    def test_class_reference(self) -> None:
+        """class="reference" → claimed, text collected."""
+        html = '<body><div class="reference">参考</div></body>'
+        idx, territory = _build(html)
+        annotations = pass4_annotation(idx, territory)
+        assert len(annotations) == 1
+        assert annotations[0]["text"] == "参考"
+
+    def test_class_notes(self) -> None:
+        """class="notes" → claimed, text collected."""
+        html = '<body><div class="notes">备注</div></body>'
+        idx, territory = _build(html)
+        annotations = pass4_annotation(idx, territory)
+        assert len(annotations) == 1
+        assert annotations[0]["text"] == "备注"
+
+    def test_font_size_9pt(self) -> None:
+        """<font style="FONT-SIZE: 9pt">小字注</font> → claimed via style scan."""
+        html = '<body><font style="FONT-SIZE: 9pt">小字注</font></body>'
+        idx, territory = _build(html)
+        annotations = pass4_annotation(idx, territory)
+        assert len(annotations) == 1
+        assert "小字注" in annotations[0]["text"]
+
+    def test_font_size_10pt_purple(self) -> None:
+        """<font style="FONT-SIZE: 10pt" color="#551A8B">紫注</font> → claimed."""
+        html = '<body><font style="FONT-SIZE: 10pt" color="#551A8B">紫注</font></body>'
+        idx, territory = _build(html)
+        annotations = pass4_annotation(idx, territory)
+        assert len(annotations) == 1
+        assert "紫注" in annotations[0]["text"]
+
+    def test_span_size_10pt_purple(self) -> None:
+        """<span style="FONT-SIZE: 10pt; color:#551A8B">夹注</span> → claimed."""
+        html = '<body><span style="FONT-SIZE: 10pt; color:#551A8B">夹注</span></body>'
+        idx, territory = _build(html)
+        annotations = pass4_annotation(idx, territory)
+        assert len(annotations) == 1
+        assert "夹注" in annotations[0]["text"]
+
+    def test_already_claimed_skipped(self) -> None:
+        """Already claimed by Pass 1-3 → skip (territory isolation)."""
+        html = '<body><span class="annotation">注释</span></body>'
+        idx, territory = _build(html)
+        span_ids = idx.by_tag.get("span", [])
+        for nid in span_ids:
+            territory.claim_leaf(nid)
+        annotations = pass4_annotation(idx, territory)
+        assert len(annotations) == 0
+
+    def test_has_claimed_ancestor_skipped(self) -> None:
+        """Annotation inside claimed ancestor → skip."""
+        html = '<body><div class="article"><span class="annotation">注</span></div></body>'
+        idx, territory = _build(html)
+        div_ids = idx.by_tag.get("div", [])
+        for nid in div_ids:
+            territory.claim_subtree(nid, idx.children_map.get(nid, []))
+        annotations = pass4_annotation(idx, territory)
+        assert len(annotations) == 0
+
+    def test_empty_text_skipped(self) -> None:
+        """Empty text node → skip."""
+        html = '<body><span class="annotation"></span></body>'
+        idx, territory = _build(html)
+        annotations = pass4_annotation(idx, territory)
+        assert len(annotations) == 0
+
+    def test_no_annotations(self) -> None:
+        """No annotation patterns → empty list (Template G scenario)."""
+        idx, territory = _build(TEMPLATE_G_HTML)
+        annotations = pass4_annotation(idx, territory)
+        assert len(annotations) == 0
+
+    def test_template_f_annotations(self) -> None:
+        """Template F → ≥2 annotations (FONT-SIZE: 9pt annotations)."""
+        idx, territory = _build(TEMPLATE_F_HTML)
+        # Run Pass 1-3 first to claim book title and chapter titles
+        pass1_book_title(idx, territory)
+        pass2_metadata(idx, territory)
+        pass3_chapter_title(idx, territory)
+        annotations = pass4_annotation(idx, territory)
+        # Template F has 2 FONT-SIZE: 9pt annotation lines
+        assert len(annotations) >= 2
+        # Verify annotation text matches expected content
+        texts = [a["text"] for a in annotations]
+        assert any("程子曰" in t for t in texts)
+        assert any("朱子曰" in t for t in texts)
+
+    def test_template_f_annotations_not_in_remaining(self) -> None:
+        """Integration: Pass 4 claimed annotations not in remaining text."""
+        idx, territory = _build(TEMPLATE_F_HTML)
+        pass1_book_title(idx, territory)
+        pass2_metadata(idx, territory)
+        pass3_chapter_title(idx, territory)
+        annotations = pass4_annotation(idx, territory)
+        # Collect remaining
+        text_content = {
+            nid: idx.text_by_id.get(nid, "").strip()
+            for nid in idx.all_text_nodes
+            if idx.text_by_id.get(nid, "").strip()
+        }
+        remaining = territory.extract_remaining(idx.all_text_nodes, text_content)
+        remaining_text = "".join(r["content"] for r in remaining)
+        # Annotation text should NOT appear in remaining
+        for ann in annotations:
+            assert ann["text"] not in remaining_text
 
 
 # ── extract_title pre-pass ──────────────────────────────────────────
