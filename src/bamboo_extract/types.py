@@ -70,3 +70,6 @@ class DOMIndex:
     by_size: dict[str, list[int]] = field(default_factory=dict)
     all_text_nodes: list[int] = field(default_factory=list)
     parent_map: dict[int, int] = field(default_factory=dict)  # {node_id: parent_node_id}
+    text_by_id: dict[int, str] = field(default_factory=dict)  # {node_id: full_text}
+    attrs_by_id: dict[int, dict[str, str]] = field(default_factory=dict)  # {node_id: attrs}
+    children_map: dict[int, list[int]] = field(default_factory=dict)  # {parent_id: [child_ids]}

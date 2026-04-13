@@ -127,3 +127,60 @@ class TestEdgeCases:
         # Verify chain: span -> p -> div
         assert idx.parent_map[span_ids[0]] == p_ids[0]
         assert idx.parent_map[p_ids[0]] == div_ids[0]
+
+
+class TestTextById:
+    def test_element_text(self) -> None:
+        html = "<body><p>hello</p></body>"
+        idx = build_dom_index(html)
+        p_ids = idx.by_tag.get("p", [])
+        assert len(p_ids) == 1
+        assert "hello" in idx.text_by_id[p_ids[0]]
+
+    def test_text_node_text(self) -> None:
+        html = "<body><div>a<span>b</span>c</div>"
+        idx = build_dom_index(html)
+        # All text nodes should have entries in text_by_id
+        for nid in idx.all_text_nodes:
+            assert nid in idx.text_by_id
+
+
+class TestAttrsById:
+    def test_element_attrs(self) -> None:
+        html = '<body><font color="#F66" size="5">x</font></body>'
+        idx = build_dom_index(html)
+        font_ids = idx.by_tag.get("font", [])
+        assert len(font_ids) == 1
+        assert idx.attrs_by_id[font_ids[0]] == {"color": "#F66", "size": "5"}
+
+    def test_no_attrs(self) -> None:
+        html = "<body><div>x</div></body>"
+        idx = build_dom_index(html)
+        div_ids = idx.by_tag.get("div", [])
+        assert len(div_ids) == 1
+        assert idx.attrs_by_id[div_ids[0]] == {}
+
+
+class TestChildrenMap:
+    def test_parent_children(self) -> None:
+        html = "<body><div><span>a</span><p>b</p></div></body>"
+        idx = build_dom_index(html)
+        div_ids = idx.by_tag.get("div", [])
+        assert len(div_ids) == 1
+        children = idx.children_map.get(div_ids[0], [])
+        # Should include span and text node children
+        assert len(children) >= 2
+
+    def test_nested_chain(self) -> None:
+        html = "<body><div><p><span>x</span></p></div></body>"
+        idx = build_dom_index(html)
+        div_ids = idx.by_tag.get("div", [])
+        p_ids = idx.by_tag.get("p", [])
+        span_ids = idx.by_tag.get("span", [])
+        assert len(div_ids) == 1
+        assert len(p_ids) == 1
+        assert len(span_ids) == 1
+        # div's children should include p
+        assert p_ids[0] in idx.children_map.get(div_ids[0], [])
+        # p's children should include span
+        assert span_ids[0] in idx.children_map.get(p_ids[0], [])

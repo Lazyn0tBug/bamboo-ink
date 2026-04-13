@@ -54,17 +54,25 @@ def build_dom_index(html: str) -> DOMIndex:
         # Text node
         if tag == "-text":
             index.all_text_nodes.append(node_id)
+            index.text_by_id[node_id] = node.text() or ""
             if parent_id is not None:
                 index.parent_map[node_id] = parent_id
+                index.children_map.setdefault(parent_id, []).append(node_id)
             return
 
-        # Element node — index by tag
+        # Element node — extract attrs first
+        attrs = node.attrs or {}
+
+        # Index by tag
         tag_lower = tag.lower()
         if tag_lower:
             index.by_tag.setdefault(tag_lower, []).append(node_id)
 
+        # Store attrs and text for element nodes
+        index.attrs_by_id[node_id] = dict(attrs)
+        index.text_by_id[node_id] = node.text() or ""
+
         # Index by color (normalized)
-        attrs = node.attrs or {}
         if "color" in attrs:
             color = _normalize_color(attrs["color"])
             index.by_color.setdefault(color, []).append(node_id)
@@ -82,6 +90,7 @@ def build_dom_index(html: str) -> DOMIndex:
         # Record parent
         if parent_id is not None:
             index.parent_map[node_id] = parent_id
+            index.children_map.setdefault(parent_id, []).append(node_id)
 
         # Recurse into children
         child = node.child
