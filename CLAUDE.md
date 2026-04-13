@@ -16,40 +16,168 @@
 
 ## 开发原则
 
-### 核心开发流程 - 完整改动必须遵守
+### 核心开发流程 - 编码→审查→测试→验证→提交（不可跳过）
 
-**每次完整改动都必须经过以下步骤，缺一不可：**
+**每次改动都必须遵循以下五步流水线，不可跳过、不可颠倒顺序、不可合并步骤。** 无论是新增功能、Bug 修复、重构还是文档更新，此规则始终生效。
+
+```
+┌─────────┐    ┌─────────┐    ┌─────────┐    ┌─────────┐    ┌─────────┐
+│ Step 1  │───▶│ Step 2  │───▶│ Step 3  │───▶│ Step 4  │───▶│ Step 5  │
+│ 编码    │    │ 审查    │    │ 测试    │    │ 验证    │    │ 提交    │
+└─────────┘    └─────────┘    └─────────┘    └─────────┘    └─────────┘
+```
+
+#### Step 1: 编码 (Code)
+
+- 先读现有代码，理解上下文再动手
+- 遵循「最小必要改动」原则，不引入无关重构
+- 新功能必须先写测试骨架（TDD 优先）
+- 占桩实现必须标注 `@todo` 并注明替换 Phase
+- **产出**：代码变更，尚未提交
+
+#### Step 2: 审查 (Review)
+
+代码完成后、运行测试前，先通过静态分析自我审查：
 
 ```bash
-# 1. 代码审查 - 检查代码质量
-bun run lint
+# TypeScript/JavaScript 侧
+bun run lint                              # ESLint: 语法、风格、常见错误
+npx ts-prune --ignore "used in spec|\.test\."  # 未引用的导出
+npx knip --no-exit-code                   # 死代码、未使用的依赖（报告模式）
 
-# 2. 更新测试用例 - 新增功能必须添加对应测试
-# 在 tests/ 目录添加或更新 .test.ts 文件
-
-# 3. 运行测试 - 验证功能正确性
-bun run test
-
-# 4. 代码格式化
-bun run format
-
-# 5. Astro 类型检查
-bun run check
-
-# 6. 构建验证
-bun run build
-
-# 7. 完整验证流程（推荐）
-bun run validate && bun run test && bun run build
+# Python 侧
+ruff check --select=F401,F841,F403        # 未使用导入、变量、import *
+python -m vulture src/content/            # 未使用的函数、类
 ```
+
+**质量保障 Skill 调用**（按需）：
+- `ce-review` (ce:review) — 在 Phase 完成后对 diff 运行完整代码审查，利用 17 个并行 persona（correctness、security、testing、maintainability 等）
+- `document-review` — 需求/计划文档的质量审查
+- `ce:plan` — 复杂变更前先产出技术计划
+
+**审查通过标准**：
+- `bun run lint` 零错误
+- `ts-prune` 无本 Phase 新增的孤立导出
+- `ruff check` 零 F401/F841/F403 错误
+
+#### Step 3: 测试 (Test)
+
+```bash
+# TypeScript/JavaScript 侧
+bun run test                              # 运行全部单元测试
+bun run test -- --run {相关文件名}         # 快速验证变更影响的范围
+
+# Python 侧
+python -m pytest tests/                   # 运行全部 Python 测试
+python -m pytest tests/ -k {关键词}        # 快速验证特定模块
+python -m pytest tests/ --cov=src/content # 覆盖率报告（Phase 完成后）
+```
+
+**质量保障 Skill 调用**：
+- `vitest` — 测试框架指导，编写高质量测试用例
+- `ce-review:testing-reviewer` — 测试覆盖率、断言质量、边缘情况审查
+
+**测试通过标准**：
+- 全部已有测试通过（零回归）— TypeScript + Python 两侧
+- 新功能/修复必须添加对应的回归测试
+- 边缘情况至少覆盖 1 个边界值
+- Python 测试覆盖率 ≥ 80%（新增代码）
+
+#### Step 4: 验证 (Verify)
+
+测试通过后，执行完整构建和类型检查：
+
+```bash
+bun run format                            # 代码格式化
+bun run check                             # Astro 类型检查
+bun run build                             # 构建验证
+bun run validate                          # 完整验证流程（lint + check + build）
+```
+
+**Python 侧额外验证**：
+```bash
+ruff check src/content/                   # 最终静态检查
+python -m py_compile src/content/*.py     # 语法验证
+```
+
+**验证通过标准**：
+- `bun run validate` 零错误
+- `bun run build` 成功生成 `dist/`
+- `ruff check` 零错误
+
+#### Step 5: 提交 (Commit)
+
+仅当 Step 1-4 全部通过后才可提交：
+
+```bash
+# 提交前最终确认
+git status                                # 确认变更范围
+git diff                                  # 审查实际改动
+git commit -m "type: description"         # 约定式提交
+```
+
+**约定式提交类型**：
+- `feat`: 新功能
+- `fix`: Bug 修复
+- `test`: 测试相关
+- `docs`: 文档更新
+- `chore`: 构建/工具配置
+- `refactor`: 代码重构
+
+**不可提交的情况**：
+- Step 1-4 中任何一步失败
+- 包含未注释的 `console.log` / `debugger`（调试代码规范）
+- 引入新的 lint 警告或测试失败
+- 变更包含 `docs/brainstorms/`、`docs/plans/`、`docs/solutions/` 中的受保护文件（除非是更新计划本身）
 
 **原则说明：**
 
-1. **代码审查优先** - 任何改动必须先通过 lint 检查
-2. **测试驱动开发** - 新功能必须先写测试，再写实现
-3. **测试覆盖** - 每个功能模块必须有对应测试文件
-4. **验证完备** - 提交前必须通过所有验证（lint + test + build）
-5. **零容忍** - 任何一步失败都不能提交
+1. **编码优先但非盲目** — 动手前必读现有代码，理解上下文
+2. **测试驱动开发** — 新功能先写测试骨架，再写实现
+3. **审查不跳步** — lint 和静态分析在测试前运行，尽早发现问题
+4. **验证零容忍** — lint / test / build 任何一步失败都不能提交
+5. **提交前自审** — `git diff` 审查实际改动，避免意外变更
+
+### 死代码与悬垂接口追踪 - 静态分析规则
+
+**目标**：防止函数定义但从未调用、接口声明但从未消费、占桩实现未替换、导出但无人导入等死代码积累。
+
+#### 工具链
+
+| 语言 | 工具 | 检测内容 |
+|------|------|----------|
+| TypeScript | `eslint` (已有) | 未使用的变量、导入、参数 |
+| TypeScript | `ts-prune` | 已导出但未被任何文件引用的符号 |
+| TypeScript | `knip` | 死代码、未使用的依赖和配置 |
+| Python | `ruff --select=F401,F841, F403` | 未使用的导入、变量、`import *` |
+| Python | `ruff --select=F841` | 已赋值但从未使用的局部变量 |
+| Python | `vulture` | 未使用的函数、类、属性 |
+
+#### 执行时机
+
+每个 Phase 完成后、提交代码前，除核心开发流程的 7 步外，追加：
+
+```bash
+# TypeScript 侧
+npx ts-prune --ignore "used in spec|\.test\."
+npx knip --no-exit-code  # 报告模式，不阻断
+
+# Python 侧 (src/content/ 目录)
+ruff check src/content/ --select=F401,F841,F403
+```
+
+#### 判定规则
+
+1. **新导出必须被消费** — 本 Phase 新增的 `export` 若未被任何其他文件引用，必须标注 `@todo` 并说明预期消费者
+2. **占桩必须有替换计划** — `dummy` / `pass` / `throw new Error("not implemented")` 等占桩实现，必须在同一 Phase 或下一个明确编号的 Phase 中被真实实现替换
+3. **Phase 结束自动清理** — 当 JS 侧功能被 Python 模块完整替换后，对应的 JS 函数必须在最近一个 Phase 内标记 `@deprecated` 并在下一个 Phase 删除
+4. **工具误报处理** — 动态调用（如 `obj[methodName]()`）导致的误报，在函数上方加 `// @used-via-dynamic` 或 `# noqa: F401  # used dynamically` 注释说明
+
+#### 验证标准
+
+- `ts-prune` 输出中不应出现本 Phase 新增的符号（`@used-via-dynamic` 标注除外）
+- `ruff check` 不应报 F401/F841 错误
+- 每个 `@todo` 占桩替换项必须关联到具体的 Phase 编号
 
 ### Git 提交规范
 
@@ -442,29 +570,9 @@ uv run pytest tests/       # test（等价于 bun run test）
 
 ## 开发流程
 
-### 验证流程
+### 五步开发流水线
 
-每个功能开发完成后需经过验证：
-
-```bash
-# 1. 代码检查
-bun run lint
-
-# 2. 代码格式化
-bun run format
-
-# 3. Astro 类型检查
-bun run check
-
-# 4. 完整验证
-bun run validate
-
-# 5. 构建测试
-bun run build
-
-# 6. 测试验证（必须）
-bun run test
-```
+见上方「核心开发流程 - 编码→审查→测试→验证→提交」章节。该流水线是**唯一**的开发流程，任何功能、修复、重构都必须遵守。此处不再重复步骤。
 
 ### 测试策略
 
