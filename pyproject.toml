@@ -1,0 +1,41 @@
+[project]
+name = "bamboo-extract"
+version = "0.1.0"
+description = "Ancient Chinese text extraction module"
+requires-python = ">=3.12"
+dependencies = [
+    "selectolax>=0.3.0",
+    "pydantic>=2.0",
+]
+
+[project.scripts]
+bamboo-extract = "bamboo_extract.cli:main"
+
+[dependency-groups]
+dev = [
+    "pytest>=8.0",
+    "ruff>=0.9.0",
+    "ty>=0.0.1a8",
+    "hatchling>=1.0",
+]
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.uv]
+package = true
+
+[tool.ruff]
+target-version = "py312"
+line-length = 100
+
+[tool.ruff.lint]
+select = ["E", "F", "W", "I", "N", "UP", "B", "SIM"]
+
+[tool.ty.rules]
+missing-import = "error"
+unresolved-reference = "error"
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
