@@ -88,6 +88,9 @@ def extract(html: str, source_path: str = "") -> ContentIR:
     index = build_dom_index(normalized)
     territory = Territory()
 
+    # Initialize NLP service (loads meta_dict + jieba plugin if available)
+    nlp_service = _build_nlp_service()
+
     # ── Catalog path ─────────────────────────────────────────────
     if detect_catalog(index):
         nav_items = [
@@ -95,13 +98,23 @@ def extract(html: str, source_path: str = "") -> ContentIR:
             for item in extract_nav_items(index)
         ]
 
-        # Try to extract metadata from body text
+        # Try to extract metadata from body text with NLP validation
         dynasty: str | None = None
         author: str | None = None
+        has_nlp = nlp_service.is_active
         for nid in index.all_text_nodes:
             text = index.text_by_id.get(nid, "").strip()
             match = METADATA_RE.search(text)
-            if match:
+            if not match:
+                continue
+            if has_nlp:
+                result = nlp_service.classify_short_text(match.group(0))
+                if result.get("type") == "metadata":
+                    dynasty = result["dynasty"]
+                    author = result["author"]
+                    break
+                # NLP rejected — continue to next candidate
+            else:
                 dynasty = match.group(1)
                 author = match.group(2)
                 break
@@ -117,9 +130,6 @@ def extract(html: str, source_path: str = "") -> ContentIR:
         )
 
     # ── Content path ─────────────────────────────────────────────
-
-    # Initialize NLP service (loads meta_dict + jieba plugin if available)
-    nlp_service = _build_nlp_service()
 
     # Pre-pass: title from <title> tag / <h1> / color scan
     title = extract_title(html, index)
