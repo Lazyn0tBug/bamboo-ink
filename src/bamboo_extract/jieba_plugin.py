@@ -11,6 +11,11 @@ import jieba
 from .meta_dict import MetaDictionary
 from .nlp import Entity, NLPPlugin
 
+# Module-level guard: jieba.add_word() mutates global state. Track which
+# words have already been registered to avoid redundant calls across
+# multiple plugin instances (e.g., concurrent extract() in a server).
+_registered_words: set[str] = set()
+
 
 class JiebaNLPPlugin(NLPPlugin):
     """NLP plugin backed by jieba segmentation + dictionary matching."""
@@ -19,11 +24,15 @@ class JiebaNLPPlugin(NLPPlugin):
         self._meta_dict = meta_dict
         if meta_dict is not None:
             # Add dynasty and author names to jieba's custom dictionary
-            # so they are recognized as single tokens during segmentation.
+            # only if not already registered (jieba state is global).
             for dynasty in meta_dict.dynasties:
-                jieba.add_word(dynasty)
+                if dynasty not in _registered_words:
+                    jieba.add_word(dynasty)
+                    _registered_words.add(dynasty)
             for author in meta_dict.authors:
-                jieba.add_word(author)
+                if author not in _registered_words:
+                    jieba.add_word(author)
+                    _registered_words.add(author)
 
     def segment(self, text: str) -> list[str]:
         """Split text into tokens using jieba.lcut."""

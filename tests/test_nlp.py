@@ -1,6 +1,6 @@
 """Tests for JiebaNLPPlugin — jieba-based NLP plugin."""
 
-from bamboo_extract.jieba_plugin import JiebaNLPPlugin
+from bamboo_extract.jieba_plugin import JiebaNLPPlugin, _registered_words
 from bamboo_extract.meta_dict import MetaDictionary
 from bamboo_extract.nlp import Entity
 
@@ -123,3 +123,37 @@ class TestJiebaMultiTokenDynastyNames:
         entities = plugin.recognize_entities(tokens, {"dynasty", "person"})
         assert any(e.text == "北宋" and e.type == "dynasty" for e in entities)
         assert any(e.text == "苏轼" and e.type == "person" for e in entities)
+
+
+class TestJiebaGlobalStateGuard:
+    """Multiple plugin instances should not duplicate add_word calls."""
+
+    def test_second_instance_does_not_duplicate(self) -> None:
+        """Second plugin instance with same dictionary adds no new words."""
+        md = MetaDictionary()
+        md.add_pair("唐", "李白")  # use unique entries to avoid collision
+        JiebaNLPPlugin(md)
+        count_after_first = len(_registered_words)
+        # Second instance should not add duplicates
+        JiebaNLPPlugin(md)
+        count_after_second = len(_registered_words)
+        assert count_after_first == count_after_second
+        assert "唐" in _registered_words
+        assert "李白" in _registered_words
+
+    def test_different_dict_entries_still_registered(self) -> None:
+        """Plugin with new dictionary entries still registers them."""
+        md1 = MetaDictionary()
+        md1.add_pair("五代", "冯道")
+        JiebaNLPPlugin(md1)
+        count = len(_registered_words)
+
+        md2 = MetaDictionary()
+        md2.add_pair("晋", "皇甫谧")  # new entries not in md1
+        JiebaNLPPlugin(md2)
+        # New words should be registered
+        assert "五代" in _registered_words
+        assert "冯道" in _registered_words
+        assert "晋" in _registered_words
+        assert "皇甫谧" in _registered_words
+        assert len(_registered_words) > count
