@@ -1,5 +1,6 @@
 """bamboo-extract — Ancient Chinese text extraction module."""
 
+import logging
 from pathlib import Path
 
 from .assembler import assemble_results
@@ -11,6 +12,9 @@ from .nlp import NLPPlugin
 from .nlp_service import NLPService
 from .normalize import normalize_html
 from .passes import (
+    AnnotationEntry,
+    ChapterTitleEntry,
+    MetadataResult,
     extract_title,
     pass1_book_title,
     pass2_metadata,
@@ -30,6 +34,13 @@ from .types import (
     NodeProxy,
     Section,
 )
+
+logger = logging.getLogger(__name__)
+
+# Minimum number of dynasty-author pairs required for NLP to be useful.
+# Below this threshold, is_dynasty() rarely matches, recognize_entities()
+# returns empty, and the entire NLP layer silently degrades to regex-only.
+_NLP_MIN_PAIRS = 50
 
 __all__ = [
     "ContentIR",
@@ -57,6 +68,9 @@ __all__ = [
     "NLPPlugin",
     "JiebaNLPPlugin",
     "MetaDictionary",
+    "MetadataResult",
+    "ChapterTitleEntry",
+    "AnnotationEntry",
 ]
 
 # Package resource path
@@ -64,13 +78,26 @@ _PACKAGE_DIR = Path(__file__).parent
 
 
 def _build_nlp_service() -> NLPService:
-    """Initialize NLPService with meta_dict and JiebaNLPPlugin if available."""
+    """Initialize NLPService with meta_dict and JiebaNLPPlugin if available.
+
+    If the loaded MetaDictionary has fewer than _NLP_MIN_pairs, the plugin
+    is not registered — NLP is disabled to prevent silent degradation where
+    is_dynasty() always returns False and the layer falls through to regex.
+    """
     service = NLPService()
     meta_dict_path = _PACKAGE_DIR / "resources" / "meta_dict.json"
     if meta_dict_path.exists():
         meta_dict = MetaDictionary.load(meta_dict_path)
         service.set_meta_dict(meta_dict)
-        service.set_plugin(JiebaNLPPlugin(meta_dict))
+        if meta_dict.pair_count >= _NLP_MIN_PAIRS:
+            service.set_plugin(JiebaNLPPlugin(meta_dict))
+        else:
+            logger.warning(
+                "NLP plugin disabled: meta_dict has %d pairs (minimum %d). "
+                "Falling back to regex-only metadata extraction.",
+                meta_dict.pair_count,
+                _NLP_MIN_PAIRS,
+            )
     return service
 
 

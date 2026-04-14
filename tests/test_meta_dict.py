@@ -186,3 +186,93 @@ class TestBuildMetaDictEdgeCases:
         assert md.get_author_dynasty("苏轼") == "宋"
         # Only one author entry despite two occurrences
         assert md.authors["苏轼"] == "宋"
+
+
+class TestMetaDictionaryValidation:
+    """Tests for MetaDictionary validation gates."""
+
+    def test_pair_count(self) -> None:
+        """pair_count returns number of unique author entries."""
+        md = MetaDictionary()
+        assert md.pair_count == 0
+        md.add_pair("宋", "朱熹")
+        assert md.pair_count == 1
+        md.add_pair("宋", "苏轼")
+        assert md.pair_count == 2
+        # Duplicate pair should not increase count
+        md.add_pair("宋", "朱熹")
+        assert md.pair_count == 2
+
+    def test_validate_pair_valid(self) -> None:
+        """validate_pair accepts known dynasty with non-empty author."""
+        md = MetaDictionary()
+        assert md.validate_pair("宋", "朱熹") is True
+        assert md.validate_pair("唐", "李白") is True
+
+    def test_validate_pair_unknown_dynasty(self) -> None:
+        """validate_pair rejects unknown dynasty names."""
+        md = MetaDictionary()
+        assert md.validate_pair("民国", "鲁迅") is False
+        assert md.validate_pair("现代", "某人") is False
+
+    def test_validate_pair_empty_author(self) -> None:
+        """validate_pair rejects empty author."""
+        md = MetaDictionary()
+        assert md.validate_pair("宋", "") is False
+        assert md.validate_pair("宋", "   ") is False
+
+    def test_extract_pairs_rejects_unknown_dynasty(self) -> None:
+        """_extract_metadata_pairs rejects patterns with unknown dynasties."""
+        from bamboo_extract.meta_dict import _extract_metadata_pairs
+
+        # Known dynasty — accepted
+        html = '<font class="annotation">(宋·朱熹)</font>'
+        pairs = _extract_metadata_pairs(html)
+        assert pairs == [("宋", "朱熹")]
+
+        # Unknown dynasty — rejected
+        html = '<font class="annotation">(民国·鲁迅)</font>'
+        pairs = _extract_metadata_pairs(html)
+        assert pairs == []
+
+    def test_extract_pairs_rejects_empty_author(self) -> None:
+        """_extract_metadata_pairs rejects patterns with empty author."""
+        from bamboo_extract.meta_dict import _extract_metadata_pairs
+
+        html = '<font class="annotation">(宋·)</font>'
+        pairs = _extract_metadata_pairs(html)
+        assert pairs == []
+
+    def test_extract_pairs_rejects_non_metadata(self) -> None:
+        """_extract_metadata_pairs rejects non-metadata like (英译本)."""
+        from bamboo_extract.meta_dict import _extract_metadata_pairs
+
+        # "(英译本)" does not match METADATA_RE pattern at all, but
+        # test that even if something matches, unknown dynasty is rejected
+        html = '<font class="annotation">(英译本)</font>'
+        pairs = _extract_metadata_pairs(html)
+        assert pairs == []
+
+    def test_build_nlp_service_disabled_when_small_dict(self, caplog) -> None:
+        """_build_nlp_service does not set plugin when dictionary is too small."""
+        import logging
+        import json
+        from unittest.mock import patch
+
+        from bamboo_extract import _build_nlp_service
+
+        # Create a temporary small dictionary
+        small_md = MetaDictionary()
+        small_md.dynasties = {"宋"}
+        small_md.authors = {"朱熹": "宋"}
+        small_md.dynasty_authors = {"宋": {"朱熹"}}
+
+        with patch.object(MetaDictionary, "load", return_value=small_md):
+            with caplog.at_level(logging.WARNING):
+                service = _build_nlp_service()
+
+        # NLP should be disabled: plugin should be None
+        assert service._plugin is None
+        # A warning should have been logged
+        assert "NLP plugin disabled" in caplog.text
+        assert "pairs" in caplog.text

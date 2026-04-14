@@ -135,3 +135,25 @@ class TestNLPServiceClassify:
         assert result["type"] == "metadata"
         assert result["dynasty"] == "宋"
         assert result["author"] == "朱熹"
+
+    def test_dynasty_mismatch_author_wins(self) -> None:
+        """When detected dynasty differs from author's dynasty, author's dynasty wins.
+
+        E.g., input produces entity "唐" (dynasty) + "朱熹" (person).
+        Dictionary knows "唐" as a dynasty AND knows "朱熹" → "宋".
+        The mismatch at line 93 fires: dynasty="唐" but author's dynasty is "宋",
+        so the result should use "宋" not "唐".
+        """
+        md = MetaDictionary()
+        md.dynasties.add("唐")  # "唐" is a known dynasty
+        md.add_pair("宋", "朱熹")  # 朱熹 belongs to 宋
+        # Plugin recognizes both "唐" as dynasty and "朱熹" as person
+        svc = _build_service(
+            token_map={"唐": "dynasty", "朱熹": "person"},
+            meta_dict=md,
+        )
+        result = svc.classify_short_text("唐·朱熹")
+        assert result["type"] == "metadata"
+        # Author's dynasty (宋) should win over detected dynasty (唐)
+        assert result["dynasty"] == "宋"
+        assert result["author"] == "朱熹"

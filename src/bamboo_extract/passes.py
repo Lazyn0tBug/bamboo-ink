@@ -8,7 +8,7 @@ Mirrors JS extractors.mjs:270-453.
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, TypedDict
 
 from selectolax.parser import HTMLParser
 
@@ -24,6 +24,30 @@ from .regex_patterns import (
 )
 from .territory import Territory
 from .types import ContentIR, DOMIndex
+
+
+# ── TypedDict for Pass return types ─────────────────────────────────
+
+
+class MetadataResult(TypedDict):
+    """Return type of pass2_metadata — dynasty and author pair."""
+
+    dynasty: str
+    author: str
+
+
+class ChapterTitleEntry(TypedDict):
+    """Single entry returned by pass3_chapter_title."""
+
+    title: str
+    node_id: int
+
+
+class AnnotationEntry(TypedDict):
+    """Single entry returned by pass4_annotation."""
+
+    text: str
+    node_id: int
 
 
 def _all_descendants(node_id: int, children_map: dict[int, list[int]]) -> list[int]:
@@ -184,7 +208,7 @@ def pass2_metadata(
     index: DOMIndex,
     territory: Territory,
     nlp_service: NLPService | None = None,
-) -> dict[str, str] | None:
+) -> MetadataResult | None:
     """Extract metadata (dynasty, author) from DOM.
 
     Strategy (JS extractors.mjs:373-396):
@@ -205,7 +229,7 @@ def pass2_metadata(
             return result
         return None
 
-    def _try_candidate(nid: int) -> dict[str, str] | None:
+    def _try_candidate(nid: int) -> MetadataResult | None:
         if territory.is_claimed(nid) or territory.has_claimed_ancestor(
             nid, index.parent_map
         ):
@@ -253,7 +277,7 @@ def pass2_metadata(
 
 def pass3_chapter_title(
     index: DOMIndex, territory: Territory
-) -> list[dict]:
+) -> list[ChapterTitleEntry]:
     """Extract chapter-title nodes from DOM.
 
     Strategy (JS extractors.mjs:408-453):
@@ -262,7 +286,7 @@ def pass3_chapter_title(
     3. color=#CC33CC + tag in [B, FONT, DIV, SPAN]
     4. h2/h3/h4 + centered
     """
-    chapters: list[dict] = []
+    chapters: list[ChapterTitleEntry] = []
 
     def try_claim(nid: int) -> bool:
         if territory.is_claimed(nid) or territory.has_claimed_ancestor(nid, index.parent_map):
@@ -311,7 +335,7 @@ def pass3_chapter_title(
 
 def pass4_annotation(
     index: DOMIndex, territory: Territory
-) -> list[dict]:
+) -> list[AnnotationEntry]:
     """Extract annotation nodes from DOM.
 
     Mirrors JS pass4Annotation() from extractors.mjs:470-517.
@@ -323,7 +347,7 @@ def pass4_annotation(
     Uses claim_leaf (not claim_subtree) — annotation nodes are leaf text
     nodes (span, font), not containers with nested structure.
     """
-    annotations: list[dict] = []
+    annotations: list[AnnotationEntry] = []
 
     def try_claim(nid: int) -> bool:
         if territory.is_claimed(nid) or territory.has_claimed_ancestor(nid, index.parent_map):

@@ -91,3 +91,35 @@ class TestJiebaPluginPunctuate:
 
         with pytest.raises(NotImplementedError):
             plugin.punctuate("学而时习之")
+
+
+class TestJiebaMultiTokenDynastyNames:
+    """Multi-token dynasty name handling.
+
+    Dynasty names like "南北朝" or "北宋" may be segmented by jieba into
+    sub-tokens. These tests verify that jieba (with add_word) correctly
+    handles these cases.
+    """
+
+    def test_compound_dynasty_recognized_as_single_token(self) -> None:
+        """'南北朝' should be recognized as a single dynasty token."""
+        md = MetaDictionary()
+        md.add_pair("南北朝", "陶渊明")
+        plugin = JiebaNLPPlugin(md)
+        tokens = plugin.segment("南北朝·陶渊明")
+        # With add_word, jieba should keep 南北朝 as one token
+        assert "南北朝" in tokens
+        entities = plugin.recognize_entities(tokens, {"dynasty", "person"})
+        assert any(e.text == "南北朝" and e.type == "dynasty" for e in entities)
+        assert any(e.text == "陶渊明" and e.type == "person" for e in entities)
+
+    def test_bei_song_recognized(self) -> None:
+        """'北宋' should be recognized as a single dynasty token."""
+        md = MetaDictionary()
+        md.add_pair("北宋", "苏轼")
+        plugin = JiebaNLPPlugin(md)
+        tokens = plugin.segment("北宋·苏轼")
+        assert "北宋" in tokens
+        entities = plugin.recognize_entities(tokens, {"dynasty", "person"})
+        assert any(e.text == "北宋" and e.type == "dynasty" for e in entities)
+        assert any(e.text == "苏轼" and e.type == "person" for e in entities)

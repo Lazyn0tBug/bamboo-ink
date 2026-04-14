@@ -708,6 +708,31 @@ class TestNlpIntegrationPass2:
         # NLP is "active" but dict is empty → no matches
         assert meta is None
 
+    def test_nlp_first_rejected_second_accepted(self) -> None:
+        """First candidate matches regex but NLP rejects; second is accepted.
+
+        This tests the key behavioral change: NLP rejection continues to
+        next candidate instead of returning None immediately.
+        """
+        md = MetaDictionary()
+        md.add_pair("宋", "朱熹")
+        svc = NLPService()
+        svc.set_plugin(JiebaNLPPlugin(md))
+        svc.set_meta_dict(md)
+
+        # HTML with two candidates: first is false positive, second is valid
+        html = """<html><body>
+        <p>卷十二 三洞经教部·经三</p>
+        <p>(宋·朱熹)</p>
+        </body></html>"""
+        idx, territory = _build(html)
+        meta = pass2_metadata(idx, territory, svc)
+        # First candidate ("洞经教部·经三") should be rejected by NLP
+        # Second candidate ("宋·朱熹") should be accepted
+        assert meta is not None
+        assert meta["dynasty"] == "宋"
+        assert meta["author"] == "朱熹"
+
 
 class TestNlpIntegrationEndToEnd:
     """End-to-end extract() with NLP layer."""
@@ -754,6 +779,43 @@ class TestNlpIntegrationEndToEnd:
         assert ir.title == "列女传"
         assert ir.dynasty == "汉"
         assert ir.author == "刘向"
+
+    def test_nlp_filters_false_positive_e2e(self) -> None:
+        """E2E test proving NLP actually executes, not just falls through to regex.
+
+        Regex matches "洞经教部·经三" but NLP rejects it because neither
+        token is in the dictionary. With NLP active, no metadata should
+        be extracted. Without NLP, the regex would match and return
+        dynasty="洞经教部", author="经三".
+
+        This test uses pass2_metadata directly (not extract()) because
+        extract() uses its own _build_nlp_service which may or may not
+        have NLP enabled depending on dictionary size.
+        """
+        md = MetaDictionary()
+        md.add_pair("宋", "朱熹")
+        svc = NLPService()
+        svc.set_plugin(JiebaNLPPlugin(md))
+        svc.set_meta_dict(md)
+
+        # This text matches METADATA_RE pattern (X·Y) but is not real metadata
+        html = """<html><body>
+        <p>卷十二 三洞经教部·经三</p>
+        </body></html>"""
+        idx, territory = _build(html)
+
+        # With NLP: should reject
+        meta_with_nlp = pass2_metadata(idx, territory, svc)
+        assert meta_with_nlp is None, (
+            f"NLP should reject '洞经教部·经三', got {meta_with_nlp}"
+        )
+
+        # Without NLP (regex-only): would accept the false positive
+        meta_without_nlp = pass2_metadata(idx, territory)
+        # This proves NLP is doing work — without it, we get a false positive
+        assert meta_without_nlp is not None, (
+            "Regex-only fallback should match '洞经教部·经三'"
+        )
 
     def test_build_meta_dict_from_catalog(self) -> None:
         """Build MetaDictionary from catalog HTML and use for NLP."""

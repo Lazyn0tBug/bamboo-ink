@@ -21,6 +21,14 @@ from selectolax.parser import HTMLParser
 
 from .regex_patterns import METADATA_RE
 
+# Known dynasty names for validation during extraction.
+# Used to reject non-metadata patterns like "(英译本)" that match the
+# regex but are not actual dynasty-author pairs.
+KNOWN_DYNASTIES = {
+    "宋", "唐", "汉", "明", "清", "元", "晋", "南北朝", "隋", "五代",
+    "北宋", "南宋", "秦", "周", "三国", "北魏", "东晋", "西晋",
+}
+
 
 @dataclass
 class MetaDictionary:
@@ -56,6 +64,17 @@ class MetaDictionary:
     def get_dynasty_authors(self, dynasty: str) -> set[str]:
         """Get all known authors for a given dynasty."""
         return self.dynasty_authors.get(dynasty, set())
+
+    @property
+    def pair_count(self) -> int:
+        """Number of unique (dynasty, author) pairs in the dictionary."""
+        return len(self.authors)
+
+    def validate_pair(self, dynasty: str, author: str) -> bool:
+        """Check if dynasty is a known name and author is non-empty."""
+        if not dynasty.strip() or not author.strip():
+            return False
+        return dynasty.strip() in KNOWN_DYNASTIES
 
     def add_pair(self, dynasty: str, author: str) -> None:
         """Add a (dynasty, author) pair to the dictionary."""
@@ -103,7 +122,8 @@ def _extract_metadata_pairs(html: str) -> list[tuple[str, str]]:
 
     Uses METADATA_RE to scan text nodes that appear in metadata-like contexts.
     This is format-agnostic — it scans all text nodes and lets the regex
-    find (dynasty·author) patterns, then validates against known contexts.
+    find (dynasty·author) patterns, then validates dynasty against the
+    KNOWN_DYNASTIES allowlist to reject non-metadata patterns.
     """
     pairs: list[tuple[str, str]] = []
     tree = HTMLParser(html)
@@ -114,8 +134,11 @@ def _extract_metadata_pairs(html: str) -> list[tuple[str, str]]:
             continue
         match = METADATA_RE.search(text)
         if match:
-            dynasty = match.group(1)
-            author = match.group(2)
+            dynasty = match.group(1).strip()
+            author = match.group(2).strip()
+            # Reject empty author or unknown dynasty (e.g., "(英译本)")
+            if not author or dynasty not in KNOWN_DYNASTIES:
+                continue
             pairs.append((dynasty, author))
 
     return pairs

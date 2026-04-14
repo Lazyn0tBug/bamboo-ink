@@ -8,6 +8,7 @@ Mirrors JS extractors.mjs:671-880 assembleResults.
 
 from __future__ import annotations
 
+from .passes import AnnotationEntry
 from .regex_patterns import END_MARKER_RE, SECTION_SUMMARY_RE
 from .territory import Territory
 from .types import Annotation, Chapter, ContentIR, DOMIndex, Section
@@ -15,7 +16,7 @@ from .types import Annotation, Chapter, ContentIR, DOMIndex, Section
 
 def assemble_results(
     index: DOMIndex,
-    annotations: list[dict],
+    annotations: list[AnnotationEntry],
     chapter_title_nodes: set[int],
     territory: Territory,
     ir: ContentIR,
