@@ -697,8 +697,9 @@ class TestNlpIntegrationPass2:
         assert meta["dynasty"] == "汉"
         assert meta["author"] == "班固"
 
-    def test_nlp_empty_dict_rejects_all(self) -> None:
-        """Empty MetaDictionary + plugin → all candidates rejected."""
+    def test_nlp_empty_dict_fallback_to_regex(self) -> None:
+        """Empty MetaDictionary + plugin → NLP rejects but falls back to regex
+        when dynasty is in KNOWN_DYNASTIES."""
         md = MetaDictionary()  # empty
         svc = NLPService()
         svc.set_plugin(JiebaNLPPlugin(md))
@@ -706,7 +707,22 @@ class TestNlpIntegrationPass2:
 
         idx, territory = _build(METADATA_HTML)
         meta = pass2_metadata(idx, territory, svc)
-        # NLP is "active" but dict is empty → no matches
+        # NLP rejects (empty dict) but "宋" is in KNOWN_DYNASTIES → fallback
+        assert meta is not None
+        assert meta["dynasty"] == "宋"
+        assert meta["author"] == "朱熹"
+
+    def test_nlp_empty_dict_unknown_dynasty_rejects(self) -> None:
+        """Empty MetaDictionary + unknown dynasty → truly rejected."""
+        md = MetaDictionary()  # empty
+        svc = NLPService()
+        svc.set_plugin(JiebaNLPPlugin(md))
+        svc.set_meta_dict(md)
+
+        html = '<body><p>(虚构朝·某人)</p></body>'
+        idx, territory = _build(html)
+        meta = pass2_metadata(idx, territory, svc)
+        # "虚构朝" not in KNOWN_DYNASTIES → truly rejected
         assert meta is None
 
     def test_nlp_first_rejected_second_accepted(self) -> None:

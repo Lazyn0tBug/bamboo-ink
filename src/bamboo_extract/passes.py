@@ -15,6 +15,8 @@ from selectolax.parser import HTMLParser
 if TYPE_CHECKING:
     from .nlp_service import NLPService
 
+# Import KNOWN_DYNASTIES for NLP fallback validation
+from .meta_dict import KNOWN_DYNASTIES
 from .regex_patterns import (
     COLOR_551A8B_RE,
     FONT_SIZE_9PT_RE,
@@ -24,7 +26,6 @@ from .regex_patterns import (
 )
 from .territory import Territory
 from .types import ContentIR, DOMIndex
-
 
 # ── TypedDict for Pass return types ─────────────────────────────────
 
@@ -248,7 +249,17 @@ def pass2_metadata(
                     "dynasty": nlp_result["dynasty"],
                     "author": nlp_result["author"],
                 }
-            return None  # NLP rejected — continue to next candidate
+            # NLP rejected — fall back to regex if dynasty is structurally
+            # valid (in KNOWN_DYNASTIES). This prevents regression for files
+            # with authors not in the dictionary but with valid dynasty names.
+            regex_dynasty = match.group(1).strip()
+            if regex_dynasty in KNOWN_DYNASTIES:
+                territory.claim_leaf(nid)
+                return {
+                    "dynasty": regex_dynasty,
+                    "author": match.group(2).strip(),
+                }
+            return None  # NLP rejected + unknown dynasty — skip
 
         # No NLP: original regex-only behavior
         territory.claim_leaf(nid)

@@ -15,7 +15,7 @@ deepened: 2026-04-12
 
 本工作提前 P8 的 NLP Plugin 设计，创建 `NLPPlugin` Protocol + `NLPService` 门面 + `JiebaNLPPlugin` 默认实现，并在 Pass 1-3 中接入分词分类。
 
-**核心思路**：不依赖静态朝代词典，而是从 Catalog 页面（5 个藏目页 + 首页）中提取所有 `(朝代·作者)` 对构建**动态元数据词典**。Pass 1-3 处理非正文元素时，用这个词典做分词分类 — 因为朝代、作者、章节都是短文本（<80 字），天然适合分词处理。
+**核心思路**：从 Catalog 页面提取和文学史参考资料构建**元数据词典**（185 对）。Pass 1-3 处理非正文元素时，用这个词典做分词分类 — 因为朝代、作者、章节都是短文本（<80 字），天然适合分词处理。
 
 **合并范围**：
 - P8 原计划的 NLP Plugin（segment / recognize_entities / punctuate 三个接口）
@@ -75,7 +75,7 @@ deepened: 2026-04-12
 ## Key Technical Decisions
 
 - **D1: NLP 作为独立服务层**: `NLPService` 是门面，`NLPPlugin` 是实现接口，Pass 只依赖 Service 门面。管道和 NLP 实现完全解耦。
-- **D2: 动态元数据词典 + 多格式提取**: 从 Catalog 页面提取 `(朝代·作者)` 对，支持 4 种 HTML 格式（见 Unit 0）。数据来自真实藏书（300+ 对），自动更新，零维护成本。
+- **D2: 元数据词典 + 多格式提取**: 从 Catalog 页面提取 `(朝代·作者)` 对（支持 4 种 HTML 格式），结合文学史参考资料扩展至 185 对。通过 `--build-meta-dict` CLI 命令可重新构建。
 - **D3: 元素级分词分类**: Pass 2 在匹配到候选时，调用 `NLPService.classify_short_text()` 进行分词+分类。短文本（<80 字）开销极小，不需要跑全文。
 - **D4: 分类而非验证**: 核心方法是 `classify_short_text(text) -> dict`，返回结构化分类结果（如 `{"type": "metadata", "dynasty": "宋", "author": "朱熹"}`），Pass 根据分类结果判断是否认领。
 - **D5: jieba + 动态词典**: 第一版用 `jieba` 分词 + 动态词典做实体匹配，不依赖统计 NER 模型。成本低，准确率高。
@@ -91,9 +91,10 @@ deepened: 2026-04-12
 | `2史部藏目.htm` | `<FONT SIZE=-1 COLOR="#993300">` / `<font color="#993300" size="2">` | `(汉·司马迁)` / `(唐·颜师古 注)` | ~50+ |
 | `3子部藏目.htm` | `<font size="2" color="#993300">` | `(周·荀况)` | ~180+ |
 | `4集部藏目.htm` | `&middot;` HTML 实体 + 颜色标记 | 待确认 | 待确认 |
-| **合计** | | | **300+** |
+| **合计（预估）** | | | **~250** |
 
-提取器需要识别这 4 种格式，统一解析为 `(dynasty, author)` 对。
+> **实际数据**: 当前 `meta_dict.json` 有 185 对，来自文学史参考资料（`scripts/expand_meta_dict.py`）。
+> `build_meta_dict()` 可从 Catalog HTML 提取，但需与静态词典合并使用。
 
 ## High-Level Technical Design
 
@@ -160,9 +161,9 @@ extract(html):
 
 ## Implementation Units
 
-- [ ] **Unit 0: Catalog 预处理 + 动态元数据词典**
+- [ ] **Unit 0: 元数据词典构建**
 
-**Goal:** 从 Catalog 页面提取所有 `(朝代·作者)` 对，构建动态元数据词典。
+**Goal:** 构建元数据词典（185 朝代-作者对），支持从 Catalog 页面提取和 CLI 重新构建。
 
 **Requirements:** R8 (领地式 Pass 架构，不破坏现有管道)
 
@@ -171,41 +172,35 @@ extract(html):
 **Files:**
 - Create: `src/bamboo_extract/meta_dict.py`
 - Create: `src/bamboo_extract/resources/` (目录)
+- Create: `scripts/expand_meta_dict.py` (扩展词典脚本)
 - Test: `tests/test_meta_dict.py`
 
 **Approach:**
-- `build_meta_dict(catalog_htmls: list[str]) -> MetaDictionary`:
-  - 对每个 Catalog HTML 运行 extract()
-  - **从原始 HTML 中提取元数据元素**，支持 4 种格式：
-    1. `<font class="annotation">(朝代·作者)</font>` — `class="annotation"` 直接匹配
-    2. `<FONT SIZE=-1 COLOR="#993300">(朝代·作者)</FONT>` — `SIZE=-1` + 颜色 `#993300` / `#800000`
-    3. `<font size="2" color="#993300">(朝代·作者)</font>` — `size="2"` + 颜色 `#993300` / `#800000`
-    4. `&middot;` 实体 — 查找包含 `·` / `&middot;` 的相邻文本，匹配 `(朝代·作者)` 模式
-  - 对提取到的文本运行 METADATA_RE，解析 dynasty-author 对
-  - 去重后构建 `MetaDictionary`:
-    - `dynasties: set[str]` — 所有朝代名
-    - `authors: dict[str, str]` — author → dynasty 映射
-    - `dynasty_authors: dict[str, set[str]]` — dynasty → set[author] 映射
 - `MetaDictionary` 类:
   - `is_dynasty(text: str) -> bool` — 判断是否是朝代名
   - `get_author_dynasty(author: str) -> str | None` — 查询作者所属朝代
   - `save(path) / load(path)` — 持久化为 JSON
-- 输出: `src/bamboo_extract/resources/meta_dict.json`
-- 提供 CLI 命令: `uv run bamboo-extract --build-meta-dict 古籍/ --output src/bamboo_extract/resources/meta_dict.json`
+  - `pair_count` 属性 — 词典中朝代-作者对数量
+  - `validate_pair(dynasty, author) -> bool` — 验证朝代-作者对
+- `build_meta_dict(catalog_htmls)` — 从 Catalog HTML 提取 (dynasty, author) 对
+  - 支持 4 种 HTML 格式：class=annotation / FONT SIZE+COLOR / font size+color / &middot; 实体
+  - 使用 METADATA_RE 匹配，KNOW_DYNASTIES 验证
+- `KNOWN_DYNASTIES` 常量 — 19 个已知朝代名的验证白名单
+- 输出: `src/bamboo_extract/resources/meta_dict.json`（185 对，来自文学史参考资料 + Catalog 提取）
+- 提供 CLI 命令: `bamboo-extract build-meta-dict 古籍/ --output meta_dict.json`（已实现）
 
 **Test scenarios:**
-- Happy path: 5 个藏目页 + 首页 → 提取 300+ 个朝代-作者对（覆盖 4 种格式）
 - Happy path: MetaDictionary.is_dynasty("宋") → True
 - Happy path: MetaDictionary.is_dynasty("简明目录") → False
 - Happy path: MetaDictionary.get_author_dynasty("苏轼") → "宋"
+- Happy path: 保存/加载 → 结果一致
 - Edge case: 空 Catalog 列表 → 空词典
-- Edge case: 保存/加载 → 结果一致
 - Edge case: 仅 `2史部藏目.htm`（无色标 class 格式）→ 正确提取
+- Happy path: build-meta-dict CLI 从目录提取并合并
 
 **Verification:**
-- `uv run bamboo-extract --build-meta-dict 古籍/ --output meta_dict.json` 产出合法 JSON
+- `bamboo-extract build-meta-dict 古籍/ --output meta_dict.json` 产出合法 JSON
 - 词典包含常见朝代: 汉、唐、宋、明、清
-- 词典包含来自 `2史部藏目.htm` 和 `3子部藏目.htm` 的条目
 - `pytest tests/test_meta_dict.py` 通过
 
 - [ ] **Unit 1: NLPPlugin Protocol 定义**
@@ -222,9 +217,9 @@ extract(html):
 **Approach:**
 - `NLPPlugin` Protocol:
   - `segment(text: str) -> list[str]` — 分词
-  - `recognize_entities(text: str, entity_types: set[str]) -> list[Entity]` — 命名实体识别
+  - `recognize_entities(tokens: list[str], entity_types: set[str]) -> list[Entity]` — 命名实体识别（基于分词结果）
   - `punctuate(text: str) -> str` — 标点断句（预留）
-- `Entity` dataclass: `text`, `type` (dynasty/person/place/book), `start`, `end`
+- `Entity` dataclass: `text`, `type` (dynasty/person/place/book) — 短文本分类不需要 start/end 位置
 - 考虑使用 `TypedDict` 或小型 dataclass 替代 raw dict，适配 ty 类型检查
 
 **Patterns to follow:**
@@ -292,8 +287,7 @@ extract(html):
 
 **Test scenarios:**
 - Happy path: "宋·朱熹" → segment → ["宋", "·", "朱熹"]
-- Happy path: recognize_entities("宋·朱熹", {"dynasty", "person"}) → [{"text": "宋", "type": "dynasty"}, {"text": "朱熹", "type": "person"}]
-- Happy path: "卷十二三洞经教部经三" → segment → 包含"三洞"、"经教部"等非朝代词
+- Happy path: recognize_entities(["宋", "朱熹"], {"dynasty", "person"}) → [{"text": "宋", "type": "dynasty"}, {"text": "朱熹", "type": "person"}]
 - Edge case: 空文本 → segment 返回 []
 - Edge case: 纯标点 → segment 返回 []
 
@@ -326,7 +320,7 @@ extract(html):
   3. 注入到 `NLPService`
 - 如果 `meta_dict.json` 不存在 → 降级为纯正则（向后兼容）
 
-**关于 35% → 60% 提取率目标的说明**: NLP 分类主要解决**误匹配过滤**（false positive elimination），将原本约 10-15% 的误匹配率降至接近 0%。提取率提升依赖于：(a) NLP 验证后更多真实元数据被正确识别而非被正则误判后丢弃；(b) 迭代式候选匹配确保不遗漏后面的正确匹配。具体提升幅度取决于真实数据分布，60% 是保守目标。
+**关于 35% → 60% 提取率目标的说明**: NLP 分类主要解决**误匹配过滤**（false positive elimination），将原本约 10-15% 的误匹配率降至接近 0%。提取率提升依赖于：(a) NLP 验证后更多真实元数据被正确识别而非被正则误判后丢弃；(b) 迭代式候选匹配确保不遗漏后面的正确匹配；(c) KNOWN_DYNASTIES 回退机制确保词典中不存在的作者仍能被正则匹配（朝代名在白名单时）。具体提升幅度取决于真实数据分布，60% 是保守目标。
 
 **Execution note:** 先写失败测试（现有误匹配案例），验证 NLP 能过滤后通过。
 
@@ -372,23 +366,24 @@ extract(html):
 |------|-----------|--------|------------|
 | jieba 分词结果对文言文不准确 | Medium | Medium | 第一版依赖词典匹配而非纯分词；准备 pkuseg 作为备选 |
 | jieba 引入新依赖 | Low | Low | jieba 纯 Python 实现，无 C 扩展，安装简单 |
-| NLP 分类增加处理时间 | Low | Low | 单次分类 < 1ms，9000 文件总延迟 < 10s，可接受 |
+| NLP 分类增加处理时间 | Low | Low | 单次分类 3-12ms（实测），首调用 jieba 加载 ~230ms。9000 文件若每文件 2 候选约 60-120s，可接受。CLI 批处理可预加载 jieba |
 | 动态词典过时（新增藏书不在词典中）| Low | Medium | 提供 `--build-meta-dict` CLI 命令，每次新增藏书后重新构建 |
-| 提取率提升不及预期 | Medium | Medium | 35%→60% 目标依赖迭代式候选匹配；若提升有限，后续可引入 LLM Fallback (R9) |
+| 提取率提升不及预期 | Medium | Medium | 35%→60% 目标依赖迭代式候选匹配 + KNOWN_DYNASTIES 回退；若提升有限，后续可引入 LLM Fallback (R9) |
 
 ## System-Wide Impact
 
 - **对 P8 的影响**: P8 不再需要定义 NLP Plugin Protocol — 已在 6B 完成。P8 只需接入 Exporter/Repository。
 - **对 P7 的影响**: 质量评估可以使用 NLP 分类结果作为质量指标的一部分。
 - **对 P11 的影响**: 全量验证前需要重新构建 meta_dict，确保覆盖率。
-- **对 extract() 的影响**: Catalog 路径的元数据提取也需要使用新的多格式提取逻辑（与 Unit 0 共享）。
+- **对 extract() 的影响**: Catalog 路径的元数据提取也需要使用新的多格式提取逻辑（与 Unit 0 共享）。当 NLP 拒绝但朝代在 KNOWN_DYNASTIES 中时，回退到正则结果。
 - **对 pyproject.toml 的影响**: 新增 `jieba >= 0.42.1` 依赖，是项目第一个第三方 NLP 库。
 - **Unchanged invariants**: Pass 2 的返回值签名不变（`dict | None`），调用方（extract() 和 catalog 路径）不需要修改接口，只需处理 NLP 增强的内部行为。
 
 ## Documentation / Operational Notes
 
-- **CLI 新增命令**: `--build-meta-dict` 参数用于从 Catalog 页面构建动态元数据词典
-- **资源文件**: `src/bamboo_extract/resources/meta_dict.json` 需要加入 Python 包的 `package_data` 配置
+- **CLI 新增命令**: `build-meta-dict` 子命令用于从 Catalog 页面构建动态元数据词典（已实现）。用法: `bamboo-extract build-meta-dict <目录> --output meta_dict.json`
+- **资源文件**: `src/bamboo_extract/resources/meta_dict.json` 已加入 hatchling package_data 配置
+- **NLP 回退机制**: 当 NLP 拒绝但正则匹配的朝代在 KNOWN_DYNASTIES 中时，回退到正则结果（防止词典不完整的作者丢失元数据）
 - **外部数据源策略**: 第一版不引入 Jiayan/EvaHan/SikuBERT，如后续文言文分词效果差再评估
 
 ## Sources & References

@@ -7,7 +7,7 @@ from .assembler import assemble_results
 from .catalog_detect import detect_catalog, extract_nav_items
 from .dom_index import build_dom_index
 from .jieba_plugin import JiebaNLPPlugin
-from .meta_dict import MetaDictionary
+from .meta_dict import KNOWN_DYNASTIES, MetaDictionary
 from .nlp import NLPPlugin
 from .nlp_service import NLPService
 from .normalize import normalize_html
@@ -140,7 +140,13 @@ def extract(html: str, source_path: str = "") -> ContentIR:
                     dynasty = result["dynasty"]
                     author = result["author"]
                     break
-                # NLP rejected — continue to next candidate
+                # NLP rejected — fall back to regex if dynasty is valid
+                regex_dynasty = match.group(1).strip()
+                if regex_dynasty in KNOWN_DYNASTIES:
+                    dynasty = regex_dynasty
+                    author = match.group(2).strip()
+                    break
+                # NLP rejected + unknown dynasty — continue
             else:
                 dynasty = match.group(1)
                 author = match.group(2)
