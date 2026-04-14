@@ -423,7 +423,8 @@ class TestExtractPipeline:
         ir = extract(TEMPLATE_F_HTML)
         assert ir.title == "大学章句集注"
         assert ir.docType == "content"
-        assert ir.dynasty == "宋"
+        # NLP-enabled: 朱熹 classified as 南宋; regex-only: "宋"
+        assert ir.dynasty in ("宋", "南宋")
         assert ir.author == "朱熹"
         assert len(ir.chapters) >= 2
         titles = [ch.title for ch in ir.chapters]
@@ -766,10 +767,10 @@ class TestNlpIntegrationEndToEnd:
         ir = extract(TEMPLATE_F_HTML)
         assert ir.title == "大学章句集注"
         assert ir.docType == "content"
-        # Note: extract() uses its own _build_nlp_service which loads
-        # meta_dict.json from disk. Since we may not have that file,
-        # the pipeline falls back to regex — which still works.
-        assert ir.dynasty == "宋"
+        # With expanded dictionary (185 pairs, NLP enabled), NLP classifies
+        # 朱熹 as 南宋. With regex-only fallback, dynasty would be "宋".
+        # Both are correct — 南宋 is more precise.
+        assert ir.dynasty in ("宋", "南宋")
         assert ir.author == "朱熹"
 
     def test_extract_catalog_with_nlp(self) -> None:

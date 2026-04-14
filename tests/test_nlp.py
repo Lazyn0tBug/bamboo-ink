@@ -131,29 +131,29 @@ class TestJiebaGlobalStateGuard:
     def test_second_instance_does_not_duplicate(self) -> None:
         """Second plugin instance with same dictionary adds no new words."""
         md = MetaDictionary()
-        md.add_pair("唐", "李白")  # use unique entries to avoid collision
+        md.add_pair("西夏", "元昊")  # use unique entries not in main dictionary
         JiebaNLPPlugin(md)
         count_after_first = len(_registered_words)
         # Second instance should not add duplicates
         JiebaNLPPlugin(md)
         count_after_second = len(_registered_words)
         assert count_after_first == count_after_second
-        assert "唐" in _registered_words
-        assert "李白" in _registered_words
+        assert "西夏" in _registered_words
+        assert "元昊" in _registered_words
 
     def test_different_dict_entries_still_registered(self) -> None:
         """Plugin with new dictionary entries still registers them."""
         md1 = MetaDictionary()
-        md1.add_pair("五代", "冯道")
+        md1.add_pair("辽", "耶律楚材")  # unique entries
         JiebaNLPPlugin(md1)
         count = len(_registered_words)
 
         md2 = MetaDictionary()
-        md2.add_pair("晋", "皇甫谧")  # new entries not in md1
+        md2.add_pair("金", "元好问")  # different unique entries
         JiebaNLPPlugin(md2)
         # New words should be registered
-        assert "五代" in _registered_words
-        assert "冯道" in _registered_words
-        assert "晋" in _registered_words
-        assert "皇甫谧" in _registered_words
+        assert "辽" in _registered_words
+        assert "耶律楚材" in _registered_words
+        assert "金" in _registered_words
+        assert "元好问" in _registered_words
         assert len(_registered_words) > count

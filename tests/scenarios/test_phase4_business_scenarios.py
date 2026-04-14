@@ -283,7 +283,8 @@ class TestClaimIsolation:
         </body></html>"""
         ir = extract(html)
         assert ir.title == "书名"
-        assert ir.dynasty == "宋"
+        # NLP-enabled: 朱熹 classified as 南宋; regex-only: "宋"
+        assert ir.dynasty in ("宋", "南宋")
         assert ir.author == "朱熹"
 
     def test_chapter_titles_not_consumed_by_metadata(self) -> None:
@@ -298,7 +299,8 @@ class TestClaimIsolation:
         </body></html>"""
         ir = extract(html)
         assert ir.title == "书名"
-        assert ir.dynasty == "宋"
+        # NLP-enabled: 朱熹 classified as 南宋; regex-only: "宋"
+        assert ir.dynasty in ("宋", "南宋")
         assert ir.author == "朱熹"
         assert len(ir.chapters) == 2
         titles = [ch.title for ch in ir.chapters]
